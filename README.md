@@ -20,6 +20,7 @@ API REST para conectar **moradores**, **pontos de coleta** e **operadores** resp
 - [Documentação da API](#documentação-da-api)
 - [Estrutura do repositório](#estrutura-do-repositório)
 - [Roadmap](#roadmap)
+- [Contribuindo](#contribuindo)
 - [Equipe](#equipe)
 
 ## Objetivo
@@ -197,11 +198,15 @@ Padrões previstos para a API:
 - [ ] Testes de integração e de concorrência
 - [ ] Interface web responsiva (segunda unidade)
 
+## Contribuindo
+
+Fluxo de trabalho da equipe (branches, commits e Pull Requests): veja o [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Equipe
 
 | Nome | GitHub |
 |---|---|
-| _Wilgner_ | [@usuario](https://github.com/wilgnergomes) |
+| _Wilgner_ | [@wilgnergomes](https://github.com/wilgnergomes) |
 | _Nome do integrante_ | [@usuario](https://github.com/usuario) |
 | _Nome do integrante_ | [@usuario](https://github.com/usuario) |
 
