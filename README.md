@@ -207,7 +207,8 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 
 - [x] Levantamento de requisitos
 - [x] Criação do repositório e do projeto Spring Boot
-- [ ] Modelagem do banco de dados (diagrama ER e migrações)
+- [x] Modelagem do banco de dados (diagrama ER e migrações)
+- [ ] Criação da Matriz de Rastreabilidade (Tabela em docs/)
 - [ ] Configuração do banco com Docker Compose
 - [ ] Contrato da API (OpenAPI)
 - [ ] Cadastros: materiais, pontos, vínculos, moradores, endereços e operadores
