@@ -2,7 +2,7 @@
 
 **Data:** 2026-10-12
 
-**Status:** Proposta
+**Status:** Aceita
 
 ## Contexto
 
