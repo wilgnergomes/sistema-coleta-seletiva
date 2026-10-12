@@ -1,94 +1,126 @@
 // =====================================================================
 // Visão 1: Cadastros, Infraestrutura e Catálogo
-// Foco: Estrutura base (Moradores, Pontos, Materiais, Operadores)
+// Foco: estrutura base (Moradores, Pontos, Materiais, Operadores)
+// Esta visão é a DEFINIÇÃO das tabelas; a visão 2 (fluxo) apenas as
+// referencia como tabelas cinza.
+// Visão simplificada: CHECKs, índices de desempenho e demais regras
+// finas estão na migração SQL (fonte da verdade do banco).
 // =====================================================================
 
 Project coleta_seletiva_cadastros {
   database_type: 'PostgreSQL'
+  Note: 'Visão estrutural. Unicidades e FKs aparecem aqui; checks e índices ficam na migração.'
 }
 
 Table mor_morador [headercolor: #3498db] {
   mor_nr_id       integer      [pk, increment]
   mor_tx_nome     varchar(80)  [not null]
-  mor_tx_email    varchar(150) [not null]
+  mor_tx_email    varchar(150) [not null, note: 'Único; guardado normalizado (trim + minúsculas)']
   mor_tx_fone     varchar(20)
-  mor_tx_situacao varchar(10)  [not null, default: 'ATIVO']
+  mor_tx_situacao varchar(10)  [not null, default: 'ATIVO', note: 'ATIVO | INATIVO']
+
+  indexes {
+    mor_tx_email [unique, name: 'uq_mor_email']
+  }
+
+  Note: 'RF01, RN03. Morador vinculado a solicitações é inativado, nunca excluído.'
 }
 
 Table end_endereco [headercolor: #3498db] {
   end_nr_id          integer      [pk, increment]
   mor_nr_id          integer      [not null]
   end_tx_logradouro  varchar(150) [not null]
-  end_tx_numero      varchar(10)  [not null]
+  end_tx_numero      varchar(10)  [not null, note: "Número ou 'S/N'. Sem valor padrão"]
   end_tx_bairro      varchar(100) [not null]
   end_tx_municipio   varchar(100) [not null]
   end_tx_uf          varchar(2)   [not null]
-  end_tx_cep         varchar(8)   [not null]
+  end_tx_cep         varchar(8)   [not null, note: 'Somente dígitos']
   end_tx_complemento varchar(100)
+
+  Note: 'RF02. Cada endereço pertence a um único morador.'
 }
 
 Table mat_material [headercolor: #27ae60] {
   mat_nr_id         integer       [pk, increment]
-  mat_tx_nome       varchar(80)   [not null]
+  mat_tx_nome       varchar(80)   [not null, note: 'Único, sem diferenciar maiúsculas/minúsculas']
   mat_tx_descricao  varchar(500)  [not null]
-  mat_tx_unidade    varchar(5)    [not null]
+  mat_tx_unidade    varchar(5)    [not null, note: 'KG | L | UN']
   mat_tx_orientacao varchar(1000) [not null]
-  mat_tx_situacao   varchar(10)   [not null, default: 'ATIVO']
+  mat_tx_situacao   varchar(10)   [not null, default: 'ATIVO', note: 'ATIVO | INATIVO']
+
+  indexes {
+    `lower(btrim(mat_tx_nome))` [unique, name: 'uq_mat_nome']
+  }
+
+  Note: 'RF03, RN02, RN03. A unidade de medida pertence ao material.'
 }
 
 Table poc_ponto_coleta [headercolor: #27ae60] {
   poc_nr_id             integer      [pk, increment]
   poc_tx_nome           varchar(120) [not null]
-  poc_tx_contato        varchar(150)
-  poc_tx_horarios       varchar(500)
-  poc_tx_situacao       varchar(10)  [not null, default: 'ATIVO']
+  poc_tx_contato        varchar(150) [note: 'Opcional; se informado, não pode ser em branco']
+  poc_tx_horarios       varchar(500) [note: 'Opcional; texto descritivo']
+  poc_tx_situacao       varchar(10)  [not null, default: 'ATIVO', note: 'ATIVO | INATIVO']
   poc_bl_rec_domiciliar boolean      [not null, default: false]
   poc_tx_logradouro     varchar(150) [not null]
-  poc_tx_numero         varchar(10)  [not null]
+  poc_tx_numero         varchar(10)  [not null, note: "Número ou 'S/N'. Sem valor padrão"]
   poc_tx_bairro         varchar(100) [not null]
   poc_tx_municipio      varchar(100) [not null]
   poc_tx_uf             varchar(2)   [not null]
-  poc_tx_cep            varchar(8)   [not null]
+  poc_tx_cep            varchar(8)   [not null, note: 'Somente dígitos']
   poc_tx_complemento    varchar(100)
+
+  Note: 'RF04, RN03, RN05. Endereço embutido no cadastro do ponto.'
 }
 
 Table mac_material_aceito [headercolor: #27ae60] {
   poc_nr_id          integer [not null, pk]
   mat_nr_id          integer [not null, pk]
   mac_tx_observacoes varchar(500)
-  mac_nr_limite      numeric(12,3)
+  mac_nr_limite      numeric(12,3) [note: 'Opcional; > 0; na unidade do material']
+
+  Note: 'RF05. Vínculo único ponto + material (PK composta).'
 }
 
 Table ope_operador [headercolor: #e67e22] {
   ope_nr_id       integer      [pk, increment]
   ope_tx_nome     varchar(80)  [not null]
-  ope_tx_email    varchar(150) [not null]
-  ope_tx_situacao varchar(10)  [not null, default: 'ATIVO']
+  ope_tx_email    varchar(150) [not null, note: 'Único; guardado normalizado (trim + minúsculas)']
+  ope_tx_situacao varchar(10)  [not null, default: 'ATIVO', note: 'ATIVO | INATIVO']
+
+  indexes {
+    ope_tx_email [unique, name: 'uq_ope_email']
+  }
+
+  Note: 'RF07.'
 }
 
 Table opp_operador_ponto [headercolor: #e67e22] {
   ope_nr_id integer [not null, pk]
   poc_nr_id integer [not null, pk]
+
+  Note: 'RF07. Vínculo N:N operador x ponto. A permissão de atuação é validada no backend.'
 }
 
-Ref fk_end_mor: end_endereco.mor_nr_id > mor_morador.mor_nr_id
-Ref fk_mac_poc: mac_material_aceito.poc_nr_id > poc_ponto_coleta.poc_nr_id
-Ref fk_mac_mat: mac_material_aceito.mat_nr_id > mat_material.mat_nr_id
-Ref fk_opp_ope: opp_operador_ponto.ope_nr_id > ope_operador.ope_nr_id
-Ref fk_opp_poc: opp_operador_ponto.poc_nr_id > poc_ponto_coleta.poc_nr_id
+// Relacionamentos (ON DELETE RESTRICT: sem exclusão física, RN03)
+Ref fk_end_mor: end_endereco.mor_nr_id > mor_morador.mor_nr_id [delete: restrict]
+Ref fk_mac_poc: mac_material_aceito.poc_nr_id > poc_ponto_coleta.poc_nr_id [delete: restrict]
+Ref fk_mac_mat: mac_material_aceito.mat_nr_id > mat_material.mat_nr_id [delete: restrict]
+Ref fk_opp_ope: opp_operador_ponto.ope_nr_id > ope_operador.ope_nr_id [delete: restrict]
+Ref fk_opp_poc: opp_operador_ponto.poc_nr_id > poc_ponto_coleta.poc_nr_id [delete: restrict]
 
-TableGroup moradores { 
+TableGroup moradores {
   mor_morador
-  end_endereco 
+  end_endereco
 }
 
-TableGroup catalogo { 
+TableGroup catalogo {
   mat_material
   poc_ponto_coleta
-  mac_material_aceito 
+  mac_material_aceito
 }
 
-TableGroup operacao { 
+TableGroup operacao {
   ope_operador
-  opp_operador_ponto 
+  opp_operador_ponto
 }

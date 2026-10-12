@@ -1,13 +1,19 @@
 // =====================================================================
 // Visão 2: Transações e Fluxo de Recolha
-// Foco: Solicitação, Itens, Histórico e Rastreabilidade
+// Foco: Solicitação, Itens, Histórico e rastreabilidade
+// As tabelas cinza são REFERÊNCIAS: a definição completa está na
+// visão 1 (er-cadastros.dbml). Ao mudar uma coluna lá, ajuste aqui
+// se ela aparecer nesta visão.
+// Visão simplificada: CHECKs, índices de desempenho e demais regras
+// finas estão na migração SQL (fonte da verdade do banco).
 // =====================================================================
 
 Project coleta_seletiva_fluxo {
   database_type: 'PostgreSQL'
+  Note: 'Visão transacional. Transições de situação (RN06), compatibilidade ponto x material (RN01) e conclusão com quantidades (RF13) são validadas no backend.'
 }
 
-// --- Tabelas de Referência Simplificadas (Stubs) ---
+// --- Tabelas de referência (stubs) ---
 Table mor_morador [headercolor: #7f8c8d] {
   mor_nr_id   integer     [pk]
   mor_tx_nome varchar(80) [note: 'Tabela de referência']
@@ -28,52 +34,62 @@ Table ope_operador [headercolor: #7f8c8d] {
   ope_tx_nome varchar(80) [note: 'Tabela de referência']
 }
 
-// --- Núcleo Transacional ---
+// --- Núcleo transacional ---
 Table sol_solicitacao [headercolor: #c0392b] {
   sol_nr_id             integer      [pk, increment]
-  sol_tx_protocolo      varchar(30)  [not null]
+  sol_tx_protocolo      varchar(30)  [not null, note: 'Único']
   mor_nr_id             integer      [not null]
   poc_nr_id             integer      [not null]
-  sol_tx_endereco_copia varchar(400) [not null]
-  sol_tx_situacao       varchar(20)  [not null, default: 'SOLICITADA']
-  sol_dt_criacao        timestamptz  [not null]
-  sol_dt_agendamento    timestamptz
-  sol_dt_conclusao      timestamptz
+  sol_tx_endereco_copia varchar(400) [not null, note: 'Cópia do endereço no momento da solicitação (RN04)']
+  sol_tx_situacao       varchar(20)  [not null, default: 'SOLICITADA', note: 'SOLICITADA | AGENDADA | EM_RECOLHIMENTO | CONCLUIDA | RECUSADA | CANCELADA']
+  sol_dt_criacao        timestamptz  [not null, default: `now()`]
+  sol_dt_agendamento    timestamptz  [note: 'Agendamento vigente']
+  sol_dt_conclusao      timestamptz  [note: 'Preenchida somente em CONCLUIDA']
   sol_tx_observacoes    varchar(500)
-  sol_nr_versao         integer      [not null, default: 0]
+  sol_nr_versao         integer      [not null, default: 0, note: 'Controle otimista (@Version, RN06)']
+
+  indexes {
+    sol_tx_protocolo [unique, name: 'uq_sol_protocolo']
+  }
+
+  Note: 'RF08-RF15, RN01-RN06. Criada junto com itens e histórico inicial, em uma única transação.'
 }
 
 Table iso_item_solicitacao [headercolor: #c0392b] {
   sol_nr_id                  integer       [not null, pk]
   mat_nr_id                  integer       [not null, pk]
-  iso_tx_copia_unidade       varchar(5)    [not null]
-  iso_nr_quantidade_estimada numeric(12,3) [not null]
-  iso_nr_quantidade_efetiva  numeric(12,3)
+  iso_tx_copia_unidade       varchar(5)    [not null, note: 'Cópia da unidade do material (RN04)']
+  iso_nr_quantidade_estimada numeric(12,3) [not null, note: '> 0']
+  iso_nr_quantidade_efetiva  numeric(12,3) [note: 'Nula até a conclusão; 0 = item não recolhido']
+
+  Note: 'RF08, RF13, RN02, RN04. O mesmo material não repete na solicitação (PK composta).'
 }
 
 Table his_historico [headercolor: #c0392b] {
   his_nr_id                    integer      [pk, increment]
   sol_nr_id                    integer      [not null]
-  his_tx_situacao_anterior     varchar(20)
+  his_tx_situacao_anterior     varchar(20)  [note: 'Nula apenas no registro inicial']
   his_tx_situacao_nova         varchar(20)  [not null]
-  his_dt_data                  timestamptz  [not null]
-  ope_nr_id                    integer      
-  mor_nr_id                    integer      
-  his_tx_motivo                varchar(500) 
-  his_dt_agendamento           timestamptz  
-  his_tx_informacoes_tentativa varchar(500) 
+  his_dt_data                  timestamptz  [not null, default: `now()`]
+  ope_nr_id                    integer      [note: 'Responsável operador (exclusivo com mor_nr_id)']
+  mor_nr_id                    integer      [note: 'Responsável morador (exclusivo com ope_nr_id)']
+  his_tx_motivo                varchar(500) [note: 'Obrigatório em recusa, cancelamento, reagendamento e falha']
+  his_dt_agendamento           timestamptz  [note: 'Data agendada vigente nesta alteração']
+  his_tx_informacoes_tentativa varchar(500) [note: 'Somente tentativa sem sucesso']
+
+  Note: 'RF10-RF14, RN03. Reagendar mantém AGENDADA; por isso anterior e nova podem ser iguais.'
 }
 
-// --- Relacionamentos da Visão 2 ---
-Ref fk_sol_mor: sol_solicitacao.mor_nr_id > mor_morador.mor_nr_id
-Ref fk_sol_poc: sol_solicitacao.poc_nr_id > poc_ponto_coleta.poc_nr_id
+// --- Relacionamentos (ON DELETE RESTRICT: sem exclusão física, RN03) ---
+Ref fk_sol_mor: sol_solicitacao.mor_nr_id > mor_morador.mor_nr_id [delete: restrict]
+Ref fk_sol_poc: sol_solicitacao.poc_nr_id > poc_ponto_coleta.poc_nr_id [delete: restrict]
 
-Ref fk_iso_sol: iso_item_solicitacao.sol_nr_id > sol_solicitacao.sol_nr_id
-Ref fk_iso_mat: iso_item_solicitacao.mat_nr_id > mat_material.mat_nr_id
+Ref fk_iso_sol: iso_item_solicitacao.sol_nr_id > sol_solicitacao.sol_nr_id [delete: restrict]
+Ref fk_iso_mat: iso_item_solicitacao.mat_nr_id > mat_material.mat_nr_id [delete: restrict]
 
-Ref fk_his_sol: his_historico.sol_nr_id > sol_solicitacao.sol_nr_id
-Ref fk_his_ope: his_historico.ope_nr_id > ope_operador.ope_nr_id
-Ref fk_his_mor: his_historico.mor_nr_id > mor_morador.mor_nr_id
+Ref fk_his_sol: his_historico.sol_nr_id > sol_solicitacao.sol_nr_id [delete: restrict]
+Ref fk_his_ope: his_historico.ope_nr_id > ope_operador.ope_nr_id [delete: restrict]
+Ref fk_his_mor: his_historico.mor_nr_id > mor_morador.mor_nr_id [delete: restrict]
 
 TableGroup transacoes {
   sol_solicitacao
