@@ -1,0 +1,82 @@
+// =====================================================================
+// Visão 2: Transações e Fluxo de Recolha
+// Foco: Solicitação, Itens, Histórico e Rastreabilidade
+// =====================================================================
+
+Project coleta_seletiva_fluxo {
+  database_type: 'PostgreSQL'
+}
+
+// --- Tabelas de Referência Simplificadas (Stubs) ---
+Table mor_morador [headercolor: #7f8c8d] {
+  mor_nr_id   integer     [pk]
+  mor_tx_nome varchar(80) [note: 'Tabela de referência']
+}
+
+Table poc_ponto_coleta [headercolor: #7f8c8d] {
+  poc_nr_id   integer      [pk]
+  poc_tx_nome varchar(120) [note: 'Tabela de referência']
+}
+
+Table mat_material [headercolor: #7f8c8d] {
+  mat_nr_id   integer     [pk]
+  mat_tx_nome varchar(80) [note: 'Tabela de referência']
+}
+
+Table ope_operador [headercolor: #7f8c8d] {
+  ope_nr_id   integer     [pk]
+  ope_tx_nome varchar(80) [note: 'Tabela de referência']
+}
+
+// --- Núcleo Transacional ---
+Table sol_solicitacao [headercolor: #c0392b] {
+  sol_nr_id             integer      [pk, increment]
+  sol_tx_protocolo      varchar(30)  [not null]
+  mor_nr_id             integer      [not null]
+  poc_nr_id             integer      [not null]
+  sol_tx_endereco_copia varchar(400) [not null]
+  sol_tx_situacao       varchar(20)  [not null, default: 'SOLICITADA']
+  sol_dt_criacao        timestamptz  [not null]
+  sol_dt_agendamento    timestamptz
+  sol_dt_conclusao      timestamptz
+  sol_tx_observacoes    varchar(500)
+  sol_nr_versao         integer      [not null, default: 0]
+}
+
+Table iso_item_solicitacao [headercolor: #c0392b] {
+  sol_nr_id                  integer       [not null, pk]
+  mat_nr_id                  integer       [not null, pk]
+  iso_tx_copia_unidade       varchar(5)    [not null]
+  iso_nr_quantidade_estimada numeric(12,3) [not null]
+  iso_nr_quantidade_efetiva  numeric(12,3)
+}
+
+Table his_historico [headercolor: #c0392b] {
+  his_nr_id                    integer      [pk, increment]
+  sol_nr_id                    integer      [not null]
+  his_tx_situacao_anterior     varchar(20)
+  his_tx_situacao_nova         varchar(20)  [not null]
+  his_dt_data                  timestamptz  [not null]
+  ope_nr_id                    integer      
+  mor_nr_id                    integer      
+  his_tx_motivo                varchar(500) 
+  his_dt_agendamento           timestamptz  
+  his_tx_informacoes_tentativa varchar(500) 
+}
+
+// --- Relacionamentos da Visão 2 ---
+Ref fk_sol_mor: sol_solicitacao.mor_nr_id > mor_morador.mor_nr_id
+Ref fk_sol_poc: sol_solicitacao.poc_nr_id > poc_ponto_coleta.poc_nr_id
+
+Ref fk_iso_sol: iso_item_solicitacao.sol_nr_id > sol_solicitacao.sol_nr_id
+Ref fk_iso_mat: iso_item_solicitacao.mat_nr_id > mat_material.mat_nr_id
+
+Ref fk_his_sol: his_historico.sol_nr_id > sol_solicitacao.sol_nr_id
+Ref fk_his_ope: his_historico.ope_nr_id > ope_operador.ope_nr_id
+Ref fk_his_mor: his_historico.mor_nr_id > mor_morador.mor_nr_id
+
+TableGroup transacoes {
+  sol_solicitacao
+  iso_item_solicitacao
+  his_historico
+}

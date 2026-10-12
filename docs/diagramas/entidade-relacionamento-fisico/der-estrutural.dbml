@@ -1,0 +1,94 @@
+// =====================================================================
+// Visão 1: Cadastros, Infraestrutura e Catálogo
+// Foco: Estrutura base (Moradores, Pontos, Materiais, Operadores)
+// =====================================================================
+
+Project coleta_seletiva_cadastros {
+  database_type: 'PostgreSQL'
+}
+
+Table mor_morador [headercolor: #3498db] {
+  mor_nr_id       integer      [pk, increment]
+  mor_tx_nome     varchar(80)  [not null]
+  mor_tx_email    varchar(150) [not null]
+  mor_tx_fone     varchar(20)
+  mor_tx_situacao varchar(10)  [not null, default: 'ATIVO']
+}
+
+Table end_endereco [headercolor: #3498db] {
+  end_nr_id          integer      [pk, increment]
+  mor_nr_id          integer      [not null]
+  end_tx_logradouro  varchar(150) [not null]
+  end_tx_numero      varchar(10)  [not null]
+  end_tx_bairro      varchar(100) [not null]
+  end_tx_municipio   varchar(100) [not null]
+  end_tx_uf          varchar(2)   [not null]
+  end_tx_cep         varchar(8)   [not null]
+  end_tx_complemento varchar(100)
+}
+
+Table mat_material [headercolor: #27ae60] {
+  mat_nr_id         integer       [pk, increment]
+  mat_tx_nome       varchar(80)   [not null]
+  mat_tx_descricao  varchar(500)  [not null]
+  mat_tx_unidade    varchar(5)    [not null]
+  mat_tx_orientacao varchar(1000) [not null]
+  mat_tx_situacao   varchar(10)   [not null, default: 'ATIVO']
+}
+
+Table poc_ponto_coleta [headercolor: #27ae60] {
+  poc_nr_id             integer      [pk, increment]
+  poc_tx_nome           varchar(120) [not null]
+  poc_tx_contato        varchar(150)
+  poc_tx_horarios       varchar(500)
+  poc_tx_situacao       varchar(10)  [not null, default: 'ATIVO']
+  poc_bl_rec_domiciliar boolean      [not null, default: false]
+  poc_tx_logradouro     varchar(150) [not null]
+  poc_tx_numero         varchar(10)  [not null]
+  poc_tx_bairro         varchar(100) [not null]
+  poc_tx_municipio      varchar(100) [not null]
+  poc_tx_uf             varchar(2)   [not null]
+  poc_tx_cep            varchar(8)   [not null]
+  poc_tx_complemento    varchar(100)
+}
+
+Table mac_material_aceito [headercolor: #27ae60] {
+  poc_nr_id          integer [not null, pk]
+  mat_nr_id          integer [not null, pk]
+  mac_tx_observacoes varchar(500)
+  mac_nr_limite      numeric(12,3)
+}
+
+Table ope_operador [headercolor: #e67e22] {
+  ope_nr_id       integer      [pk, increment]
+  ope_tx_nome     varchar(80)  [not null]
+  ope_tx_email    varchar(150) [not null]
+  ope_tx_situacao varchar(10)  [not null, default: 'ATIVO']
+}
+
+Table opp_operador_ponto [headercolor: #e67e22] {
+  ope_nr_id integer [not null, pk]
+  poc_nr_id integer [not null, pk]
+}
+
+Ref fk_end_mor: end_endereco.mor_nr_id > mor_morador.mor_nr_id
+Ref fk_mac_poc: mac_material_aceito.poc_nr_id > poc_ponto_coleta.poc_nr_id
+Ref fk_mac_mat: mac_material_aceito.mat_nr_id > mat_material.mat_nr_id
+Ref fk_opp_ope: opp_operador_ponto.ope_nr_id > ope_operador.ope_nr_id
+Ref fk_opp_poc: opp_operador_ponto.poc_nr_id > poc_ponto_coleta.poc_nr_id
+
+TableGroup moradores { 
+  mor_morador
+  end_endereco 
+}
+
+TableGroup catalogo { 
+  mat_material
+  poc_ponto_coleta
+  mac_material_aceito 
+}
+
+TableGroup operacao { 
+  ope_operador
+  opp_operador_ponto 
+}
