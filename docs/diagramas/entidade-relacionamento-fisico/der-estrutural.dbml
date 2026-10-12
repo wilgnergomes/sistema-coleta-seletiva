@@ -87,27 +87,21 @@ Table ope_operador [headercolor: #e67e22] {
   ope_tx_nome     varchar(80)  [not null]
   ope_tx_email    varchar(150) [not null, note: 'Único; guardado normalizado (trim + minúsculas)']
   ope_tx_situacao varchar(10)  [not null, default: 'ATIVO', note: 'ATIVO | INATIVO']
+  poc_nr_id       integer      [not null, note: 'Ponto de coleta ao qual o operador está vinculado']
 
   indexes {
     ope_tx_email [unique, name: 'uq_ope_email']
+    poc_nr_id [name: 'idx_ope_poc']
   }
 
-  Note: 'RF07.'
-}
-
-Table opp_operador_ponto [headercolor: #e67e22] {
-  ope_nr_id integer [not null, pk]
-  poc_nr_id integer [not null, pk]
-
-  Note: 'RF07. Vínculo N:N operador x ponto. A permissão de atuação é validada no backend.'
+  Note: 'RF07. Cada operador está vinculado a um único ponto de coleta.'
 }
 
 // Relacionamentos (ON DELETE RESTRICT: sem exclusão física, RN03)
 Ref fk_end_mor: end_endereco.mor_nr_id > mor_morador.mor_nr_id [delete: restrict]
 Ref fk_mac_poc: mac_material_aceito.poc_nr_id > poc_ponto_coleta.poc_nr_id [delete: restrict]
 Ref fk_mac_mat: mac_material_aceito.mat_nr_id > mat_material.mat_nr_id [delete: restrict]
-Ref fk_opp_ope: opp_operador_ponto.ope_nr_id > ope_operador.ope_nr_id [delete: restrict]
-Ref fk_opp_poc: opp_operador_ponto.poc_nr_id > poc_ponto_coleta.poc_nr_id [delete: restrict]
+Ref fk_ope_poc: ope_operador.poc_nr_id > poc_ponto_coleta.poc_nr_id [delete: restrict]
 
 TableGroup moradores {
   mor_morador
@@ -122,5 +116,4 @@ TableGroup catalogo {
 
 TableGroup operacao {
   ope_operador
-  opp_operador_ponto
 }

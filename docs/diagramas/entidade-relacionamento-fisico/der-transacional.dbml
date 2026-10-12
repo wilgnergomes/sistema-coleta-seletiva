@@ -30,8 +30,9 @@ Table mat_material [headercolor: #7f8c8d] {
 }
 
 Table ope_operador [headercolor: #7f8c8d] {
-  ope_nr_id   integer     [pk]
-  ope_tx_nome varchar(80) [note: 'Tabela de referência']
+  ope_nr_id   integer      [pk]
+  ope_tx_nome varchar(80)  [note: 'Tabela de referência']
+  poc_nr_id   integer      [not null, note: 'FK para poc_ponto_coleta; definida na visão de cadastros']
 }
 
 // --- Núcleo transacional ---
