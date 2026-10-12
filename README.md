@@ -18,6 +18,7 @@ API REST para conectar **moradores**, **pontos de coleta** e **operadores** resp
 - [Como executar](#como-executar)
 - [Configuração](#configuração)
 - [Documentação da API](#documentação-da-api)
+- [Modelo de Banco de Dados](#modelo-de-banco-de-dados)
 - [Estrutura do repositório](#estrutura-do-repositório)
 - [Roadmap](#roadmap)
 - [Contribuindo](#contribuindo)
@@ -167,16 +168,36 @@ Padrões previstos para a API:
 - Listagens paginadas, com limite máximo de 100 registros por página.
 - Tratamento global de erros, com mensagem, código e erros por campo.
 
+## Modelo de Banco de Dados
+
+O banco de dados foi modelado em múltiplas visões para facilitar o entendimento dos domínios.
+
+### 1. Visão Estrutural (Cadastros)
+Esta visão apresenta as entidades base do sistema.
+
+![Visão Estrutural](docs/diagramas/entidade-relacionamento-fisico/der-estrutural.svg)
+
+> 📝 [Ver código fonte do diagrama (DBML)](docs/diagramas/entidade-relacionamento-fisico/der-estrutural.dbml)
+
+### 2. Visão Transacional (Fluxo de Recolhimento)
+Esta visão detalha o fluxo principal e o histórico de ações.
+
+![Visão Transacional](docs/diagramas/entidade-relacionamento-fisico/der-transacional.svg)
+
+> 📝 [Ver código fonte do diagrama (DBML)](docs/diagramas/entidade-relacionamento-fisico/der-transacional.dbml)
+
 ## Estrutura do repositório
 
 ```text
 .
-├── docs/            # Documentação do projeto (decisões, diagramas, API)
+├── docs/            # Documentação do projeto
+│   ├── adr/         # Registros de Decisão de Arquitetura (ADRs)
+│   └── diagramas/   # Modelos Entidade-Relacionamento e diagramas visuais
 ├── src/
-│   ├── main/        # Código-fonte e recursos da aplicação
+│   ├── main/        # Código-fonte (Java/Spring) e migrações do banco (Flyway)
 │   └── test/        # Testes automatizados
 ├── mvnw / mvnw.cmd  # Maven Wrapper
-├── pom.xml          # Dependências e build
+├── pom.xml          # Dependências e configuração do build
 └── README.md
 ```
 
@@ -186,7 +207,6 @@ Padrões previstos para a API:
 
 - [x] Levantamento de requisitos
 - [x] Criação do repositório e do projeto Spring Boot
-- [ ] Modelagem do sistema (casos de uso, diagrama de estados, sequência)
 - [ ] Modelagem do banco de dados (diagrama ER e migrações)
 - [ ] Configuração do banco com Docker Compose
 - [ ] Contrato da API (OpenAPI)
