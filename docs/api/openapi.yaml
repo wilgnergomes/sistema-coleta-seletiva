@@ -1,0 +1,1261 @@
+openapi: 3.0.3
+
+info:
+  title: API do Sistema de Coleta Seletiva
+  version: v1
+  description: |
+    Contrato da API do Sistema de Coleta Seletiva (Programação Web I, IFS).
+
+    **Status: contrato previsto.** Este arquivo é a fonte da verdade da API (ADR 0017).
+    Os endpoints só passam a existir no código conforme cada ciclo os entrega; o
+    estado de cada um é acompanhado na matriz de rastreabilidade.
+
+    **Identificação do ator (ADR 0019, proposta).** O protótipo não tem autenticação.
+    O ator é informado pelos cabeçalhos `X-Perfil` (MORADOR, OPERADOR ou ADMINISTRADOR)
+    e `X-Usuario-Id` (id do morador ou do operador). Isso é uma seleção de usuário
+    para demonstração, não segurança.
+
+    **Concorrência (ADR 0009).** Toda ação que altera uma solicitação recebe a `versao`
+    lida pelo cliente. Versão desatualizada resulta em 409 `CONFLITO_VERSAO`.
+
+    **Períodos (ADR 0014, proposta).** Os filtros `de` e `ate` são datas no fuso de
+    negócio (America/Sao_Paulo). O intervalo é semiaberto: do início do dia `de`
+    (inclusive) até o início do dia seguinte a `ate` (exclusive).
+
+servers:
+  - url: http://localhost:8080
+    description: Desenvolvimento local
+
+tags:
+  - name: Moradores
+  - name: Endereços
+  - name: Materiais
+  - name: Pontos de coleta
+  - name: Materiais aceitos
+  - name: Operadores
+  - name: Solicitações
+  - name: Situação da solicitação
+  - name: Resumo gerencial
+
+security:
+  - perfil: []
+    usuarioId: []
+
+paths:
+
+  # ---------------------------------------------------------------- RF01
+  /moradores:
+    post:
+      tags: [Moradores]
+      summary: Cadastra um morador (RF01)
+      description: O e-mail é normalizado (minúsculas, sem espaços nas pontas). E-mail repetido é rejeitado.
+      operationId: criarMorador
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MoradorEntrada' }
+            example:
+              nome: Maria da Silva
+              email: maria.silva@exemplo.com
+              fone: '79999990000'
+      responses:
+        '201':
+          description: Morador criado
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Morador' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '409': { $ref: '#/components/responses/Erro409' }
+    get:
+      tags: [Moradores]
+      summary: Lista moradores (RF01)
+      description: Uso do administrador. Paginado.
+      operationId: listarMoradores
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+      responses:
+        '200':
+          description: Página de moradores
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginaMoradores' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+
+  /moradores/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Moradores]
+      summary: Consulta um morador (RF01)
+      operationId: buscarMorador
+      responses:
+        '200':
+          description: Morador encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Morador' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+    put:
+      tags: [Moradores]
+      summary: Atualiza um morador (RF01)
+      description: Substitui os dados do morador. A inativação é feita pelo campo `situacao`.
+      operationId: atualizarMorador
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MoradorEntrada' }
+      responses:
+        '200':
+          description: Morador atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Morador' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+
+  # ---------------------------------------------------------------- RF02
+  /moradores/{moradorId}/enderecos:
+    parameters:
+      - { $ref: '#/components/parameters/MoradorId' }
+    post:
+      tags: [Endereços]
+      summary: Cadastra um endereço do morador (RF02)
+      description: O número é informado ou `S/N` de forma explícita. Endereço incompleto é rejeitado.
+      operationId: criarEndereco
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EnderecoEntrada' }
+            example:
+              logradouro: Rua das Flores
+              numero: '120'
+              bairro: Centro
+              municipio: Lagarto
+              uf: SE
+              cep: '49400000'
+              complemento: Casa dos fundos
+      responses:
+        '201':
+          description: Endereço criado
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Endereco' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+    get:
+      tags: [Endereços]
+      summary: Lista os endereços do morador (RF02)
+      operationId: listarEnderecos
+      responses:
+        '200':
+          description: Endereços do morador
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Endereco' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+
+  /moradores/{moradorId}/enderecos/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/MoradorId' }
+      - { $ref: '#/components/parameters/Id' }
+    put:
+      tags: [Endereços]
+      summary: Atualiza um endereço do morador (RF02)
+      operationId: atualizarEndereco
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EnderecoEntrada' }
+      responses:
+        '200':
+          description: Endereço atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Endereco' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+
+  # ---------------------------------------------------------------- RF03
+  /materiais:
+    post:
+      tags: [Materiais]
+      summary: Cadastra um material reciclável (RF03)
+      description: O nome é único (sem diferenciar maiúsculas). Nome repetido é rejeitado.
+      operationId: criarMaterial
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MaterialEntrada' }
+            example:
+              nome: Vidro
+              descricao: Garrafas e potes de vidro
+              unidade: KG
+              orientacao: Lavar e remover tampas
+      responses:
+        '201':
+          description: Material criado
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Material' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '409': { $ref: '#/components/responses/Erro409' }
+    get:
+      tags: [Materiais]
+      summary: Lista materiais (RF03 e RF06)
+      description: |
+        Consulta pública: sem ator, ou como morador ou operador, devolve só materiais ATIVOS.
+        Como administrador, aceita o filtro `situacao` e enxerga também os inativos (ADR 0019, proposta).
+      operationId: listarMateriais
+      security:
+        - {}
+        - perfil: []
+          usuarioId: []
+      parameters:
+        - name: situacao
+          in: query
+          description: Só tem efeito para o administrador.
+          schema: { $ref: '#/components/schemas/SituacaoCadastro' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+      responses:
+        '200':
+          description: Página de materiais
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginaMateriais' }
+        '400': { $ref: '#/components/responses/Erro400' }
+
+  /materiais/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Materiais]
+      summary: Consulta um material (RF03 e RF06)
+      operationId: buscarMaterial
+      security:
+        - {}
+        - perfil: []
+          usuarioId: []
+      responses:
+        '200':
+          description: Material encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Material' }
+        '404': { $ref: '#/components/responses/Erro404' }
+    put:
+      tags: [Materiais]
+      summary: Atualiza ou inativa um material (RF03)
+      description: |
+        A inativação é feita pelo campo `situacao`. Alterar a `unidade` de um material que já
+        tem item em solicitação ou vínculo com ponto é bloqueado com 409 (ADR 0013).
+      operationId: atualizarMaterial
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MaterialEntrada' }
+      responses:
+        '200':
+          description: Material atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Material' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+
+  # ----------------------------------------------------- RF04 e RF06
+  /pontos-coleta:
+    post:
+      tags: [Pontos de coleta]
+      summary: Cadastra um ponto de coleta (RF04)
+      description: Nome e endereço são obrigatórios. O endereço fica embutido no ponto (ADR 0005).
+      operationId: criarPontoColeta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PontoEntrada' }
+            example:
+              nome: Cooperativa Verde Vida
+              contato: (79) 3333-0000
+              horarios: Segunda a sexta, das 8h às 17h
+              recolhimentoDomiciliar: true
+              endereco:
+                logradouro: Avenida Principal
+                numero: S/N
+                bairro: Distrito Industrial
+                municipio: Lagarto
+                uf: SE
+                cep: '49400000'
+      responses:
+        '201':
+          description: Ponto criado
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ponto' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+    get:
+      tags: [Pontos de coleta]
+      summary: Pesquisa pontos de coleta (RF06 e listagem administrativa do RF04)
+      description: |
+        Consulta pública: devolve só pontos ATIVOS, sem dados pessoais. Como administrador,
+        aceita o filtro `situacao` e enxerga também os inativos (ADR 0019, proposta).
+        Os filtros de texto não diferenciam maiúsculas de minúsculas.
+      operationId: pesquisarPontosColeta
+      security:
+        - {}
+        - perfil: []
+          usuarioId: []
+      parameters:
+        - { name: nome, in: query, schema: { type: string } }
+        - { name: municipio, in: query, schema: { type: string } }
+        - { name: bairro, in: query, schema: { type: string } }
+        - name: materialId
+          in: query
+          description: Só pontos que aceitam este material.
+          schema: { type: integer, format: int32 }
+        - name: situacao
+          in: query
+          description: Só tem efeito para o administrador.
+          schema: { $ref: '#/components/schemas/SituacaoCadastro' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+      responses:
+        '200':
+          description: Página de pontos de coleta
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginaPontos' }
+        '400': { $ref: '#/components/responses/Erro400' }
+
+  /pontos-coleta/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Pontos de coleta]
+      summary: Consulta um ponto de coleta (RF06)
+      description: Exibe endereço, horários, materiais aceitos e orientações.
+      operationId: buscarPontoColeta
+      security:
+        - {}
+        - perfil: []
+          usuarioId: []
+      responses:
+        '200':
+          description: Ponto encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ponto' }
+        '404': { $ref: '#/components/responses/Erro404' }
+    put:
+      tags: [Pontos de coleta]
+      summary: Atualiza ou inativa um ponto de coleta (RF04)
+      description: |
+        A inativação é feita pelo campo `situacao`. Inativar um ponto com solicitações
+        abertas afetadas é bloqueado com 409 (RN05).
+      operationId: atualizarPontoColeta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PontoEntrada' }
+      responses:
+        '200':
+          description: Ponto atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ponto' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+
+  # ---------------------------------------------------------------- RF05
+  /pontos-coleta/{pontoId}/materiais/{materialId}:
+    parameters:
+      - { $ref: '#/components/parameters/PontoId' }
+      - { $ref: '#/components/parameters/MaterialId' }
+    put:
+      tags: [Materiais aceitos]
+      summary: Vincula um material ao ponto, ou atualiza o vínculo (RF05)
+      description: |
+        Cria o vínculo se não existir; se existir, atualiza observações e limite. O mesmo
+        vínculo nunca se repete. Limite menor ou igual a zero é rejeitado.
+      operationId: vincularMaterialAoPonto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VinculoEntrada' }
+            example:
+              observacoes: Aceita apenas embalagens limpas
+              limite: 50
+      responses:
+        '200':
+          description: Vínculo criado ou atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MaterialAceito' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+    delete:
+      tags: [Materiais aceitos]
+      summary: Remove o vínculo entre material e ponto (RF05)
+      description: Bloqueado com 409 enquanto houver solicitações abertas afetadas (RN05).
+      operationId: removerVinculoMaterial
+      responses:
+        '204':
+          description: Vínculo removido
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+
+  # ---------------------------------------------------------------- RF07
+  /operadores:
+    post:
+      tags: [Operadores]
+      summary: Cadastra um operador e o vincula a um ponto (RF07)
+      description: Cada operador pertence a um único ponto (ADR 0010).
+      operationId: criarOperador
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperadorEntrada' }
+            example:
+              nome: João Pereira
+              email: joao.pereira@exemplo.com
+              pontoId: 1
+      responses:
+        '201':
+          description: Operador criado
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Operador' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+    get:
+      tags: [Operadores]
+      summary: Lista operadores (RF07)
+      operationId: listarOperadores
+      parameters:
+        - { name: pontoId, in: query, schema: { type: integer, format: int32 } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+      responses:
+        '200':
+          description: Página de operadores
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginaOperadores' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+
+  /operadores/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Operadores]
+      summary: Consulta um operador (RF07)
+      operationId: buscarOperador
+      responses:
+        '200':
+          description: Operador encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Operador' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+    put:
+      tags: [Operadores]
+      summary: Atualiza um operador, muda seu ponto ou o inativa (RF07)
+      operationId: atualizarOperador
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperadorEntrada' }
+      responses:
+        '200':
+          description: Operador atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Operador' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+
+  # ----------------------------------------------- RF08 (RN04) e RF09
+  /solicitacoes:
+    post:
+      tags: [Solicitações]
+      summary: Cria uma solicitação de recolhimento (RF08)
+      description: |
+        Valida a RN01 (ponto ativo, recolhimento domiciliar, materiais ativos e aceitos,
+        limites, sem material repetido) e a posse do endereço pelo morador. Gera o protocolo,
+        grava solicitação, itens e histórico inicial em uma única transação. Qualquer falha
+        não grava nada. O endereço e a unidade dos itens são copiados para a solicitação (ADR 0008).
+      operationId: criarSolicitacao
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SolicitacaoEntrada' }
+            example:
+              pontoId: 1
+              enderecoId: 3
+              observacoes: Caixas na calçada
+              itens:
+                - { materialId: 1, quantidadeEstimada: 5.5 }
+                - { materialId: 2, quantidadeEstimada: 10 }
+      responses:
+        '201':
+          description: Solicitação criada em SOLICITADA
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SolicitacaoDetalhe' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+    get:
+      tags: [Solicitações]
+      summary: Consulta solicitações com filtros (RF09)
+      description: |
+        O resultado respeita o contexto do ator: o morador vê as suas, o operador vê as do seu
+        ponto e o administrador vê todas. O filtro de período usa a data de criação
+        (ADR 0014, proposta).
+      operationId: listarSolicitacoes
+      parameters:
+        - name: situacao
+          in: query
+          schema: { $ref: '#/components/schemas/SituacaoSolicitacao' }
+        - { name: pontoId, in: query, schema: { type: integer, format: int32 } }
+        - { $ref: '#/components/parameters/De' }
+        - { $ref: '#/components/parameters/Ate' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+      responses:
+        '200':
+          description: Página de solicitações
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginaSolicitacoes' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+
+  /solicitacoes/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Solicitações]
+      summary: Consulta os detalhes de uma solicitação (RF09)
+      description: Traz itens, protocolo, situação, agendamento e o histórico completo.
+      operationId: buscarSolicitacao
+      responses:
+        '200':
+          description: Solicitação encontrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SolicitacaoDetalhe' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+    put:
+      tags: [Solicitações]
+      summary: Corrige itens e endereço antes do agendamento (RN04)
+      description: |
+        Só é permitido enquanto a solicitação está em SOLICITADA. Refaz as cópias de endereço e
+        de unidade e valida de novo a compatibilidade (RN01). Exige a `versao` lida pelo cliente.
+      operationId: corrigirSolicitacao
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SolicitacaoCorrecao' }
+      responses:
+        '200':
+          description: Solicitação corrigida
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SolicitacaoDetalhe' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+
+  # ------------------------------------------------------ RF10 a RF14
+  /solicitacoes/{id}/agendamento:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Situação da solicitação]
+      summary: Agenda o recolhimento (RF10)
+      description: |
+        Operador do ponto da solicitação. Só a partir de SOLICITADA. A data e hora precisam ser
+        futuras. Muda a situação para AGENDADA e grava o histórico.
+      operationId: agendarSolicitacao
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgendamentoEntrada' }
+            example:
+              dataHora: '2026-11-03T09:00:00-03:00'
+              versao: 0
+      responses:
+        '200': { $ref: '#/components/responses/SolicitacaoAtualizada' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+
+  /solicitacoes/{id}/recusa:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Situação da solicitação]
+      summary: Recusa a solicitação (RF11)
+      description: Operador do ponto. Só em SOLICITADA. O motivo é obrigatório.
+      operationId: recusarSolicitacao
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MotivoEntrada' }
+            example:
+              motivo: Fora da área de atendimento
+              versao: 0
+      responses:
+        '200': { $ref: '#/components/responses/SolicitacaoAtualizada' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+
+  /solicitacoes/{id}/cancelamento:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Situação da solicitação]
+      summary: Cancela a solicitação (RF12)
+      description: |
+        Morador dono da solicitação ou operador do ponto. Só em SOLICITADA ou AGENDADA.
+        O motivo é obrigatório. Cancelar recolhimento iniciado ou concluído é rejeitado com 409.
+      operationId: cancelarSolicitacao
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MotivoEntrada' }
+            example:
+              motivo: Não estarei em casa
+              versao: 1
+      responses:
+        '200': { $ref: '#/components/responses/SolicitacaoAtualizada' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+
+  /solicitacoes/{id}/inicio:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Situação da solicitação]
+      summary: Inicia o recolhimento (RF13)
+      description: Operador do ponto. Só a partir de AGENDADA. Muda para EM_RECOLHIMENTO.
+      operationId: iniciarRecolhimento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VersaoEntrada' }
+            example:
+              versao: 1
+      responses:
+        '200': { $ref: '#/components/responses/SolicitacaoAtualizada' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+
+  /solicitacoes/{id}/conclusao:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Situação da solicitação]
+      summary: Conclui o recolhimento com as quantidades efetivas (RF13)
+      description: |
+        Operador do ponto. Só a partir de EM_RECOLHIMENTO. Informa a quantidade efetiva de cada
+        item, aceitando zero para item não recolhido. Concluir sem nenhuma quantidade positiva é
+        rejeitado. A data da conclusão é registrada pelo servidor e o responsável vem do ator
+        (proposta, ADR 0018).
+      operationId: concluirRecolhimento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConclusaoEntrada' }
+            example:
+              itens:
+                - { materialId: 1, quantidadeEfetiva: 5 }
+                - { materialId: 2, quantidadeEfetiva: 0 }
+              versao: 2
+      responses:
+        '200': { $ref: '#/components/responses/SolicitacaoAtualizada' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+
+  /solicitacoes/{id}/reagendamento:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Situação da solicitação]
+      summary: Reagenda uma solicitação AGENDADA (RF14)
+      description: |
+        Operador do ponto. A situação continua AGENDADA. Exige justificativa e nova data futura.
+        O agendamento anterior permanece no histórico.
+      operationId: reagendarSolicitacao
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReagendamentoEntrada' }
+            example:
+              dataHora: '2026-11-05T14:00:00-03:00'
+              motivo: Veículo em manutenção
+              versao: 1
+      responses:
+        '200': { $ref: '#/components/responses/SolicitacaoAtualizada' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+
+  /solicitacoes/{id}/falha:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Situação da solicitação]
+      summary: Registra tentativa sem sucesso e reagenda (RF14)
+      description: |
+        Operador do ponto. Só a partir de EM_RECOLHIMENTO. Volta para AGENDADA, com justificativa,
+        informações da tentativa e nova data futura. A tentativa anterior permanece no histórico.
+      operationId: registrarFalha
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FalhaEntrada' }
+            example:
+              motivo: Morador ausente
+              informacoesTentativa: Portão fechado, ninguém atendeu
+              dataHora: '2026-11-06T09:00:00-03:00'
+              versao: 2
+      responses:
+        '200': { $ref: '#/components/responses/SolicitacaoAtualizada' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+        '404': { $ref: '#/components/responses/Erro404' }
+        '409': { $ref: '#/components/responses/Erro409' }
+
+  # ---------------------------------------------------------------- RF15
+  /resumo-gerencial:
+    get:
+      tags: [Resumo gerencial]
+      summary: Exibe o resumo gerencial (RF15)
+      description: |
+        Dois blocos. (1) Número de solicitações por situação, com filtro de período pela data de
+        criação. (2) Quantidades efetivamente recolhidas por material e unidade, somando só
+        solicitações CONCLUIDA, com filtro de período pela data de conclusão. Unidades diferentes
+        nunca são somadas. Datas de referência a confirmar (ADR 0014, proposta).
+      operationId: resumoGerencial
+      parameters:
+        - { $ref: '#/components/parameters/De' }
+        - { $ref: '#/components/parameters/Ate' }
+      responses:
+        '200':
+          description: Resumo gerencial
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ResumoGerencial' }
+        '400': { $ref: '#/components/responses/Erro400' }
+        '403': { $ref: '#/components/responses/Erro403' }
+
+components:
+
+  securitySchemes:
+    perfil:
+      type: apiKey
+      in: header
+      name: X-Perfil
+      description: Perfil do ator (MORADOR, OPERADOR ou ADMINISTRADOR). Seleção de usuário, não é autenticação.
+    usuarioId:
+      type: apiKey
+      in: header
+      name: X-Usuario-Id
+      description: Id do morador ou do operador que está agindo. Dispensado para o administrador.
+
+  headers:
+    Location:
+      description: Endereço do recurso criado.
+      schema: { type: string }
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, format: int32 }
+    MoradorId:
+      name: moradorId
+      in: path
+      required: true
+      schema: { type: integer, format: int32 }
+    PontoId:
+      name: pontoId
+      in: path
+      required: true
+      schema: { type: integer, format: int32 }
+    MaterialId:
+      name: materialId
+      in: path
+      required: true
+      schema: { type: integer, format: int32 }
+    Page:
+      name: page
+      in: query
+      description: Número da página, começando em 0.
+      schema: { type: integer, minimum: 0, default: 0 }
+    Size:
+      name: size
+      in: query
+      description: Itens por página. Máximo 100.
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    De:
+      name: de
+      in: query
+      description: Data inicial do período (inclusive), no fuso de negócio. Formato AAAA-MM-DD.
+      schema: { type: string, format: date }
+    Ate:
+      name: ate
+      in: query
+      description: Data final do período (inclusive, pelo intervalo semiaberto do ADR 0014). Formato AAAA-MM-DD.
+      schema: { type: string, format: date }
+
+  responses:
+    Erro400:
+      description: Entrada inválida (VALIDACAO) ou valor de enum desconhecido (VALOR_INVALIDO).
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/RespostaErro' }
+          example:
+            codigo: VALIDACAO
+            mensagem: Dados inválidos.
+            erros:
+              - { campo: email, mensagem: deve ser um endereço de e-mail válido }
+    Erro403:
+      description: O ator não tem permissão para a operação (ACESSO_NEGADO).
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/RespostaErro' }
+    Erro404:
+      description: Registro ausente (NAO_ENCONTRADO).
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/RespostaErro' }
+    Erro409:
+      description: Conflito de regra (CONFLITO_REGRA) ou de versão (CONFLITO_VERSAO).
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/RespostaErro' }
+          example:
+            codigo: CONFLITO_VERSAO
+            mensagem: A solicitação foi alterada por outra operação. Recarregue e tente novamente.
+            erros: []
+    SolicitacaoAtualizada:
+      description: Solicitação com a nova situação, a nova versão e o histórico atualizado.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/SolicitacaoDetalhe' }
+
+  schemas:
+
+    # ------------------------------------------------ erros e paginação
+    ErroCampo:
+      type: object
+      required: [campo, mensagem]
+      properties:
+        campo: { type: string }
+        mensagem: { type: string }
+    RespostaErro:
+      type: object
+      required: [codigo, mensagem, erros]
+      properties:
+        codigo:
+          type: string
+          enum: [VALIDACAO, VALOR_INVALIDO, ACESSO_NEGADO, NAO_ENCONTRADO, CONFLITO_REGRA, CONFLITO_VERSAO, ERRO_INTERNO]
+        mensagem: { type: string }
+        erros:
+          type: array
+          items: { $ref: '#/components/schemas/ErroCampo' }
+    PaginaBase:
+      type: object
+      required: [pagina, tamanho, totalElementos, totalPaginas]
+      properties:
+        pagina: { type: integer }
+        tamanho: { type: integer }
+        totalElementos: { type: integer, format: int64 }
+        totalPaginas: { type: integer }
+    PaginaMoradores:
+      allOf:
+        - $ref: '#/components/schemas/PaginaBase'
+        - type: object
+          required: [conteudo]
+          properties:
+            conteudo: { type: array, items: { $ref: '#/components/schemas/Morador' } }
+    PaginaMateriais:
+      allOf:
+        - $ref: '#/components/schemas/PaginaBase'
+        - type: object
+          required: [conteudo]
+          properties:
+            conteudo: { type: array, items: { $ref: '#/components/schemas/Material' } }
+    PaginaPontos:
+      allOf:
+        - $ref: '#/components/schemas/PaginaBase'
+        - type: object
+          required: [conteudo]
+          properties:
+            conteudo: { type: array, items: { $ref: '#/components/schemas/Ponto' } }
+    PaginaOperadores:
+      allOf:
+        - $ref: '#/components/schemas/PaginaBase'
+        - type: object
+          required: [conteudo]
+          properties:
+            conteudo: { type: array, items: { $ref: '#/components/schemas/Operador' } }
+    PaginaSolicitacoes:
+      allOf:
+        - $ref: '#/components/schemas/PaginaBase'
+        - type: object
+          required: [conteudo]
+          properties:
+            conteudo: { type: array, items: { $ref: '#/components/schemas/Solicitacao' } }
+
+    # ------------------------------------------------ domínios fechados (ADR 0012)
+    SituacaoCadastro:
+      type: string
+      enum: [ATIVO, INATIVO]
+    SituacaoSolicitacao:
+      type: string
+      enum: [SOLICITADA, AGENDADA, EM_RECOLHIMENTO, CONCLUIDA, RECUSADA, CANCELADA]
+    Unidade:
+      type: string
+      enum: [KG, L, UN]
+
+    # ------------------------------------------------ moradores e endereços
+    MoradorEntrada:
+      type: object
+      required: [nome, email]
+      properties:
+        nome: { type: string, minLength: 1, maxLength: 80 }
+        email: { type: string, format: email, maxLength: 150 }
+        fone: { type: string, maxLength: 20 }
+        situacao: { $ref: '#/components/schemas/SituacaoCadastro' }
+    Morador:
+      allOf:
+        - $ref: '#/components/schemas/MoradorEntrada'
+        - type: object
+          required: [id, situacao]
+          properties:
+            id: { type: integer, format: int32 }
+    EnderecoEntrada:
+      type: object
+      required: [logradouro, numero, bairro, municipio, uf, cep]
+      properties:
+        logradouro: { type: string, minLength: 1, maxLength: 150 }
+        numero: { type: string, minLength: 1, maxLength: 10, description: 'Número, ou "S/N" de forma explícita.' }
+        bairro: { type: string, minLength: 1, maxLength: 100 }
+        municipio: { type: string, minLength: 1, maxLength: 100 }
+        uf: { type: string, pattern: '^[A-Z]{2}$' }
+        cep: { type: string, pattern: '^[0-9]{8}$', description: 'Oito dígitos, sem máscara.' }
+        complemento: { type: string, maxLength: 100 }
+    Endereco:
+      allOf:
+        - $ref: '#/components/schemas/EnderecoEntrada'
+        - type: object
+          required: [id, moradorId]
+          properties:
+            id: { type: integer, format: int32 }
+            moradorId: { type: integer, format: int32 }
+
+    # ------------------------------------------------ materiais e pontos
+    MaterialEntrada:
+      type: object
+      required: [nome, descricao, unidade, orientacao]
+      properties:
+        nome: { type: string, minLength: 1, maxLength: 80 }
+        descricao: { type: string, maxLength: 500 }
+        unidade: { $ref: '#/components/schemas/Unidade' }
+        orientacao: { type: string, maxLength: 1000 }
+        situacao: { $ref: '#/components/schemas/SituacaoCadastro' }
+    Material:
+      allOf:
+        - $ref: '#/components/schemas/MaterialEntrada'
+        - type: object
+          required: [id, situacao]
+          properties:
+            id: { type: integer, format: int32 }
+    PontoEntrada:
+      type: object
+      required: [nome, endereco]
+      properties:
+        nome: { type: string, minLength: 1, maxLength: 120 }
+        contato: { type: string, maxLength: 150 }
+        horarios: { type: string, maxLength: 500, description: 'Texto descritivo (ADR 0006).' }
+        recolhimentoDomiciliar: { type: boolean, default: false }
+        situacao: { $ref: '#/components/schemas/SituacaoCadastro' }
+        endereco: { $ref: '#/components/schemas/EnderecoEntrada' }
+    MaterialAceito:
+      type: object
+      required: [materialId, nomeMaterial, unidade]
+      properties:
+        materialId: { type: integer, format: int32 }
+        nomeMaterial: { type: string }
+        unidade: { $ref: '#/components/schemas/Unidade' }
+        orientacao: { type: string }
+        observacoes: { type: string }
+        limite: { type: number, nullable: true, description: 'Limite por solicitação, na unidade do material.' }
+    Ponto:
+      allOf:
+        - $ref: '#/components/schemas/PontoEntrada'
+        - type: object
+          required: [id, situacao, recolhimentoDomiciliar, materiaisAceitos]
+          properties:
+            id: { type: integer, format: int32 }
+            materiaisAceitos:
+              type: array
+              items: { $ref: '#/components/schemas/MaterialAceito' }
+    VinculoEntrada:
+      type: object
+      properties:
+        observacoes: { type: string, maxLength: 500 }
+        limite: { type: number, minimum: 0, exclusiveMinimum: true, description: Maior que zero. }
+
+    # ------------------------------------------------ operadores
+    OperadorEntrada:
+      type: object
+      required: [nome, email, pontoId]
+      properties:
+        nome: { type: string, minLength: 1, maxLength: 80 }
+        email: { type: string, format: email, maxLength: 150 }
+        pontoId: { type: integer, format: int32 }
+        situacao: { $ref: '#/components/schemas/SituacaoCadastro' }
+    Operador:
+      allOf:
+        - $ref: '#/components/schemas/OperadorEntrada'
+        - type: object
+          required: [id, situacao]
+          properties:
+            id: { type: integer, format: int32 }
+
+    # ------------------------------------------------ solicitações
+    ItemEntrada:
+      type: object
+      required: [materialId, quantidadeEstimada]
+      properties:
+        materialId: { type: integer, format: int32 }
+        quantidadeEstimada: { type: number, minimum: 0, exclusiveMinimum: true, description: Maior que zero. Inteira quando a unidade é UN. }
+    SolicitacaoEntrada:
+      type: object
+      required: [pontoId, enderecoId, itens]
+      properties:
+        pontoId: { type: integer, format: int32 }
+        enderecoId: { type: integer, format: int32, description: Precisa pertencer ao morador. }
+        observacoes: { type: string, maxLength: 500 }
+        itens:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/ItemEntrada' }
+    SolicitacaoCorrecao:
+      type: object
+      required: [enderecoId, itens, versao]
+      properties:
+        enderecoId: { type: integer, format: int32 }
+        observacoes: { type: string, maxLength: 500 }
+        itens:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/ItemEntrada' }
+        versao: { type: integer, minimum: 0 }
+    Item:
+      type: object
+      required: [materialId, nomeMaterial, unidade, quantidadeEstimada]
+      properties:
+        materialId: { type: integer, format: int32 }
+        nomeMaterial: { type: string }
+        unidade: { $ref: '#/components/schemas/Unidade' }
+        quantidadeEstimada: { type: number }
+        quantidadeEfetiva: { type: number, nullable: true }
+    Responsavel:
+      type: object
+      required: [tipo, id]
+      properties:
+        tipo: { type: string, enum: [MORADOR, OPERADOR] }
+        id: { type: integer, format: int32 }
+    Historico:
+      type: object
+      required: [id, situacaoNova, data, responsavel]
+      properties:
+        id: { type: integer, format: int32 }
+        situacaoAnterior:
+          allOf:
+            - $ref: '#/components/schemas/SituacaoSolicitacao'
+          nullable: true
+        situacaoNova: { $ref: '#/components/schemas/SituacaoSolicitacao' }
+        data: { type: string, format: date-time }
+        responsavel: { $ref: '#/components/schemas/Responsavel' }
+        motivo: { type: string, nullable: true }
+        agendamento: { type: string, format: date-time, nullable: true }
+        informacoesTentativa: { type: string, nullable: true }
+    Solicitacao:
+      type: object
+      required: [id, protocolo, moradorId, pontoId, enderecoCopia, situacao, criadaEm, versao]
+      properties:
+        id: { type: integer, format: int32 }
+        protocolo: { type: string }
+        moradorId: { type: integer, format: int32 }
+        pontoId: { type: integer, format: int32 }
+        enderecoCopia: { type: string, description: 'Texto do endereço copiado na criação (ADR 0008).' }
+        situacao: { $ref: '#/components/schemas/SituacaoSolicitacao' }
+        criadaEm: { type: string, format: date-time }
+        agendadaPara: { type: string, format: date-time, nullable: true }
+        concluidaEm: { type: string, format: date-time, nullable: true }
+        observacoes: { type: string, nullable: true }
+        versao: { type: integer, description: Enviar de volta nas ações que alteram a solicitação (ADR 0009). }
+    SolicitacaoDetalhe:
+      allOf:
+        - $ref: '#/components/schemas/Solicitacao'
+        - type: object
+          required: [itens, historico]
+          properties:
+            itens:
+              type: array
+              items: { $ref: '#/components/schemas/Item' }
+            historico:
+              type: array
+              items: { $ref: '#/components/schemas/Historico' }
+
+    # ------------------------------------------------ ações de situação
+    VersaoEntrada:
+      type: object
+      required: [versao]
+      properties:
+        versao: { type: integer, minimum: 0 }
+    AgendamentoEntrada:
+      type: object
+      required: [dataHora, versao]
+      properties:
+        dataHora: { type: string, format: date-time, description: 'Data e hora futuras, com offset.' }
+        versao: { type: integer, minimum: 0 }
+    MotivoEntrada:
+      type: object
+      required: [motivo, versao]
+      properties:
+        motivo: { type: string, minLength: 1, maxLength: 500 }
+        versao: { type: integer, minimum: 0 }
+    ConclusaoEntrada:
+      type: object
+      required: [itens, versao]
+      properties:
+        itens:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [materialId, quantidadeEfetiva]
+            properties:
+              materialId: { type: integer, format: int32 }
+              quantidadeEfetiva: { type: number, minimum: 0, description: Zero para item não recolhido. Inteira quando a unidade é UN. }
+        versao: { type: integer, minimum: 0 }
+    ReagendamentoEntrada:
+      type: object
+      required: [dataHora, motivo, versao]
+      properties:
+        dataHora: { type: string, format: date-time, description: 'Nova data e hora futuras, com offset.' }
+        motivo: { type: string, minLength: 1, maxLength: 500 }
+        versao: { type: integer, minimum: 0 }
+    FalhaEntrada:
+      type: object
+      required: [motivo, informacoesTentativa, dataHora, versao]
+      properties:
+        motivo: { type: string, minLength: 1, maxLength: 500 }
+        informacoesTentativa: { type: string, minLength: 1, maxLength: 500 }
+        dataHora: { type: string, format: date-time, description: 'Nova data e hora futuras, com offset.' }
+        versao: { type: integer, minimum: 0 }
+
+    # ------------------------------------------------ resumo gerencial
+    ResumoGerencial:
+      type: object
+      required: [solicitacoesPorSituacao, quantidadesRecolhidas]
+      properties:
+        solicitacoesPorSituacao:
+          type: array
+          items:
+            type: object
+            required: [situacao, total]
+            properties:
+              situacao: { $ref: '#/components/schemas/SituacaoSolicitacao' }
+              total: { type: integer, format: int64 }
+        quantidadesRecolhidas:
+          type: array
+          description: Uma linha por material e unidade. Nunca soma unidades diferentes.
+          items:
+            type: object
+            required: [materialId, nomeMaterial, unidade, quantidade]
+            properties:
+              materialId: { type: integer, format: int32 }
+              nomeMaterial: { type: string }
+              unidade: { $ref: '#/components/schemas/Unidade' }
+              quantidade: { type: number, description: Soma das quantidades efetivas (nunca das estimadas). }
