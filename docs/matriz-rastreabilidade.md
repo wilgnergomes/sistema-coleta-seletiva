@@ -66,7 +66,8 @@ Estas escolhas não decorrem diretamente da especificação original. Ficam regi
 | Fuso de negócio dos limites de período | `America/Sao_Paulo`, configurável | A confirmar | ADR 0014 (Proposta) |
 | Limites do período | Intervalo semiaberto: início do dia inicial (inclusive) até o início do dia seguinte ao final (exclusivo) | A confirmar | ADR 0014 (Proposta) |
 | Alteração da unidade do material | Bloqueada, com 409, se existir qualquer item ou vínculo | Decidida | ADR 0013 (Aceita) |
-
+| Correção de solicitação antes do agendamento (`PUT /solicitacoes/{id}`) | Permitida conforme as regras definidas para a correção antes do agendamento | A confirmar | ADR 0018 |
+| Resposta HTTP `403` para acesso não autorizado | Retornar `403 Forbidden` quando o ator autenticado não tiver permissão para executar a operação | A confirmar | ADR 0018 |
 ## Definição do resumo gerencial (RF15)
 
 - Quantidades recolhidas: somar `iso_nr_quantidade_efetiva` apenas de solicitações em CONCLUIDA, nunca a estimada.
