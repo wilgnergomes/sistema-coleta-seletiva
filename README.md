@@ -217,14 +217,17 @@ docker volume ls --filter name=coleta
 
 ## Documentação da API
 
-> 🚧 Em construção. A documentação dos endpoints, exemplos e respostas será disponibilizada em formato OpenAPI (Swagger) ou coleção Postman.
+O contrato da API está em [`docs/api/openapi.yaml`](docs/api/openapi.yaml), no formato OpenAPI 3.0. Ele é a fonte da verdade dos endpoints, dos formatos de entrada e saída e das respostas de erro (ADR 0017). Para ler, abra o arquivo em um editor com pré-visualização de OpenAPI ou cole o conteúdo em [editor.swagger.io](https://editor.swagger.io).
 
-Padrões previstos para a API:
+A interface Swagger gerada pela aplicação será disponibilizada quando os primeiros endpoints forem implementados (Ciclo 1). Cada endpoint e seu estado de implementação são acompanhados na [matriz de rastreabilidade](docs/matriz-rastreabilidade.md).
+
+Convenções da API (ADR 0018):
 
 - JSON como formato de troca.
-- Códigos HTTP: `201` para criação, `400` para entrada inválida, `404` para registro ausente e `409` para conflitos de regra ou de versão.
+- Códigos HTTP: `201` para criação, `400` para entrada inválida, `403` para operação não permitida ao ator, `404` para registro ausente e `409` para conflitos de regra ou de versão.
+- Erros no formato `{ codigo, mensagem, erros }`, sem stack trace.
 - Listagens paginadas, com limite máximo de 100 registros por página.
-- Tratamento global de erros, com mensagem, código e erros por campo.
+- Ator identificado pelos cabeçalhos `X-Perfil` e `X-Usuario-Id`, apenas para demonstração, sem autenticação (ADR 0019).
 
 ## Modelo de Banco de Dados
 
@@ -250,6 +253,7 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 .
 ├── docs/            # Documentação do projeto
 │   ├── adr/         # Registros de Decisão de Arquitetura (ADRs)
+│   ├── api/         # Contrato da API (OpenAPI)
 │   └── diagramas/   # Modelos Entidade-Relacionamento e diagramas visuais
 ├── src/
 │   ├── main/        # Código-fonte (Java/Spring) e migrações do banco (Flyway)
@@ -268,7 +272,8 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 - [x] Modelagem do banco de dados (diagrama ER e migrações)
 - [x] Criação da [Matriz de Rastreabilidade](docs/matriz-rastreabilidade.md)
 - [x] Configuração do banco com Docker Compose
-- [ ] Contrato da API (OpenAPI)
+- [x] Contrato da API (OpenAPI)
+- [ ] Fundação da API (springdoc, tratamento de erros, paginação, identificação do ator)
 - [ ] Cadastros: materiais, pontos, vínculos, moradores, endereços e operadores
 - [ ] Consultas com filtros e paginação
 - [ ] Solicitação de recolhimento (compatibilidade, itens e protocolo)
