@@ -123,6 +123,23 @@ git clone https://github.com/<usuario>/sistema-coleta-seletiva.git
 cd sistema-coleta-seletiva
 ```
 
+Crie o arquivo `.env` a partir do modelo e **troque a senha** (veja [Configuração](#configuração)):
+
+```bash
+# Windows (PowerShell/CMD)
+copy .env.example .env
+
+# Linux / macOS / Git Bash
+cp .env.example .env
+```
+
+Suba o banco de dados (PostgreSQL em container) e confirme que o serviço `db` está `healthy`:
+
+```bash
+docker compose up -d
+docker compose ps
+```
+
 Compilar e executar os testes:
 
 ```bash
@@ -132,6 +149,8 @@ Compilar e executar os testes:
 # Linux / macOS / Git Bash
 ./mvnw clean verify
 ```
+
+> Os testes que carregam o contexto da aplicação precisam do banco no ar e do `.env` criado.
 
 Executar a aplicação:
 
@@ -143,19 +162,58 @@ Executar a aplicação:
 ./mvnw spring-boot:run
 ```
 
-> ⚠️ A execução da aplicação depende da configuração do banco de dados (em definição, ver [Configuração](#configuração)).
+> Execute sempre a partir da raiz do projeto, para que o arquivo `.env` seja encontrado. Ao iniciar, a aplicação aplica as migrações de `src/main/resources/db/migration`.
 
 Verificar se a aplicação está no ar:
 
 ```bash
+# Windows (PowerShell)
+curl.exe http://localhost:8080/actuator/health
+
+# Demais terminais
 curl http://localhost:8080/actuator/health
+```
+
+Parar o banco quando terminar (os dados são mantidos):
+
+```bash
+docker compose stop
 ```
 
 ## Configuração
 
 As credenciais e parâmetros de conexão com o banco são configurados por **variáveis de ambiente**. Nenhuma senha, token ou credencial é versionado no repositório.
 
-> 🚧 A lista de variáveis e o arquivo `.env.example` serão adicionados junto com a configuração do banco (Docker Compose).
+Os valores ficam no arquivo `.env`, na raiz do projeto, que **não é versionado** (está no `.gitignore`). O arquivo `.env.example` é o modelo, com valores fictícios. O Docker Compose e a aplicação leem o mesmo `.env`. Variáveis de ambiente definidas no sistema ou no CI também funcionam e prevalecem sobre o arquivo.
+
+| Variável | Descrição | Exemplo |
+|----------|-----------|---------|
+| `DB_NAME` | Nome do banco | `coleta_seletiva` |
+| `DB_USER` | Usuário do banco | `coleta` |
+| `DB_PASSWORD` | Senha do banco (obrigatória, sem valor padrão) | `defina-uma-senha-aqui` |
+| `DB_PORT` | Porta do seu computador mapeada para a 5432 do container. Use 5433 para não colidir com um PostgreSQL local | `5433` |
+
+### Comandos úteis do banco
+
+```bash
+docker compose logs -f db      # acompanhar os logs
+docker compose down            # remove o container e mantém os dados
+```
+
+Para apagar o banco e recomeçar do zero (**destrói todos os dados**), confira o volume antes e depois:
+
+```bash
+docker volume ls --filter name=coleta
+docker compose down -v
+docker volume ls --filter name=coleta
+```
+
+### Problemas comuns
+
+- **Porta já em uso ao subir o banco:** troque `DB_PORT` no `.env` e rode `docker compose up -d` de novo.
+- **`Could not resolve placeholder 'DB_PASSWORD'`:** o `.env` não existe ou a aplicação foi executada fora da raiz do projeto.
+- **O compose pede para definir `DB_PASSWORD`:** o `.env` não foi criado (veja "Como executar").
+- **Troquei a senha no `.env` e a conexão falha:** usuário e senha só valem na primeira criação do banco. Apague o volume (comando acima) e suba de novo.
 
 ## Documentação da API
 
@@ -209,7 +267,7 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 - [x] Criação do repositório e do projeto Spring Boot
 - [x] Modelagem do banco de dados (diagrama ER e migrações)
 - [x] Criação da [Matriz de Rastreabilidade](docs/matriz-rastreabilidade.md)
-- [ ] Configuração do banco com Docker Compose
+- [x] Configuração do banco com Docker Compose
 - [ ] Contrato da API (OpenAPI)
 - [ ] Cadastros: materiais, pontos, vínculos, moradores, endereços e operadores
 - [ ] Consultas com filtros e paginação
