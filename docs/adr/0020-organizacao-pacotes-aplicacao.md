@@ -50,7 +50,7 @@ Os pacotes terão as seguintes responsabilidades:
 - **`dto`:** conter os modelos utilizados para estruturar os dados de saída das respostas da API, incluindo o formato padronizado de erro (`RespostaErro` e `ErroCampo`).
 - **`mapper`:** converter os formulários em entidades e as entidades em DTOs. Não contém regras de negócio, validações, verificação de permissão nem acesso ao banco, apenas a cópia de campos entre os modelos.
 - **`enumeration`:** conter os enums de domínio (por exemplo, `SituacaoCadastro`, `SituacaoSolicitacao` e `Unidade`), usados pelas entidades, forms e DTOs. O nome do pacote não pode ser `enum`, por ser palavra reservada do Java. As regras de mapeamento seguem a ADR 0012.
-- **`exception`:** conter as classes relacionadas ao tratamento de erros: as exceções próprias, o enum `CodigoErro` e o tratador global (`TratadorGlobalExcecoes`). O `CodigoErro` permanece neste pacote, e não em `enumeration`, por ser parte do tratamento de erros, e não do domínio.
+- **`exception`:** conter as classes relacionadas ao tratamento de erros: as exceções próprias, o enum `CodigoErro` e o tratador global (`TratadorGlobalExceptions`). O `CodigoErro` permanece neste pacote, e não em `enumeration`, por ser parte do tratamento de erros, e não do domínio.
 - **`config`:** conter as configurações da aplicação.
 
 A distribuição das classes seguirá a responsabilidade de cada uma, sem exigir uma correspondência direta entre pacotes e tabelas. Por exemplo, as entidades `Morador`, `Endereco`, `Material`, `PontoColeta` e `Solicitacao` ficarão inicialmente em `entity/`, enquanto seus respectivos repositories ficarão em `repository/`.
