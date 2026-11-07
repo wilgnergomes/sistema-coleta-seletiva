@@ -6,7 +6,7 @@ Liga cada requisito funcional (RF01 a RF15) às entidades, às dependências, ao
 2. definir a **ordem dos ciclos** de entrega;
 3. responder na arguição **qual parte do código atende a qual requisito**.
 
-**Fontes:** especificação do trabalho (seções 6 a 8 e 13), migração `V1__criar_esquema_incial.sql`, contrato `docs/api/openapi.yaml` e ADRs 0005 a 0019.
+**Fontes:** especificação do trabalho (seções 6 a 8 e 13), migração `V1__criar_esquema_incial.sql`, contrato `../api/openapi.yaml` e ADRs 0005 a 0019.
 
 ## Como ler e manter
 
@@ -14,7 +14,7 @@ Liga cada requisito funcional (RF01 a RF15) às entidades, às dependências, ao
 - **Dependências:** RFs que precisam estar **implementados** para que o RF funcione. Estados necessários só para testar uma rejeição são pré-condição de teste e vêm de fixture (ver a regra abaixo da tabela).
 - **Dados de seed:** cada item é classificado como **Seed** (dado de demonstração, serve para apresentar o sistema) ou **Fixture** (estado preparado só para teste, inclusive estados difíceis de atingir pelo fluxo normal). "Não vem de seed" significa que o próprio teste cria o dado.
 - **Tipos de teste:** `[UNIT]` unitário; `[INT]` integração com banco; `[API]` contrato HTTP; `[CONC]` concorrência.
-- **Endpoints:** começam como *pendente (ciclo N)*. Passam a *Previstos* quando constam do contrato `docs/api/openapi.yaml`, sempre com `MÉTODO /caminho`. Ao fechar o ciclo, cada endpoint recebe o registro de execução, por exemplo `✔ executado em AAAA-MM-DD`, depois de conferido com a documentação gerada pelo springdoc (RNF07). Endpoint documentado não prova que o requisito foi atendido: só o teste executado prova.
+- **Endpoints:** começam como *pendente (ciclo N)*. Passam a *Previstos* quando constam do contrato `../api/openapi.yaml`, sempre com `MÉTODO /caminho`. Ao fechar o ciclo, cada endpoint recebe o registro de execução, por exemplo `✔ executado em AAAA-MM-DD`, depois de conferido com a documentação gerada pelo springdoc (RNF07). Endpoint documentado não prova que o requisito foi atendido: só o teste executado prova.
 - **Testes:** começam como *pendente (ciclo N)*. Ao fechar o ciclo, preencher com `[TIPO] Classe#método` e o registro de execução. Esta coluna não é alterada pelo contrato.
 - Linhas com **Previstos** listam testes já decididos; continuam pendentes até o ciclo entregá-los.
 - Itens marcados *(a confirmar)* dependem das decisões listadas na seção "Decisões a confirmar".

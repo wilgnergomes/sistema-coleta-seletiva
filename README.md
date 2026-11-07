@@ -219,7 +219,7 @@ docker volume ls --filter name=coleta
 
 O contrato da API está em [`docs/api/openapi.yaml`](docs/api/openapi.yaml), no formato OpenAPI 3.0. Ele é a fonte da verdade dos endpoints, dos formatos de entrada e saída e das respostas de erro (ADR 0017). Para ler, abra o arquivo em um editor com pré-visualização de OpenAPI ou cole o conteúdo em [editor.swagger.io](https://editor.swagger.io).
 
-A interface Swagger gerada pela aplicação será disponibilizada quando os primeiros endpoints forem implementados (Ciclo 1). Cada endpoint e seu estado de implementação são acompanhados na [matriz de rastreabilidade](docs/matriz-rastreabilidade.md).
+A interface Swagger gerada pela aplicação será disponibilizada quando os primeiros endpoints forem implementados (Ciclo 1). Cada endpoint e seu estado de implementação são acompanhados na [matriz de rastreabilidade](docs/requirements/matriz-rastreabilidade.md).
 
 Convenções da API (ADR 0018):
 
@@ -270,7 +270,7 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 - [x] Levantamento de requisitos
 - [x] Criação do repositório e do projeto Spring Boot
 - [x] Modelagem do banco de dados (diagrama ER e migrações)
-- [x] Criação da [Matriz de Rastreabilidade](docs/matriz-rastreabilidade.md)
+- [x] Criação da [Matriz de Rastreabilidade](docs/requirements/matriz-rastreabilidade.md)
 - [x] Configuração do banco com Docker Compose
 - [x] Contrato da API (OpenAPI)
 - [ ] Fundação da API (springdoc, tratamento de erros, paginação, identificação do ator)
