@@ -19,4 +19,10 @@ public record MoradorAtualizacaoForm(
         String fone,
 
         SituacaoCadastro situacao
-) {}
+) {
+
+    /** Apara o e-mail na leitura, para que a validação veja o mesmo texto que o service normaliza. */
+    public MoradorAtualizacaoForm {
+        email = email == null ? null : email.trim();
+    }
+}

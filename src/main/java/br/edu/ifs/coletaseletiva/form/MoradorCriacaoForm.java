@@ -16,4 +16,10 @@ public record MoradorCriacaoForm(
 
         @Size(max = 20, message = "deve ter no máximo 20 caracteres")
         String fone
-) {}
+) {
+
+    /** Apara o e-mail na leitura, para que a validação veja o mesmo texto que o service normaliza. */
+    public MoradorCriacaoForm {
+        email = email == null ? null : email.trim();
+    }
+}

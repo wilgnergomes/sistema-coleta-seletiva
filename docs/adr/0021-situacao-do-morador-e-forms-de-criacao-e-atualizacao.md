@@ -18,7 +18,7 @@ Foram consideradas as seguintes alternativas: um formulário único com `situaca
 2. A atualização (`PUT /moradores/{id}`) usa o schema `MoradorEntrada`, com `situacao` opcional. Quando omitida, a situação atual é mantida, e o morador pode corrigir nome, e-mail e telefone sem reenviá-la.
 3. Somente o administrador pode alterar a situação. Um morador que enviar `situacao` diferente da atual recebe 403 `ACESSO_NEGADO`. A verificação é feita no serviço, e não no formulário nem no mapper.
 4. No código, `MoradorCriacaoForm` e `MoradorAtualizacaoForm` correspondem aos dois schemas. O `MoradorMapper` tem um método para criar e outro para atualizar, sem regra de permissão.
-5. A normalização do e-mail (minúsculas, sem espaços nas pontas) e a verificação de duplicidade continuam no serviço (RF01).
+5. A normalização do e-mail (minúsculas, sem espaços nas pontas) e a verificação de duplicidade continuam no serviço (RF01). **Esclarecimento:** como o `@Email` valida o corpo antes de o serviço executar, os formulários de criação e atualização removem os espaços nas pontas do e-mail ao serem construídos, para que um e-mail como `" maria@exemplo.com "` não seja rejeitado com 400. O serviço continua responsável por colocar o e-mail em minúsculas, por normalizar os demais campos e por verificar a duplicidade.
 
 ## Consequências
 
