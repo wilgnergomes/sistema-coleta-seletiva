@@ -25,9 +25,17 @@ abstract class IntegracaoBase {
     @Autowired
     protected JdbcTemplate jdbc;
 
-    /** Cada teste começa com a tabela de moradores vazia. */
+    /** Cada teste começa com as tabelas de dados vazias. */
     @BeforeEach
     void limparMoradores() {
+        // Da tabela "filha" para a "mãe", por causa das chaves estrangeiras (ON DELETE RESTRICT).
+        jdbc.update("DELETE FROM coleta.iso_item_solicitacao");
+        jdbc.update("DELETE FROM coleta.his_historico");
+        jdbc.update("DELETE FROM coleta.sol_solicitacao");
+        jdbc.update("DELETE FROM coleta.mac_material_aceito");
+        jdbc.update("DELETE FROM coleta.ope_operador");
+        jdbc.update("DELETE FROM coleta.poc_ponto_coleta");
+        jdbc.update("DELETE FROM coleta.mat_material");
         jdbc.update("DELETE FROM coleta.end_endereco");
         jdbc.update("DELETE FROM coleta.mor_morador");
     }
