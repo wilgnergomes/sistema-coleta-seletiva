@@ -90,6 +90,7 @@ Objetivos específicos:
 | Spring Web | API REST |
 | Spring Data JPA | Persistência |
 | Bean Validation | Validação de entrada |
+| springdoc-openapi | Interface Swagger gerada a partir dos controllers |
 | PostgreSQL | Banco de dados relacional |
 | Flyway | Migrações do esquema do banco |
 | Spring Boot Actuator | Monitoramento (endpoint de saúde) |
@@ -164,6 +165,20 @@ Executar a aplicação:
 
 > Execute sempre a partir da raiz do projeto, para que o arquivo `.env` seja encontrado. Ao iniciar, a aplicação aplica as migrações de `src/main/resources/db/migration`.
 
+### Dados de demonstração (perfil `demo`)
+
+Para carregar os dados fictícios de demonstração (hoje, 5 moradores do RF01), ative o perfil `demo`:
+
+```bash
+# Windows (PowerShell/CMD)
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=demo"
+
+# Linux / macOS / Git Bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
+```
+
+Os scripts ficam em `src/main/resources/db/seed` e rodam a cada início do perfil, sem duplicar dados (ADR 0022). Sem o perfil, nenhum dado de demonstração é carregado. Para usar um morador como ator, consulte os ids em `GET /moradores` (cabeçalho `X-Perfil: ADMINISTRADOR`) e envie `X-Perfil: MORADOR` com `X-Usuario-Id` igual ao id.
+
 Verificar se a aplicação está no ar:
 
 ```bash
@@ -219,7 +234,7 @@ docker volume ls --filter name=coleta
 
 O contrato da API está em [`docs/api/openapi.yaml`](docs/api/openapi.yaml), no formato OpenAPI 3.0. Ele é a fonte da verdade dos endpoints, dos formatos de entrada e saída e das respostas de erro (ADR 0017). Para ler, abra o arquivo em um editor com pré-visualização de OpenAPI ou cole o conteúdo em [editor.swagger.io](https://editor.swagger.io).
 
-A interface Swagger gerada pela aplicação será disponibilizada quando os primeiros endpoints forem implementados (Ciclo 1). Cada endpoint e seu estado de implementação são acompanhados na [matriz de rastreabilidade](docs/requirements/matriz-rastreabilidade.md).
+Com a aplicação em execução, a interface Swagger gerada pelo springdoc fica em <http://localhost:8080/swagger-ui/index.html> e o JSON em <http://localhost:8080/v3/api-docs>. Ela reflete os endpoints implementados, mas por enquanto mostra só as respostas de sucesso; as respostas de erro estão no contrato `openapi.yaml` (veja [melhorias pendentes](docs/melhorias-pendentes.md)). Cada endpoint e seu estado de implementação são acompanhados na [matriz de rastreabilidade](docs/requirements/matriz-rastreabilidade.md).
 
 Convenções da API (ADR 0018):
 
@@ -254,7 +269,10 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 ├── docs/            # Documentação do projeto
 │   ├── adr/         # Registros de Decisão de Arquitetura (ADRs)
 │   ├── api/         # Contrato da API (OpenAPI)
-│   └── diagramas/   # Modelos Entidade-Relacionamento e diagramas visuais
+│   ├── diagramas/   # Modelos Entidade-Relacionamento e diagramas visuais
+│   ├── referencias/ # Enunciado original da atividade
+│   ├── requirements/# Matriz de rastreabilidade
+│   └── melhorias-pendentes.md  # Melhorias não críticas, para depois
 ├── src/
 │   ├── main/        # Código-fonte (Java/Spring) e migrações do banco (Flyway)
 │   └── test/        # Testes automatizados
@@ -273,8 +291,9 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 - [x] Criação da [Matriz de Rastreabilidade](docs/requirements/matriz-rastreabilidade.md)
 - [x] Configuração do banco com Docker Compose
 - [x] Contrato da API (OpenAPI)
-- [ ] Fundação da API (springdoc, tratamento de erros, paginação, identificação do ator)
-- [ ] Cadastros: materiais, pontos, vínculos, moradores, endereços e operadores
+- [x] Fundação da API (springdoc, tratamento de erros, paginação, identificação do ator)
+- [x] Cadastro de moradores (RF01)
+- [ ] Cadastros: materiais, pontos, vínculos, endereços e operadores
 - [ ] Consultas com filtros e paginação
 - [ ] Solicitação de recolhimento (compatibilidade, itens e protocolo)
 - [ ] Transições de situação e histórico

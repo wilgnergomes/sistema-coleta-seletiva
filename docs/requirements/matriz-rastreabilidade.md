@@ -6,7 +6,7 @@ Liga cada requisito funcional (RF01 a RF15) às entidades, às dependências, ao
 2. definir a **ordem dos ciclos** de entrega;
 3. responder na arguição **qual parte do código atende a qual requisito**.
 
-**Fontes:** especificação do trabalho (seções 6 a 8 e 13), migração `V1__criar_esquema_incial.sql`, contrato `../api/openapi.yaml` e ADRs 0005 a 0019.
+**Fontes:** especificação do trabalho (seções 6 a 8 e 13), migração `V1__criar_esquema_incial.sql`, contrato `../api/openapi.yaml` e ADRs 0005 a 0022.
 
 ## Como ler e manter
 
@@ -23,7 +23,7 @@ Liga cada requisito funcional (RF01 a RF15) às entidades, às dependências, ao
 
 | RF | Entidades que usa | RF dos quais depende | Dados que podem vir de seed | Endpoints | Testes |
 |----|-------------------|----------------------|-----------------------------|-----------|--------|
-| **RF01** Cadastrar moradores | **Grava:** Morador (`mor_morador`) | — | **Seed:** moradores fictícios com e-mails distintos, já em minúsculas | **Previstos (ciclo 1):**<br>`POST /moradores`<br>`GET /moradores`<br>`GET /moradores/{id}`<br>`PUT /moradores/{id}` | _pendente (ciclo 1)_ |
+| **RF01** Cadastrar moradores | **Grava:** Morador (`mor_morador`) | — | **Seed:** moradores fictícios com e-mails distintos, já em minúsculas<br>✔ Implementado: `db/seed/afterMigrate__010_moradores.sql` (5 moradores, 1 inativo), carregado só no perfil `demo` (ADR 0022) | `POST /moradores` ✔ executado em 2026-11-07<br>`GET /moradores` ✔ executado em 2026-11-07<br>`GET /moradores/{id}` ✔ executado em 2026-11-07<br>`PUT /moradores/{id}` ✔ executado em 2026-11-07<br>_Conferidos com o springdoc: caminhos, parâmetros e campos coincidem; as respostas de erro aparecem só no contrato (ver `../melhorias-pendentes.md`)_ | `[UNIT] MoradorServiceTest` (16: normalização, e-mail repetido, permissões por perfil, situação, paginação)<br>`[API] MoradorControllerTest` (28: 201 com `Location`, 400, 403, 404, 409, 405, 415, 500, paginação inválida, e-mail com espaços)<br>`[INT] MoradorFluxoIntegracaoTest` (14: cadastro e consulta com banco real, atualização, situação, permissões, `DELETE` → 405)<br>`[INT] MoradorBancoIntegracaoTest` (8: `uq_mor_email`, `ck_mor_email_normalizado`, `ck_mor_situacao`, `fk_end_mor`)<br>`[INT] SeedDemoIntegracaoTest` (4) e `ColetaSeletivaApplicationTests#semPerfilDemoOBancoNaoRecebeDadosDeSeed`<br>`[CONC] MoradorFluxoIntegracaoTest#rf01_cadastrosSimultaneosComOMesmoEmailCriamApenasUm`<br>✔ `./mvnw test` em 2026-11-07: 72 testes, 0 falhas |
 | **RF02** Gerenciar endereços | **Grava:** Endereço (`end_endereco`)<br>**Lê:** Morador | RF01 | **Seed:** 1 a 2 endereços por morador; um com `S/N` (valor explícito, ADR 0005), um sem complemento<br>**Fixture:** ao menos um morador com 2 endereços (testa a posse do endereço no RF08) | **Previstos (ciclo 1):**<br>`POST /moradores/{moradorId}/enderecos`<br>`GET /moradores/{moradorId}/enderecos`<br>`PUT /moradores/{moradorId}/enderecos/{id}` | _pendente (ciclo 1)_ |
 | **RF03** Gerenciar materiais recicláveis | **Grava:** Material (`mat_material`)<br>**Lê:** Item (`iso_item_solicitacao`) e Material aceito (`mac_material_aceito`), para o bloqueio de alteração de unidade (ADR 0013) | — (a regra de bloqueio só é testável depois do RF05 e do RF08) | **Seed:** papel, plástico, vidro e metal em KG; ao menos um em L e um em UN; um material inativo<br>**Fixture:** material já usado em item de solicitação; material vinculado a ponto sem itens | **Previstos (ciclo 1):**<br>`POST /materiais`<br>`GET /materiais` (compartilhado com RF06)<br>`GET /materiais/{id}`<br>`PUT /materiais/{id}` (inclui inativar e a regra do ADR 0013) | _pendente (ciclo 1; testes de bloqueio de unidade no ciclo 3)_<br>**Previstos:** `[INT]` alterar a unidade de material com item → 409 e estado preservado; `[INT]` alterar a unidade de material com vínculo em `mac_material_aceito` → 409 e estado preservado; `[INT]` nome e descrição continuam editáveis |
 | **RF04** Gerenciar pontos de coleta | **Grava:** Ponto de coleta (`poc_ponto_coleta`, endereço embutido) | — | **Seed:** pontos em municípios e bairros diferentes; com e sem recolhimento domiciliar; um inativo; um sem contato e horários. A listagem administrativa pode filtrar por situação | **Previstos (ciclo 1):**<br>`POST /pontos-coleta`<br>`PUT /pontos-coleta/{id}` (inclui inativar)<br>`GET /pontos-coleta` com filtro `situacao` para o administrador (compartilhado com RF06) | _pendente (ciclo 1)_ |
@@ -69,6 +69,7 @@ Estas escolhas não decorrem diretamente da especificação original. Ficam regi
 | Correção de solicitação antes do agendamento (`PUT /solicitacoes/{id}`) | Permitida conforme as regras definidas para a correção antes do agendamento | A confirmar | ADR 0018 |
 | Resposta HTTP `403` para acesso não autorizado | Retornar `403 Forbidden` quando o ator autenticado não tiver permissão para executar a operação | A confirmar | ADR 0018 |
 | Quem altera a situação do morador | Só o administrador, pelo campo `situacao` do `PUT`; o `POST` não aceita `situacao` (nasce ATIVO) | Decidida | ADR 0021 (Aceita) |
+| Dados de demonstração (seed) | Callbacks `afterMigrate` em `db/seed`, carregados só no perfil `demo`; scripts idempotentes; testes não carregam o seed | Decidida | ADR 0022 (Aceita) |
 
 ## Definição do resumo gerencial (RF15)
 
@@ -90,7 +91,7 @@ Estes critérios pertencem a um RF, mas dependem de outro estar pronto ou de uma
 | Ponto inativo não aparece como disponível para atendimento | RF04 | RF06 (consulta) e RF08 (RN01) |
 | Operador não atualiza solicitações de outro ponto | RF07 | RF10 a RF14, quando o controle de acesso estiver implementado |
 | Bloquear inativação de ponto ou remoção de vínculo com solicitações abertas (RN05) | RF04, RF05 | RF08 e RF12 (para resolver ou cancelar as abertas) |
-| Não excluir fisicamente cadastros vinculados a solicitações (RN03) | RF01, RF03, RF04 | RF08 (o banco já garante com `ON DELETE RESTRICT`, mas o teste precisa de uma solicitação) |
+| Não excluir fisicamente cadastros vinculados a solicitações (RN03) | RF01, RF03, RF04 | RF08 (o banco já garante com `ON DELETE RESTRICT`, mas o teste precisa de uma solicitação). No RF01 já está provado com endereço (`fk_end_mor`) e com o `DELETE` → 405 da API; falta a prova com solicitação |
 | Recusa fora de SOLICITADA é rejeitada | RF11 | RF10 ou fixture de solicitação AGENDADA |
 | Tentar cancelar recolhimento iniciado ou concluído | RF12 | RF13 ou fixture |
 
