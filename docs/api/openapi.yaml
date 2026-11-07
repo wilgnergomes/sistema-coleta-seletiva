@@ -24,7 +24,7 @@ info:
     **Idioma (ADR 0023).** As mensagens de erro e de validação saem em português do Brasil
     (padrão) ou em inglês, conforme o cabeçalho `Accept-Language`. Os endpoints passam a
     documentar o cabeçalho conforme cada funcionalidade recebe suas mensagens nos dois idiomas
-    (hoje, RF01 e RF02).
+    (hoje, RF01, RF02 e RF03).
 
     **Períodos (ADR 0014, proposta).** Os filtros `de` e `ate` são datas no fuso de
     negócio (America/Sao_Paulo). O intervalo é semiaberto: do início do dia `de`
@@ -226,6 +226,8 @@ paths:
 
   # ---------------------------------------------------------------- RF03
   /materiais:
+    parameters:
+      - { $ref: '#/components/parameters/AcceptLanguage' }
     post:
       tags: [Materiais]
       summary: Cadastra um material reciclável (RF03)
@@ -283,6 +285,7 @@ paths:
   /materiais/{id}:
     parameters:
       - { $ref: '#/components/parameters/Id' }
+      - { $ref: '#/components/parameters/AcceptLanguage' }
     get:
       tags: [Materiais]
       summary: Consulta um material (RF03 e RF06)
