@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -69,8 +70,32 @@ class SeedDemoIntegracaoTest {
     }
 
     @Test
+    void rf02_seedTemEnderecosParaOsMoradoresComSemNumeroEComplementoAusente() {
+        assertEquals(7, contar("SELECT COUNT(*) FROM coleta.end_endereco"));
+        assertEquals(2, contar("SELECT COUNT(*) FROM coleta.end_endereco WHERE end_tx_numero = 'S/N'"));
+        assertTrue(contar("SELECT COUNT(*) FROM coleta.end_endereco WHERE end_tx_complemento IS NULL") > 0);
+        assertEquals(2, contar("""
+                SELECT COUNT(*) FROM coleta.end_endereco e JOIN coleta.mor_morador m ON m.mor_nr_id = e.mor_nr_id
+                WHERE m.mor_tx_email = 'maria.silva@exemplo.com'"""));
+        // Todo morador do seed tem pelo menos um endereço
+        assertEquals(0, contar("""
+                SELECT COUNT(*) FROM coleta.mor_morador m
+                WHERE NOT EXISTS (SELECT 1 FROM coleta.end_endereco e WHERE e.mor_nr_id = m.mor_nr_id)"""));
+    }
+
+    @Test
+    void rf02_reexecutarOSeedNaoDuplicaEnderecos() {
+        int antes = contar("SELECT COUNT(*) FROM coleta.end_endereco");
+
+        flyway.migrate();
+
+        assertEquals(antes, contar("SELECT COUNT(*) FROM coleta.end_endereco"));
+    }
+
+    @Test
     void rf01_oSeedNaoApareceNoHistoricoDoFlyway() {
         assertEquals(0, contar("SELECT COUNT(*) FROM coleta.flyway_schema_history WHERE description ILIKE '%morador%'"));
+        assertEquals(0, contar("SELECT COUNT(*) FROM coleta.flyway_schema_history WHERE description ILIKE '%endere%'"));
     }
 
     @Test

@@ -86,8 +86,11 @@ public class MoradorService {
                 .orElseThrow(() -> new NaoEncontradoException("erro.morador.nao-encontrado"));
     }
 
-    /** Administrador acessa qualquer morador; morador só o próprio; operador não acessa. */
-    private void autorizarAcesso(Ator ator, Integer id) {
+    /**
+     * Administrador acessa qualquer morador; morador só o próprio; operador não acessa.
+     * Público para o RF02 reutilizar a regra (endereços pertencem ao morador).
+     */
+    public void autorizarAcesso(Ator ator, Integer id) {
         switch (ator.perfil()) {
             case ADMINISTRADOR -> { }
             case MORADOR -> {
