@@ -100,7 +100,7 @@ Regras:
 - É obrigatório pedir aprovação antes de **merge**, antes de formalizar **novas decisões arquiteturais** (ADR) e antes de operações destrutivas fora do fluxo (`reset`, `clean`, `stash`, `rebase`, push forçado, apagar branch com trabalho não integrado).
 - Se houver alterações locais inesperadas, conflitos ou risco de perda de trabalho, interromper a operação e informar o estudante antes de prosseguir.
 - Não incluir configurações locais (`.claude/settings.local.json`), credenciais ou arquivos sensíveis nos commits.
-- Internacionalização (Issue #35, depois de integrada): cada nova funcionalidade acrescenta suas mensagens em português e inglês na própria branch, sem reabrir a Issue #35, salvo defeito ou requisito pendente da infraestrutura.
+- Internacionalização (ADR 0023, infraestrutura da Issue #35): mensagens ao cliente não ficam fixas no código. Formulários usam chaves (`message = "{morador.nome.obrigatorio}"`) e as exceções de negócio (`NegocioException`) carregam chave e argumentos; o texto fica em `messages.properties` (pt-BR) e `messages_en.properties`, com as mesmas chaves nos dois (um teste confere). Cada nova funcionalidade acrescenta suas chaves nos dois idiomas na própria branch, sem reabrir a Issue #35, salvo defeito ou requisito pendente da infraestrutura.
 
 ## Gestão contínua de decisões arquiteturais (ADRs)
 

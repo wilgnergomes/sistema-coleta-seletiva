@@ -21,6 +21,11 @@ info:
     **Erros (ADR 0018).** Todo erro segue o formato `{ codigo, mensagem, erros }`, sem
     stack trace. Erros inesperados devolvem 500 `ERRO_INTERNO` com mensagem genérica.
 
+    **Idioma (ADR 0023).** As mensagens de erro e de validação saem em português do Brasil
+    (padrão) ou em inglês, conforme o cabeçalho `Accept-Language`. Os endpoints passam a
+    documentar o cabeçalho conforme cada funcionalidade recebe suas mensagens nos dois idiomas
+    (hoje, o RF01).
+
     **Períodos (ADR 0014, proposta).** Os filtros `de` e `ate` são datas no fuso de
     negócio (America/Sao_Paulo). O intervalo é semiaberto: do início do dia `de`
     (inclusive) até o início do dia seguinte a `ate` (exclusive).
@@ -48,6 +53,8 @@ paths:
 
   # ---------------------------------------------------------------- RF01
   /moradores:
+    parameters:
+      - { $ref: '#/components/parameters/AcceptLanguage' }
     post:
       tags: [Moradores]
       summary: Cadastra um morador (RF01)
@@ -97,6 +104,7 @@ paths:
   /moradores/{id}:
     parameters:
       - { $ref: '#/components/parameters/Id' }
+      - { $ref: '#/components/parameters/AcceptLanguage' }
     get:
       tags: [Moradores]
       summary: Consulta um morador (RF01)
@@ -888,6 +896,16 @@ components:
       schema: { type: string }
 
   parameters:
+    AcceptLanguage:
+      name: Accept-Language
+      in: header
+      required: false
+      description: |
+        Idioma das mensagens de erro e de validação (ADR 0023). Aceita `pt-BR` (padrão) e `en`.
+        Sem o cabeçalho, ou com outro idioma, as mensagens saem em português do Brasil.
+        Só o texto de `mensagem` muda: `codigo`, o status HTTP e a estrutura do erro são os mesmos.
+      schema: { type: string, enum: [pt-BR, en], default: pt-BR }
+      example: en
     Id:
       name: id
       in: path

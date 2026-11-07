@@ -243,6 +243,7 @@ Convenções da API (ADR 0018):
 - Erros no formato `{ codigo, mensagem, erros }`, sem stack trace.
 - Listagens paginadas, com limite máximo de 100 registros por página.
 - Ator identificado pelos cabeçalhos `X-Perfil` e `X-Usuario-Id`, apenas para demonstração, sem autenticação (ADR 0019).
+- Idioma das mensagens de erro e de validação pelo cabeçalho `Accept-Language`: português do Brasil (padrão) ou inglês (`en`). Só o texto de `mensagem` muda; `codigo`, status e estrutura do erro permanecem (ADR 0023). Exemplo: `curl -H "Accept-Language: en" ...`. As mensagens ficam em `src/main/resources/messages.properties` e `messages_en.properties`.
 
 ## Modelo de Banco de Dados
 
