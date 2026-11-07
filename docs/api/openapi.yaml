@@ -10,13 +10,16 @@ info:
     Os endpoints só passam a existir no código conforme cada ciclo os entrega; o
     estado de cada um é acompanhado na matriz de rastreabilidade.
 
-    **Identificação do ator (ADR 0019, proposta).** O protótipo não tem autenticação.
+    **Identificação do ator (ADR 0019).** O protótipo não tem autenticação.
     O ator é informado pelos cabeçalhos `X-Perfil` (MORADOR, OPERADOR ou ADMINISTRADOR)
     e `X-Usuario-Id` (id do morador ou do operador). Isso é uma seleção de usuário
     para demonstração, não segurança.
 
     **Concorrência (ADR 0009).** Toda ação que altera uma solicitação recebe a `versao`
     lida pelo cliente. Versão desatualizada resulta em 409 `CONFLITO_VERSAO`.
+
+    **Erros (ADR 0018).** Todo erro segue o formato `{ codigo, mensagem, erros }`, sem
+    stack trace. Erros inesperados devolvem 500 `ERRO_INTERNO` com mensagem genérica.
 
     **Períodos (ADR 0014, proposta).** Os filtros `de` e `ate` são datas no fuso de
     negócio (America/Sao_Paulo). O intervalo é semiaberto: do início do dia `de`
@@ -48,14 +51,16 @@ paths:
     post:
       tags: [Moradores]
       summary: Cadastra um morador (RF01)
-      description: O e-mail é normalizado (minúsculas, sem espaços nas pontas). E-mail repetido é rejeitado.
+      description: |
+        O e-mail é normalizado (minúsculas, sem espaços nas pontas). E-mail repetido é rejeitado.
+        Todo morador nasce ATIVO; este endpoint não aceita `situacao` (ADR 0021).
       operationId: criarMorador
       security: []
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/MoradorEntrada' }
+            schema: { $ref: '#/components/schemas/MoradorCriacao' }
             example:
               nome: Maria da Silva
               email: maria.silva@exemplo.com
@@ -70,6 +75,7 @@ paths:
               schema: { $ref: '#/components/schemas/Morador' }
         '400': { $ref: '#/components/responses/Erro400' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
     get:
       tags: [Moradores]
       summary: Lista moradores (RF01)
@@ -86,6 +92,7 @@ paths:
               schema: { $ref: '#/components/schemas/PaginaMoradores' }
         '400': { $ref: '#/components/responses/Erro400' }
         '403': { $ref: '#/components/responses/Erro403' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   /moradores/{id}:
     parameters:
@@ -102,16 +109,25 @@ paths:
               schema: { $ref: '#/components/schemas/Morador' }
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
+        '500': { $ref: '#/components/responses/Erro500' }
     put:
       tags: [Moradores]
       summary: Atualiza um morador (RF01)
-      description: Substitui os dados do morador. A inativação é feita pelo campo `situacao`.
+      description: |
+        Substitui nome, e-mail e telefone. A inativação é feita pelo campo `situacao`, opcional:
+        quando omitido, a situação atual é mantida. Só o administrador pode alterar a situação;
+        outro perfil que envie situação diferente da atual recebe 403 (ADR 0021).
       operationId: atualizarMorador
       requestBody:
         required: true
         content:
           application/json:
             schema: { $ref: '#/components/schemas/MoradorEntrada' }
+            example:
+              nome: Maria da Silva
+              email: maria.silva@exemplo.com
+              fone: '79999990000'
+              situacao: ATIVO
       responses:
         '200':
           description: Morador atualizado
@@ -122,6 +138,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   # ---------------------------------------------------------------- RF02
   /moradores/{moradorId}/enderecos:
@@ -156,6 +173,7 @@ paths:
         '400': { $ref: '#/components/responses/Erro400' }
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
+        '500': { $ref: '#/components/responses/Erro500' }
     get:
       tags: [Endereços]
       summary: Lista os endereços do morador (RF02)
@@ -170,6 +188,7 @@ paths:
                 items: { $ref: '#/components/schemas/Endereco' }
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   /moradores/{moradorId}/enderecos/{id}:
     parameters:
@@ -193,6 +212,7 @@ paths:
         '400': { $ref: '#/components/responses/Erro400' }
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   # ---------------------------------------------------------------- RF03
   /materiais:
@@ -222,12 +242,13 @@ paths:
         '400': { $ref: '#/components/responses/Erro400' }
         '403': { $ref: '#/components/responses/Erro403' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
     get:
       tags: [Materiais]
       summary: Lista materiais (RF03 e RF06)
       description: |
         Consulta pública: sem ator, ou como morador ou operador, devolve só materiais ATIVOS.
-        Como administrador, aceita o filtro `situacao` e enxerga também os inativos (ADR 0019, proposta).
+        Como administrador, aceita o filtro `situacao` e enxerga também os inativos (ADR 0019).
       operationId: listarMateriais
       security:
         - {}
@@ -247,6 +268,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/PaginaMateriais' }
         '400': { $ref: '#/components/responses/Erro400' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   /materiais/{id}:
     parameters:
@@ -266,6 +288,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Material' }
         '404': { $ref: '#/components/responses/Erro404' }
+        '500': { $ref: '#/components/responses/Erro500' }
     put:
       tags: [Materiais]
       summary: Atualiza ou inativa um material (RF03)
@@ -288,6 +311,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   # ----------------------------------------------------- RF04 e RF06
   /pontos-coleta:
@@ -323,12 +347,13 @@ paths:
               schema: { $ref: '#/components/schemas/Ponto' }
         '400': { $ref: '#/components/responses/Erro400' }
         '403': { $ref: '#/components/responses/Erro403' }
+        '500': { $ref: '#/components/responses/Erro500' }
     get:
       tags: [Pontos de coleta]
       summary: Pesquisa pontos de coleta (RF06 e listagem administrativa do RF04)
       description: |
         Consulta pública: devolve só pontos ATIVOS, sem dados pessoais. Como administrador,
-        aceita o filtro `situacao` e enxerga também os inativos (ADR 0019, proposta).
+        aceita o filtro `situacao` e enxerga também os inativos (ADR 0019).
         Os filtros de texto não diferenciam maiúsculas de minúsculas.
       operationId: pesquisarPontosColeta
       security:
@@ -336,9 +361,9 @@ paths:
         - perfil: []
           usuarioId: []
       parameters:
-        - { name: nome, in: query, schema: { type: string } }
-        - { name: municipio, in: query, schema: { type: string } }
-        - { name: bairro, in: query, schema: { type: string } }
+        - { name: nome, in: query, schema: { type: string, maxLength: 120 } }
+        - { name: municipio, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: bairro, in: query, schema: { type: string, maxLength: 100 } }
         - name: materialId
           in: query
           description: Só pontos que aceitam este material.
@@ -356,6 +381,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/PaginaPontos' }
         '400': { $ref: '#/components/responses/Erro400' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   /pontos-coleta/{id}:
     parameters:
@@ -376,6 +402,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Ponto' }
         '404': { $ref: '#/components/responses/Erro404' }
+        '500': { $ref: '#/components/responses/Erro500' }
     put:
       tags: [Pontos de coleta]
       summary: Atualiza ou inativa um ponto de coleta (RF04)
@@ -398,6 +425,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   # ---------------------------------------------------------------- RF05
   /pontos-coleta/{pontoId}/materiais/{materialId}:
@@ -429,6 +457,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
     delete:
       tags: [Materiais aceitos]
       summary: Remove o vínculo entre material e ponto (RF05)
@@ -440,6 +469,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   # ---------------------------------------------------------------- RF07
   /operadores:
@@ -469,6 +499,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
     get:
       tags: [Operadores]
       summary: Lista operadores (RF07)
@@ -485,6 +516,7 @@ paths:
               schema: { $ref: '#/components/schemas/PaginaOperadores' }
         '400': { $ref: '#/components/responses/Erro400' }
         '403': { $ref: '#/components/responses/Erro403' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   /operadores/{id}:
     parameters:
@@ -501,6 +533,7 @@ paths:
               schema: { $ref: '#/components/schemas/Operador' }
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
+        '500': { $ref: '#/components/responses/Erro500' }
     put:
       tags: [Operadores]
       summary: Atualiza um operador, muda seu ponto ou o inativa (RF07)
@@ -520,6 +553,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   # ----------------------------------------------- RF08 (RN04) e RF09
   /solicitacoes:
@@ -556,6 +590,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
     get:
       tags: [Solicitações]
       summary: Consulta solicitações com filtros (RF09)
@@ -581,6 +616,7 @@ paths:
               schema: { $ref: '#/components/schemas/PaginaSolicitacoes' }
         '400': { $ref: '#/components/responses/Erro400' }
         '403': { $ref: '#/components/responses/Erro403' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   /solicitacoes/{id}:
     parameters:
@@ -598,6 +634,7 @@ paths:
               schema: { $ref: '#/components/schemas/SolicitacaoDetalhe' }
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
+        '500': { $ref: '#/components/responses/Erro500' }
     put:
       tags: [Solicitações]
       summary: Corrige itens e endereço antes do agendamento (RN04)
@@ -620,6 +657,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   # ------------------------------------------------------ RF10 a RF14
   /solicitacoes/{id}/agendamento:
@@ -646,6 +684,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   /solicitacoes/{id}/recusa:
     parameters:
@@ -669,6 +708,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   /solicitacoes/{id}/cancelamento:
     parameters:
@@ -694,6 +734,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   /solicitacoes/{id}/inicio:
     parameters:
@@ -716,6 +757,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   /solicitacoes/{id}/conclusao:
     parameters:
@@ -727,7 +769,7 @@ paths:
         Operador do ponto. Só a partir de EM_RECOLHIMENTO. Informa a quantidade efetiva de cada
         item, aceitando zero para item não recolhido. Concluir sem nenhuma quantidade positiva é
         rejeitado. A data da conclusão é registrada pelo servidor e o responsável vem do ator
-        (proposta, ADR 0018).
+        (ADR 0018).
       operationId: concluirRecolhimento
       requestBody:
         required: true
@@ -745,6 +787,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   /solicitacoes/{id}/reagendamento:
     parameters:
@@ -771,6 +814,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   /solicitacoes/{id}/falha:
     parameters:
@@ -798,6 +842,7 @@ paths:
         '403': { $ref: '#/components/responses/Erro403' }
         '404': { $ref: '#/components/responses/Erro404' }
         '409': { $ref: '#/components/responses/Erro409' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
   # ---------------------------------------------------------------- RF15
   /resumo-gerencial:
@@ -821,6 +866,7 @@ paths:
               schema: { $ref: '#/components/schemas/ResumoGerencial' }
         '400': { $ref: '#/components/responses/Erro400' }
         '403': { $ref: '#/components/responses/Erro403' }
+        '500': { $ref: '#/components/responses/Erro500' }
 
 components:
 
@@ -899,11 +945,19 @@ components:
       content:
         application/json:
           schema: { $ref: '#/components/schemas/RespostaErro' }
+          example:
+            codigo: ACESSO_NEGADO
+            mensagem: O perfil informado não pode executar esta operação.
+            erros: []
     Erro404:
       description: Registro ausente (NAO_ENCONTRADO).
       content:
         application/json:
           schema: { $ref: '#/components/schemas/RespostaErro' }
+          example:
+            codigo: NAO_ENCONTRADO
+            mensagem: Registro não encontrado.
+            erros: []
     Erro409:
       description: Conflito de regra (CONFLITO_REGRA) ou de versão (CONFLITO_VERSAO).
       content:
@@ -912,6 +966,15 @@ components:
           example:
             codigo: CONFLITO_VERSAO
             mensagem: A solicitação foi alterada por outra operação. Recarregue e tente novamente.
+            erros: []
+    Erro500:
+      description: Erro inesperado (ERRO_INTERNO). A mensagem é genérica e não expõe detalhes internos.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/RespostaErro' }
+          example:
+            codigo: ERRO_INTERNO
+            mensagem: Erro interno. Tente novamente mais tarde.
             erros: []
     SolicitacaoAtualizada:
       description: Solicitação com a nova situação, a nova versão e o histórico atualizado.
@@ -943,10 +1006,10 @@ components:
       type: object
       required: [pagina, tamanho, totalElementos, totalPaginas]
       properties:
-        pagina: { type: integer }
-        tamanho: { type: integer }
-        totalElementos: { type: integer, format: int64 }
-        totalPaginas: { type: integer }
+        pagina: { type: integer, minimum: 0 }
+        tamanho: { type: integer, minimum: 0, maximum: 100 }
+        totalElementos: { type: integer, format: int64, minimum: 0 }
+        totalPaginas: { type: integer, minimum: 0 }
     PaginaMoradores:
       allOf:
         - $ref: '#/components/schemas/PaginaBase'
@@ -995,8 +1058,17 @@ components:
       enum: [KG, L, UN]
 
     # ------------------------------------------------ moradores e endereços
+    MoradorCriacao:
+      type: object
+      description: Corpo do cadastro. Não aceita `situacao`: todo morador nasce ATIVO (ADR 0021).
+      required: [nome, email]
+      properties:
+        nome: { type: string, minLength: 1, maxLength: 80 }
+        email: { type: string, format: email, maxLength: 150 }
+        fone: { type: string, maxLength: 20 }
     MoradorEntrada:
       type: object
+      description: Corpo da atualização. `situacao` é opcional e só o administrador pode alterá-la (ADR 0021).
       required: [nome, email]
       properties:
         nome: { type: string, minLength: 1, maxLength: 80 }
@@ -1018,7 +1090,7 @@ components:
         numero: { type: string, minLength: 1, maxLength: 10, description: 'Número, ou "S/N" de forma explícita.' }
         bairro: { type: string, minLength: 1, maxLength: 100 }
         municipio: { type: string, minLength: 1, maxLength: 100 }
-        uf: { type: string, pattern: '^[A-Z]{2}$' }
+        uf: { type: string, pattern: '^[A-Z]{2}$', description: Duas letras maiúsculas. }
         cep: { type: string, pattern: '^[0-9]{8}$', description: 'Oito dígitos, sem máscara.' }
         complemento: { type: string, maxLength: 100 }
     Endereco:
@@ -1036,9 +1108,9 @@ components:
       required: [nome, descricao, unidade, orientacao]
       properties:
         nome: { type: string, minLength: 1, maxLength: 80 }
-        descricao: { type: string, maxLength: 500 }
+        descricao: { type: string, minLength: 1, maxLength: 500 }
         unidade: { $ref: '#/components/schemas/Unidade' }
-        orientacao: { type: string, maxLength: 1000 }
+        orientacao: { type: string, minLength: 1, maxLength: 1000 }
         situacao: { $ref: '#/components/schemas/SituacaoCadastro' }
     Material:
       allOf:
@@ -1062,10 +1134,10 @@ components:
       required: [materialId, nomeMaterial, unidade]
       properties:
         materialId: { type: integer, format: int32 }
-        nomeMaterial: { type: string }
+        nomeMaterial: { type: string, maxLength: 80 }
         unidade: { $ref: '#/components/schemas/Unidade' }
-        orientacao: { type: string }
-        observacoes: { type: string }
+        orientacao: { type: string, maxLength: 1000 }
+        observacoes: { type: string, maxLength: 500 }
         limite: { type: number, nullable: true, description: 'Limite por solicitação, na unidade do material.' }
     Ponto:
       allOf:
@@ -1081,7 +1153,12 @@ components:
       type: object
       properties:
         observacoes: { type: string, maxLength: 500 }
-        limite: { type: number, minimum: 0, exclusiveMinimum: true, description: Maior que zero. }
+        limite:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 999999999.999
+          description: Maior que zero, até 3 casas decimais.
 
     # ------------------------------------------------ operadores
     OperadorEntrada:
@@ -1106,7 +1183,12 @@ components:
       required: [materialId, quantidadeEstimada]
       properties:
         materialId: { type: integer, format: int32 }
-        quantidadeEstimada: { type: number, minimum: 0, exclusiveMinimum: true, description: Maior que zero. Inteira quando a unidade é UN. }
+        quantidadeEstimada:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 999999999.999
+          description: Maior que zero, até 3 casas decimais. Inteira quando a unidade é UN.
     SolicitacaoEntrada:
       type: object
       required: [pontoId, enderecoId, itens]
@@ -1134,7 +1216,7 @@ components:
       required: [materialId, nomeMaterial, unidade, quantidadeEstimada]
       properties:
         materialId: { type: integer, format: int32 }
-        nomeMaterial: { type: string }
+        nomeMaterial: { type: string, maxLength: 80 }
         unidade: { $ref: '#/components/schemas/Unidade' }
         quantidadeEstimada: { type: number }
         quantidadeEfetiva: { type: number, nullable: true }
@@ -1156,24 +1238,24 @@ components:
         situacaoNova: { $ref: '#/components/schemas/SituacaoSolicitacao' }
         data: { type: string, format: date-time }
         responsavel: { $ref: '#/components/schemas/Responsavel' }
-        motivo: { type: string, nullable: true }
+        motivo: { type: string, maxLength: 500, nullable: true }
         agendamento: { type: string, format: date-time, nullable: true }
-        informacoesTentativa: { type: string, nullable: true }
+        informacoesTentativa: { type: string, maxLength: 500, nullable: true }
     Solicitacao:
       type: object
       required: [id, protocolo, moradorId, pontoId, enderecoCopia, situacao, criadaEm, versao]
       properties:
         id: { type: integer, format: int32 }
-        protocolo: { type: string }
+        protocolo: { type: string, maxLength: 30 }
         moradorId: { type: integer, format: int32 }
         pontoId: { type: integer, format: int32 }
-        enderecoCopia: { type: string, description: 'Texto do endereço copiado na criação (ADR 0008).' }
+        enderecoCopia: { type: string, maxLength: 400, description: 'Texto do endereço copiado na criação (ADR 0008).' }
         situacao: { $ref: '#/components/schemas/SituacaoSolicitacao' }
         criadaEm: { type: string, format: date-time }
         agendadaPara: { type: string, format: date-time, nullable: true }
         concluidaEm: { type: string, format: date-time, nullable: true }
-        observacoes: { type: string, nullable: true }
-        versao: { type: integer, description: Enviar de volta nas ações que alteram a solicitação (ADR 0009). }
+        observacoes: { type: string, maxLength: 500, nullable: true }
+        versao: { type: integer, minimum: 0, description: Enviar de volta nas ações que alteram a solicitação (ADR 0009). }
     SolicitacaoDetalhe:
       allOf:
         - $ref: '#/components/schemas/Solicitacao'
@@ -1217,7 +1299,11 @@ components:
             required: [materialId, quantidadeEfetiva]
             properties:
               materialId: { type: integer, format: int32 }
-              quantidadeEfetiva: { type: number, minimum: 0, description: Zero para item não recolhido. Inteira quando a unidade é UN. }
+              quantidadeEfetiva:
+                type: number
+                minimum: 0
+                maximum: 999999999.999
+                description: Zero para item não recolhido. Inteira quando a unidade é UN.
         versao: { type: integer, minimum: 0 }
     ReagendamentoEntrada:
       type: object
@@ -1247,7 +1333,7 @@ components:
             required: [situacao, total]
             properties:
               situacao: { $ref: '#/components/schemas/SituacaoSolicitacao' }
-              total: { type: integer, format: int64 }
+              total: { type: integer, format: int64, minimum: 0 }
         quantidadesRecolhidas:
           type: array
           description: Uma linha por material e unidade. Nunca soma unidades diferentes.
@@ -1256,6 +1342,6 @@ components:
             required: [materialId, nomeMaterial, unidade, quantidade]
             properties:
               materialId: { type: integer, format: int32 }
-              nomeMaterial: { type: string }
+              nomeMaterial: { type: string, maxLength: 80 }
               unidade: { $ref: '#/components/schemas/Unidade' }
               quantidade: { type: number, description: Soma das quantidades efetivas (nunca das estimadas). }

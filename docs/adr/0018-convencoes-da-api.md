@@ -14,7 +14,7 @@ Foram consideradas as seguintes alternativas: para a mudança de situação, um 
 
 1. Caminhos e campos usam português (ADR 0002), com recursos no plural (`/moradores`, `/pontos-coleta`) e JSON como formato de troca.
 2. Criação devolve 201 com o cabeçalho `Location`; consulta e atualização devolvem 200; remoção de vínculo devolve 204.
-3. Cadastros usam `POST` para criar, `GET` para consultar e `PUT` para atualizar, com a representação completa. A inativação é feita pelo campo `situacao` do `PUT` (RF03 e RF04, e o mesmo para moradores e operadores). Não há exclusão física de cadastros (RN03).
+3. Cadastros usam `POST` para criar, `GET` para consultar e `PUT` para atualizar, com a representação completa. A inativação é feita pelo campo `situacao` do `PUT` (RF03 e RF04, e o mesmo para moradores e operadores). Não há exclusão física de cadastros (RN03). Para moradores, a criação e a atualização usam schemas distintos, e só o administrador altera a situação (ADR 0021).
 4. As mudanças de situação da solicitação são ações `POST` sobre `/solicitacoes/{id}`: `agendamento`, `recusa`, `cancelamento`, `inicio`, `conclusao`, `reagendamento` e `falha`. Cada uma aplica a regra da sua transição (RN06) e grava um registro de histórico.
 5. A `versao` lida pelo cliente vai no corpo de toda ação e da correção de itens e endereço. A resposta devolve a solicitação com a nova versão. Versão diferente da atual ou bloqueio otimista resulta em 409 `CONFLITO_VERSAO` (ADR 0009).
 6. O erro tem sempre o formato `{ codigo, mensagem, erros: [{ campo, mensagem }] }`, sem stack trace, com este catálogo:
@@ -29,6 +29,7 @@ Foram consideradas as seguintes alternativas: para a mudança de situação, um 
    | `CONFLITO_VERSAO` | 409 | Versão desatualizada ou bloqueio otimista |
    | `ERRO_INTERNO` | 500 | Erro inesperado, com mensagem genérica |
 
+   O contrato descreve cada resposta de erro em `components.responses` (`Erro400`, `Erro403`, `Erro404`, `Erro409` e `Erro500`), e todos os endpoints as referenciam.
 7. O código 403 é um acréscimo à lista do RNF03. Ele é necessário para o RF07, que exige impedir que o operador atue em solicitações de outro ponto.
 8. As listagens recebem `page` (a partir de 0) e `size` (padrão 20, máximo 100) e devolvem `{ conteudo, pagina, tamanho, totalElementos, totalPaginas }`, em um DTO próprio.
 9. Datas de evento usam ISO-8601 com offset (RNF05). Os filtros de período `de` e `ate` são datas no formato `AAAA-MM-DD`, interpretadas conforme o ADR 0014.
@@ -41,4 +42,4 @@ Foram consideradas as seguintes alternativas: para a mudança de situação, um 
 
 - **Positivas:** o front sabe o formato de qualquer resposta e de qualquer erro; cada transição de situação tem endpoint, corpo e teste próprios; a paginação não depende do formato interno do Spring; o contrato fica coerente entre os 15 requisitos.
 - **Negativas:** há vários endpoints `POST` de ação, em vez de um só de alteração de situação; o cliente precisa guardar e reenviar a `versao`; o 403 não consta da lista do RNF03.
-- **Cuidados:** todo endpoint novo ou alterado entra no `openapi.yaml` e na matriz no mesmo Pull Request; o tratador global de exceções deve produzir exatamente o formato e o catálogo acima; os testes `[API]` devem conferir o formato do erro; acrescentar um valor de enum exige uma migração nova e o ajuste do contrato (ADR 0012); o ADR 0014 continua Proposta, e os filtros de período seguem o que ele definir.
+- **Cuidados:** todo endpoint novo ou alterado entra no `openapi.yaml` e na matriz no mesmo Pull Request; o tratador global de exceções deve produzir exatamente o formato e o catálogo acima; os testes `[API]` devem conferir o formato do erro; acrescentar um valor de enum exige uma migração nova e o ajuste do contrato (ADR 0012); o ADR 0014 continua Proposta, e os filtros de período seguem o que ele definir. Métodos HTTP não suportados (405) e tipos de conteúdo não suportados (415) não constam do catálogo; se forem tratados, o catálogo, o contrato e este ADR devem ser alterados no mesmo Pull Request.
