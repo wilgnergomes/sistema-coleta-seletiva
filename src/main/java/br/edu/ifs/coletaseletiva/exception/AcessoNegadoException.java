@@ -1,7 +1,7 @@
 package br.edu.ifs.coletaseletiva.exception;
 
-public class AcessoNegadoException extends RuntimeException{
-    public AcessoNegadoException(String mensagem) {
-        super(mensagem);
+public class AcessoNegadoException extends NegocioException {
+    public AcessoNegadoException(String chave, Object... argumentos) {
+        super(chave, argumentos);
     }
 }
