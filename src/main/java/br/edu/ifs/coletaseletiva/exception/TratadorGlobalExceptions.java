@@ -2,8 +2,11 @@ package br.edu.ifs.coletaseletiva.exception;
 
 import br.edu.ifs.coletaseletiva.dto.ErroCampo;
 import br.edu.ifs.coletaseletiva.dto.RespostaErro;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -25,10 +28,17 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Converte exceções em respostas {@code { codigo, mensagem, erros }} (ADR 0018). As mensagens vêm
+ * do {@link MessageSource}, no idioma da requisição (ADR 0023): aqui o texto é escolhido pela chave.
+ */
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class TratadorGlobalExceptions {
 
     private static final Logger log = LoggerFactory.getLogger(TratadorGlobalExceptions.class);
+
+    private final MessageSource messageSource;
 
     // =====================================================================
     // 400: entrada inválida (exceções lançadas pelo Spring)
@@ -37,13 +47,15 @@ public class TratadorGlobalExceptions {
     /** Campo do corpo quebrou uma validação (@NotBlank, @Email, @Size...). */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<RespostaErro> entradaInvalida(MethodArgumentNotValidException excecao) {
+        // O texto de cada erro já vem no idioma certo: o Bean Validation resolve a chave
+        // da anotação (por exemplo {morador.nome.obrigatorio}) no mesmo MessageSource.
         List<ErroCampo> erros = excecao.getBindingResult()
                 .getFieldErrors()
                 .stream()
                 .map(erro -> new ErroCampo(erro.getField(), erro.getDefaultMessage()))
                 .toList();
 
-        return montar(HttpStatus.BAD_REQUEST, CodigoErro.VALIDACAO, "Dados inválidos.", erros);
+        return montar(HttpStatus.BAD_REQUEST, CodigoErro.VALIDACAO, traduzir("erro.geral.dados-invalidos"), erros);
     }
 
     /** JSON malformado, corpo ausente ou valor de enum inexistente no corpo. */
@@ -56,7 +68,7 @@ public class TratadorGlobalExceptions {
                     mensagemValoresAceitos(causa.getTargetType()), List.of());
         }
         return montar(HttpStatus.BAD_REQUEST, CodigoErro.VALIDACAO,
-                "Dados inválidos. Verifique se o JSON está completo e bem formado.", List.of());
+                traduzir("erro.geral.json-ilegivel"), List.of());
     }
 
     /** Parâmetro da URL com tipo errado: /moradores/abc ou ?situacao=XYZ. */
@@ -67,11 +79,12 @@ public class TratadorGlobalExceptions {
         if (tipo != null && tipo.isEnum()) {
             List<ErroCampo> erros = List.of(new ErroCampo(excecao.getName(), mensagemValoresAceitos(tipo)));
             return montar(HttpStatus.BAD_REQUEST, CodigoErro.VALOR_INVALIDO,
-                    "Parâmetro inválido.", erros);
+                    traduzir("erro.geral.parametro-invalido"), erros);
         }
 
-        List<ErroCampo> erros = List.of(new ErroCampo(excecao.getName(), "valor inválido"));
-        return montar(HttpStatus.BAD_REQUEST, CodigoErro.VALIDACAO, "Parâmetro inválido.", erros);
+        List<ErroCampo> erros = List.of(new ErroCampo(excecao.getName(), traduzir("erro.geral.valor-invalido-campo")));
+        return montar(HttpStatus.BAD_REQUEST, CodigoErro.VALIDACAO,
+                traduzir("erro.geral.parametro-invalido"), erros);
     }
 
     /** Validação de @RequestParam/@PathVariable falhou (ex.: size acima de 100). */
@@ -84,14 +97,17 @@ public class TratadorGlobalExceptions {
                                 erro.getDefaultMessage())))
                 .toList();
 
-        return montar(HttpStatus.BAD_REQUEST, CodigoErro.VALIDACAO, "Parâmetro inválido.", erros);
+        return montar(HttpStatus.BAD_REQUEST, CodigoErro.VALIDACAO,
+                traduzir("erro.geral.parametro-invalido"), erros);
     }
 
     /** Parâmetro obrigatório da URL não foi enviado. */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<RespostaErro> parametroAusente(MissingServletRequestParameterException excecao) {
-        List<ErroCampo> erros = List.of(new ErroCampo(excecao.getParameterName(), "o parâmetro é obrigatório"));
-        return montar(HttpStatus.BAD_REQUEST, CodigoErro.VALIDACAO, "Parâmetro ausente.", erros);
+        List<ErroCampo> erros = List.of(
+                new ErroCampo(excecao.getParameterName(), traduzir("erro.geral.parametro-obrigatorio")));
+        return montar(HttpStatus.BAD_REQUEST, CodigoErro.VALIDACAO,
+                traduzir("erro.geral.parametro-ausente"), erros);
     }
 
     // =====================================================================
@@ -100,35 +116,36 @@ public class TratadorGlobalExceptions {
 
     @ExceptionHandler(AcessoNegadoException.class)
     public ResponseEntity<RespostaErro> acessoNegado(AcessoNegadoException excecao) {
-        return montar(HttpStatus.FORBIDDEN, CodigoErro.ACESSO_NEGADO, excecao.getMessage(), List.of());
+        return montar(HttpStatus.FORBIDDEN, CodigoErro.ACESSO_NEGADO, traduzir(excecao), List.of());
     }
 
     @ExceptionHandler(NaoEncontradoException.class)
     public ResponseEntity<RespostaErro> naoEncontrado(NaoEncontradoException excecao) {
-        return montar(HttpStatus.NOT_FOUND, CodigoErro.NAO_ENCONTRADO, excecao.getMessage(), List.of());
+        return montar(HttpStatus.NOT_FOUND, CodigoErro.NAO_ENCONTRADO, traduzir(excecao), List.of());
     }
 
     /** URL que não existe (lançada pelo Spring). */
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<RespostaErro> caminhoInexistente(NoResourceFoundException excecao) {
-        return montar(HttpStatus.NOT_FOUND, CodigoErro.NAO_ENCONTRADO, "Recurso não encontrado.", List.of());
+        return montar(HttpStatus.NOT_FOUND, CodigoErro.NAO_ENCONTRADO,
+                traduzir("erro.geral.recurso-nao-encontrado"), List.of());
     }
 
     @ExceptionHandler(ConflitoRegraException.class)
     public ResponseEntity<RespostaErro> conflitoRegra(ConflitoRegraException excecao) {
-        return montar(HttpStatus.CONFLICT, CodigoErro.CONFLITO_REGRA, excecao.getMessage(), List.of());
+        return montar(HttpStatus.CONFLICT, CodigoErro.CONFLITO_REGRA, traduzir(excecao), List.of());
     }
 
     @ExceptionHandler(ConflitoVersaoException.class)
     public ResponseEntity<RespostaErro> conflitoVersao(ConflitoVersaoException excecao) {
-        return montar(HttpStatus.CONFLICT, CodigoErro.CONFLITO_VERSAO, excecao.getMessage(), List.of());
+        return montar(HttpStatus.CONFLICT, CodigoErro.CONFLITO_VERSAO, traduzir(excecao), List.of());
     }
 
     /** Duas transações disputaram a mesma linha com @Version (ADR 0009). */
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     public ResponseEntity<RespostaErro> bloqueioOtimista(ObjectOptimisticLockingFailureException excecao) {
         return montar(HttpStatus.CONFLICT, CodigoErro.CONFLITO_VERSAO,
-                "O registro foi alterado por outra operação. Recarregue e tente novamente.", List.of());
+                traduzir("erro.geral.registro-alterado"), List.of());
     }
 
     /** O banco barrou o dado (UNIQUE, FK, CHECK) e o service não tinha checado antes. */
@@ -136,7 +153,7 @@ public class TratadorGlobalExceptions {
     public ResponseEntity<RespostaErro> violacaoDeIntegridade(DataIntegrityViolationException excecao) {
         log.warn("Violação de integridade no banco", excecao);
         return montar(HttpStatus.CONFLICT, CodigoErro.CONFLITO_REGRA,
-                "Os dados informados violam uma regra de integridade.", List.of());
+                traduzir("erro.geral.violacao-integridade"), List.of());
     }
 
     // =====================================================================
@@ -146,13 +163,13 @@ public class TratadorGlobalExceptions {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<RespostaErro> metodoNaoSuportado(HttpRequestMethodNotSupportedException excecao) {
         return montar(excecao.getStatusCode(), CodigoErro.VALIDACAO,
-                "Método HTTP não suportado para este recurso.", List.of());
+                traduzir("erro.geral.metodo-nao-suportado"), List.of());
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public ResponseEntity<RespostaErro> tipoNaoSuportado(HttpMediaTypeNotSupportedException excecao) {
         return montar(excecao.getStatusCode(), CodigoErro.VALIDACAO,
-                "Tipo de conteúdo não suportado. Use application/json.", List.of());
+                traduzir("erro.geral.tipo-nao-suportado"), List.of());
     }
 
     // =====================================================================
@@ -163,7 +180,7 @@ public class TratadorGlobalExceptions {
     public ResponseEntity<RespostaErro> erroInesperado(Exception excecao) {
         log.error("Erro inesperado", excecao);
         return montar(HttpStatus.INTERNAL_SERVER_ERROR, CodigoErro.ERRO_INTERNO,
-                "Erro interno. Tente novamente mais tarde.", List.of());
+                traduzir("erro.geral.erro-interno"), List.of());
     }
 
     // =====================================================================
@@ -177,10 +194,22 @@ public class TratadorGlobalExceptions {
                 .body(new RespostaErro(codigo, mensagem, erros));
     }
 
+    /**
+     * Procura a chave no MessageSource, no idioma que o DispatcherServlet escolheu para esta
+     * requisição (Accept-Language). Se a chave não existir, devolve a própria chave.
+     */
+    private String traduzir(String chave, Object... argumentos) {
+        return messageSource.getMessage(chave, argumentos, chave, LocaleContextHolder.getLocale());
+    }
+
+    private String traduzir(NegocioException excecao) {
+        return traduzir(excecao.getChave(), excecao.getArgumentos());
+    }
+
     private String mensagemValoresAceitos(Class<?> tipoEnum) {
         String valores = Arrays.stream(tipoEnum.getEnumConstants())
                 .map(Object::toString)
                 .collect(Collectors.joining(", "));
-        return "Valor inválido. Valores aceitos: " + valores + ".";
+        return traduzir("erro.geral.valor-invalido", valores);
     }
 }

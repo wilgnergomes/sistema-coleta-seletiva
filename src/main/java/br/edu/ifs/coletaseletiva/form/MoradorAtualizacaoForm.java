@@ -6,16 +6,16 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record MoradorAtualizacaoForm(
-        @NotBlank(message = "o nome é obrigatório")
-        @Size(max = 80, message = "deve ter no máximo 80 caracteres")
+        @NotBlank(message = "{morador.nome.obrigatorio}")
+        @Size(max = 80, message = "{morador.nome.tamanho-maximo}")
         String nome,
 
-        @NotBlank(message = "o e-mail é obrigatório")
-        @Email(message = "deve ser um endereço de e-mail válido")
-        @Size(max = 150, message = "deve ter no máximo 150 caracteres")
+        @NotBlank(message = "{morador.email.obrigatorio}")
+        @Email(message = "{morador.email.invalido}")
+        @Size(max = 150, message = "{morador.email.tamanho-maximo}")
         String email,
 
-        @Size(max = 20, message = "deve ter no máximo 20 caracteres")
+        @Size(max = 20, message = "{morador.fone.tamanho-maximo}")
         String fone,
 
         SituacaoCadastro situacao

@@ -26,7 +26,7 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class MoradorService {
 
-    private static final String EMAIL_REPETIDO = "Já existe um morador cadastrado com este e-mail.";
+    private static final String EMAIL_REPETIDO = "erro.morador.email-repetido";
 
     private final MoradorRepository repository;
     private final MoradorMapper mapper;
@@ -46,7 +46,7 @@ public class MoradorService {
     @Transactional(readOnly = true)
     public Pagina<MoradorDTO> listar(Ator ator, int page, int size) {
         if (ator.perfil() != Perfil.ADMINISTRADOR) {
-            throw new AcessoNegadoException("Apenas o administrador pode listar moradores.");
+            throw new AcessoNegadoException("erro.morador.listar-somente-administrador");
         }
 
         Pageable paginacao = PageRequest.of(page, size, Sort.by("id"));
@@ -68,7 +68,7 @@ public class MoradorService {
         boolean mudaSituacao = dados.situacao() != null
                 && dados.situacao() != morador.getSituacao();
         if (mudaSituacao && ator.perfil() != Perfil.ADMINISTRADOR) {
-            throw new AcessoNegadoException("Apenas o administrador pode alterar a situação do morador.");
+            throw new AcessoNegadoException("erro.morador.situacao-somente-administrador");
         }
 
         if (repository.existsByEmailAndIdNot(dados.email(), id)) {
@@ -83,7 +83,7 @@ public class MoradorService {
 
     private Morador buscarOuFalhar(Integer id) {
         return repository.findById(id)
-                .orElseThrow(() -> new NaoEncontradoException("Morador não encontrado."));
+                .orElseThrow(() -> new NaoEncontradoException("erro.morador.nao-encontrado"));
     }
 
     /** Administrador acessa qualquer morador; morador só o próprio; operador não acessa. */
@@ -92,13 +92,13 @@ public class MoradorService {
             case ADMINISTRADOR -> { }
             case MORADOR -> {
                 if (!id.equals(ator.usuarioId())) {
-                    throw new AcessoNegadoException("O morador só pode acessar o próprio cadastro.");
+                    throw new AcessoNegadoException("erro.morador.acesso-proprio-cadastro");
                 }
                 repository.findById(ator.usuarioId())
                         .filter(m -> m.getSituacao() == SituacaoCadastro.ATIVO)
-                        .orElseThrow(() -> new AcessoNegadoException("Usuário inexistente ou inativo."));
+                        .orElseThrow(() -> new AcessoNegadoException("erro.morador.usuario-inexistente-ou-inativo"));
             }
-            case OPERADOR -> throw new AcessoNegadoException("O operador não pode acessar cadastros de moradores.");
+            case OPERADOR -> throw new AcessoNegadoException("erro.morador.operador-sem-acesso");
         }
     }
 

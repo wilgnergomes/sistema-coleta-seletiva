@@ -28,14 +28,14 @@ public class AtorArgumentResolver implements HandlerMethodArgumentResolver {
 
         String textoPerfil = requisicao.getHeader(CABECALHO_PERFIL);
         if (textoPerfil == null || textoPerfil.isBlank()) {
-            throw new AcessoNegadoException("Informe o cabeçalho " + CABECALHO_PERFIL + ".");
+            throw new AcessoNegadoException("erro.ator.cabecalho-ausente", CABECALHO_PERFIL);
         }
 
         Perfil perfil;
         try {
             perfil = Perfil.valueOf(textoPerfil.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
-            throw new AcessoNegadoException("Perfil inválido. Use MORADOR, OPERADOR ou ADMINISTRADOR.");
+            throw new AcessoNegadoException("erro.ator.perfil-invalido");
         }
 
         if (perfil == Perfil.ADMINISTRADOR) {
@@ -44,13 +44,13 @@ public class AtorArgumentResolver implements HandlerMethodArgumentResolver {
 
         String textoId = requisicao.getHeader(CABECALHO_USUARIO);
         if (textoId == null || textoId.isBlank()) {
-            throw new AcessoNegadoException("Informe o cabeçalho " + CABECALHO_USUARIO + ".");
+            throw new AcessoNegadoException("erro.ator.cabecalho-ausente", CABECALHO_USUARIO);
         }
 
         try {
             return new Ator(perfil, Integer.valueOf(textoId.trim()));
         } catch (NumberFormatException e) {
-            throw new AcessoNegadoException("O cabeçalho " + CABECALHO_USUARIO + " deve ser um número.");
+            throw new AcessoNegadoException("erro.ator.usuario-id-invalido", CABECALHO_USUARIO);
         }
     }
 }
