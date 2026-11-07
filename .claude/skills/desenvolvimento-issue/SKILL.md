@@ -66,30 +66,52 @@ Aguarde a aprovação antes de iniciar alterações relevantes.
 - Evite funcionalidades especulativas.
 - Não faça refatorações fora do escopo.
 
-Não crie Worktrees nem altere a branch atual
+Não desenvolva diretamente no `main` e não crie Worktrees
 sem autorização.
 
-## 5. Controle do Git
+## 5. Fluxo de Git e GitHub
 
-Preserve alterações preexistentes.
+Siga o fluxo permanente registrado no `CLAUDE.md`:
 
-Não execute automaticamente:
+1. Com a Issue escolhida, atualize o `main` local (`git switch main`
+   e `git pull`) e crie a branch da Issue a partir dele
+   (`tipo/nome-curto`, por exemplo `feat/cadastro-morador`).
+2. Desenvolva, teste e faça commits organizados (`tipo: descrição`),
+   um assunto por commit.
+3. Faça push da branch e abra o PR para `main` com o template do
+   repositório e `Closes #N`.
+4. Revise o PR (critérios de aceite, testes, diff) e apresente um
+   resumo ao estudante.
+5. **Aguarde a autorização explícita do estudante para o merge.**
+6. Depois do merge, confirme que a Issue foi encerrada, atualize o
+   `main`, exclua a branch (local e remota) após confirmar a
+   integração e que não há trabalho não preservado, e deixe o `main`
+   limpo antes da próxima Issue.
 
-- git checkout ou git switch.
-- git stash.
-- git reset.
-- git clean.
-- git commit.
-- git push.
-- merge ou rebase.
+Preserve alterações preexistentes. Você pode executar sem pedir
+permissão: `git switch`, `git pull`, criação de branch, `git add`,
+`git commit` e `git push` da branch da Issue, e abertura do PR.
 
-Não feche Issues nem Pull Requests sem autorização.
+Peça autorização antes de:
+
+- fazer merge de PR;
+- fechar Issue ou PR fora do fluxo (o normal é o `Closes #N`);
+- `git stash`, `git reset`, `git clean`, `rebase`, push forçado e
+  qualquer outra operação que possa perder trabalho;
+- formalizar uma nova decisão arquitetural (ADR).
+
+Se houver alterações locais inesperadas, conflitos ou risco de perda
+de trabalho, interrompa e informe o estudante antes de prosseguir.
+
+Nunca inclua em commits `.claude/settings.local.json`, credenciais
+ou arquivos sensíveis.
 
 ## 6. Verificação
 
 Antes de considerar a Issue concluída:
 
-- Execute os testes pertinentes, após autorização.
+- Execute os testes essenciais (requisitos, regras críticas e
+  funcionamento principal) e corrija os problemas reais.
 - Verifique os critérios de aceitação.
 - Revise o diff.
 - Consulte a matriz de rastreabilidade.

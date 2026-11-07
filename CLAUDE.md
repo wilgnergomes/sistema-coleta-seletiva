@@ -73,6 +73,35 @@ O estudante quer aprender enquanto o projeto é construído.
 - Dê ao estudante partes adequadas ao seu nível para implementar, sem
   impedir o andamento do trabalho.
 
+## Fluxo permanente de Git e GitHub
+
+Cada Issue segue este fluxo (detalhes e comandos manuais em `CONTRIBUTING.md`):
+
+1. Selecionar uma Issue e verificar seus requisitos e critérios de aceite.
+2. Atualizar o `main` local a partir do remoto.
+3. Criar uma branch específica para a Issue, partindo do `main` atualizado.
+4. Desenvolver a funcionalidade respeitando a arquitetura e os contratos existentes.
+5. Executar os testes necessários e corrigir problemas reais.
+6. Fazer commits organizados e coerentes com as alterações.
+7. Fazer push da branch.
+8. Abrir PR para `main`, relacionando a Issue (`Closes #N`), com o template do repositório.
+9. Revisar o PR: critérios de aceite, testes e diff.
+10. **Aguardar a autorização explícita do estudante para o merge.**
+11. Após a aprovação, fazer o merge e confirmar o encerramento da Issue, se todos os critérios foram cumpridos.
+12. Atualizar o `main` local.
+13. Excluir a branch antiga, local e remota, depois de verificar que a integração foi concluída e que não existem alterações não preservadas.
+14. Deixar o `main` atualizado e limpo antes de começar a próxima Issue.
+
+Regras:
+
+- Não desenvolver funcionalidades diretamente no `main`.
+- Não acumular branches de trabalho já integradas, salvo com justificativa técnica.
+- As operações rotineiras deste fluxo (atualizar o `main`, criar branch, commit, push, abrir PR) podem ser conduzidas sem pedir permissão a cada passo.
+- É obrigatório pedir aprovação antes de **merge**, antes de formalizar **novas decisões arquiteturais** (ADR) e antes de operações destrutivas fora do fluxo (`reset`, `clean`, `stash`, `rebase`, push forçado, apagar branch com trabalho não integrado).
+- Se houver alterações locais inesperadas, conflitos ou risco de perda de trabalho, interromper a operação e informar o estudante antes de prosseguir.
+- Não incluir configurações locais (`.claude/settings.local.json`), credenciais ou arquivos sensíveis nos commits.
+- Internacionalização (Issue #35, depois de integrada): cada nova funcionalidade acrescenta suas mensagens em português e inglês na própria branch, sem reabrir a Issue #35, salvo defeito ou requisito pendente da infraestrutura.
+
 ## Gestão contínua de decisões arquiteturais (ADRs)
 
 Os ADRs são documentos evolutivos e devem acompanhar
