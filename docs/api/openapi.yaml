@@ -1078,7 +1078,7 @@ components:
     # ------------------------------------------------ moradores e endereços
     MoradorCriacao:
       type: object
-      description: Corpo do cadastro. Não aceita `situacao`: todo morador nasce ATIVO (ADR 0021).
+      description: 'Corpo do cadastro. Não aceita `situacao`: todo morador nasce ATIVO (ADR 0021).'
       required: [nome, email]
       properties:
         nome: { type: string, minLength: 1, maxLength: 80 }
