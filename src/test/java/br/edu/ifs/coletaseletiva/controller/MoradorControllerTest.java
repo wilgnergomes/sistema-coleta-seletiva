@@ -99,7 +99,7 @@ class MoradorControllerTest {
     @Test
     void rf01_postComEmailRepetidoRetorna409() throws Exception {
         when(service.criar(any(MoradorCriacaoForm.class)))
-                .thenThrow(new ConflitoRegraException("Já existe um morador cadastrado com este e-mail."));
+                .thenThrow(new ConflitoRegraException("erro.morador.email-repetido"));
 
         mockMvc.perform(post("/moradores")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -224,7 +224,7 @@ class MoradorControllerTest {
     @Test
     void rf01_getListaNegadaPeloServiceRetorna403() throws Exception {
         when(service.listar(new Ator(Perfil.MORADOR, 1), 0, 20))
-                .thenThrow(new AcessoNegadoException("Apenas o administrador pode listar moradores."));
+                .thenThrow(new AcessoNegadoException("erro.morador.listar-somente-administrador"));
 
         mockMvc.perform(get("/moradores")
                         .header("X-Perfil", "MORADOR")
@@ -267,7 +267,7 @@ class MoradorControllerTest {
 
     @Test
     void rf01_getPorIdInexistenteRetorna404() throws Exception {
-        when(service.buscar(ADMINISTRADOR, 99)).thenThrow(new NaoEncontradoException("Morador não encontrado."));
+        when(service.buscar(ADMINISTRADOR, 99)).thenThrow(new NaoEncontradoException("erro.morador.nao-encontrado"));
 
         mockMvc.perform(get("/moradores/99").header("X-Perfil", "ADMINISTRADOR"))
                 .andExpect(status().isNotFound())
@@ -284,7 +284,7 @@ class MoradorControllerTest {
     @Test
     void rf01_getPorIdDeOutroMoradorRetorna403() throws Exception {
         when(service.buscar(new Ator(Perfil.MORADOR, 1), 2))
-                .thenThrow(new AcessoNegadoException("O morador só pode acessar o próprio cadastro."));
+                .thenThrow(new AcessoNegadoException("erro.morador.acesso-proprio-cadastro"));
 
         mockMvc.perform(get("/moradores/2")
                         .header("X-Perfil", "MORADOR")
@@ -372,7 +372,7 @@ class MoradorControllerTest {
     @Test
     void rf01_putComEmailDeOutroMoradorRetorna409() throws Exception {
         when(service.atualizar(any(Ator.class), any(Integer.class), any(MoradorAtualizacaoForm.class)))
-                .thenThrow(new ConflitoRegraException("Já existe um morador cadastrado com este e-mail."));
+                .thenThrow(new ConflitoRegraException("erro.morador.email-repetido"));
 
         mockMvc.perform(put("/moradores/1")
                         .header("X-Perfil", "ADMINISTRADOR")

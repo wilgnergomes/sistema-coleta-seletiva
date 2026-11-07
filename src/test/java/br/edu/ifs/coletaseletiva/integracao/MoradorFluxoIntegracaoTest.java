@@ -81,6 +81,21 @@ class MoradorFluxoIntegracaoTest extends IntegracaoBase {
     }
 
     @Test
+    void i18n_emailRepetidoComAcceptLanguageEnSaiEmInglesComOMesmoCodigoEStatus() throws Exception {
+        cadastrar("Maria", "maria@exemplo.com", null);
+
+        mockMvc.perform(post("/moradores")
+                        .header("Accept-Language", "en")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nome": "Outra Maria", "email": "maria@exemplo.com"}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("CONFLITO_REGRA"))
+                .andExpect(jsonPath("$.mensagem").value("A resident with this email is already registered."));
+    }
+
+    @Test
     void rf01_listagemEhPaginadaEOrdenadaPorId() throws Exception {
         int primeiro = cadastrar("Ana", "ana@exemplo.com", null);
         cadastrar("Bia", "bia@exemplo.com", null);
