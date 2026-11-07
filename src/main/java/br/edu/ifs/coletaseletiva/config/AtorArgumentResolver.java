@@ -2,7 +2,6 @@ package br.edu.ifs.coletaseletiva.config;
 
 import br.edu.ifs.coletaseletiva.enumeration.Perfil;
 import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
