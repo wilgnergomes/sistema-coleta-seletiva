@@ -47,10 +47,10 @@ public class MoradorController {
     public Pagina<MoradorDTO> listar(
             @Parameter(hidden = true) Ator ator,
             @RequestParam(defaultValue = "0")
-            @Min(value = 0, message = "deve ser maior ou igual a 0") int page,
+            @Min(value = 0, message = "{paginacao.page.minimo}") int page,
             @RequestParam(defaultValue = "20")
-            @Min(value = 1, message = "deve ser maior ou igual a 1")
-            @Max(value = 100, message = "deve ser no máximo 100") int size) {
+            @Min(value = 1, message = "{paginacao.size.minimo}")
+            @Max(value = 100, message = "{paginacao.size.maximo}") int size) {
 
         return service.listar(ator, page, size);
     }
