@@ -9,7 +9,11 @@ O RNF04 pede que a pesquisa de pontos (RF06), a listagem de solicitações (RF09
 | [`k6-consultas.js`](k6-consultas.js) | Script do k6: fases `aquecimento`, `principal` e `complementar` |
 | [`explain-consultas.sql`](explain-consultas.sql) | `EXPLAIN (ANALYZE, BUFFERS)` das consultas reais |
 | [`resultados-iniciais.md`](resultados-iniciais.md) | Resultados da medição inicial (sem os índices da V3) |
-| [`evidencias/`](evidencias) | Saídas brutas do roteiro definitivo: planos, resumos do k6 (inclusive todas as tentativas da fase complementar) e SQL capturado. `evidencias/historico-roteiro-v1/` guarda a primeira versão do roteiro, só como histórico |
+| [`evidencias/`](evidencias) | Saídas brutas da medição vigente: planos, resumos do k6 (inclusive todas as tentativas da fase complementar), SQL capturado e a avaliação dos índices |
+| [`carga-volume-ampliado.sql`](carga-volume-ampliado.sql) | Volume ampliado **isolado** (100.000 solicitações), só para avaliar planos; fora da medição oficial |
+| [`explain-indices-v3.sql`](explain-indices-v3.sql) | Compara os planos sem e com os índices candidatos, em transação que termina em `ROLLBACK` |
+| [`analise-indices-v3.md`](analise-indices-v3.md) | Candidatos a índice, consulta beneficiada, `EXPLAIN` e recomendação (Issue #33) |
+| [`historico-dataset-original/`](historico-dataset-original) | Medição feita com o dataset original (cada ponto e cada morador com uma única situação). Só histórico: **não comparar** com a base corrigida |
 
 Nada disso roda sozinho: o dataset **não** faz parte do seed `demo` e a aplicação nunca o carrega. Os testes de integração (`DatasetDesempenhoIntegracaoTest`) o carregam em um PostgreSQL descartável do Testcontainers.
 
@@ -18,6 +22,7 @@ Nada disso roda sozinho: o dataset **não** faz parte do seed `demo` e a aplica�
 - **1.000 solicitações** criadas ao longo de 12 meses (nov/2025 a out/2026, fuso America/Sao_Paulo), com 2 a 4 itens cada (3.000 itens) e 2.850 linhas de histórico.
 - **200 moradores** (um endereço cada), **20 pontos** ativos em 8 municípios e 5 bairros, **8 materiais** (KG, L e UN), **101 vínculos** (4 a 6 materiais por ponto) e **20 operadores** (um por ponto).
 - Situações: CONCLUIDA 450, SOLICITADA 150, AGENDADA 150, RECUSADA 100, CANCELADA 100, EM_RECOLHIMENTO 50.
+- **Ponto, morador e situação são independentes**: cada ponto tem as 6 situações e cada morador distribui as 5 solicitações por 5 pontos diferentes (corrigido na Issue #33; o dataset original os correlacionava).
 - **Determinístico**: não usa `random()`. Cada carga gera exatamente os mesmos dados, o que torna os números comparáveis entre medições.
 - Respeita as regras do sistema (RN01, RN03, ADRs 0008, 0010 e 0011): ponto ativo e domiciliar, materiais aceitos pelo ponto, limites do vínculo, unidade e endereço copiados, histórico coerente com a situação atual e quantidade efetiva só nas concluídas.
 - Marcador **PERF**: e-mails `perf.morador.NNN@exemplo.com` e `perf.operador.NN@exemplo.com`, e nomes `PERF ...`. A limpeza e a guarda contra carga repetida usam esse marcador.
@@ -71,7 +76,7 @@ No Git Bash do Windows, prefixe o `docker run` com `MSYS_NO_PATHCONV=1` e use `$
 - O `setup()` **se recusa a medir** se o banco não tiver exatamente 1.000 solicitações, 20 pontos, 200 moradores e 20 operadores `PERF` (protege contra medir o banco errado).
 - Cada requisição verifica o **status 200 e o conteúdo** (lista não vazia quando o filtro garante resultado; o ponto esperado no filtro combinado; 5 itens e total 20 na paginação; o morador sem filtro vê exatamente as suas 5 e o operador as 50 do seu ponto). Uma resposta de erro rápida reprova a medição: o limiar de `checks` exige 100% e o de falhas HTTP exige 0%.
 - Limiares: p95 < 2.000 ms no geral (`etapa:medicao`), em cada tipo de consulta e em **cada variante** (o limiar por variante faz o k6 exportar o p95 de cada uma). Se algum falhar, o k6 termina com código 99.
-- **Instabilidade observada na fase `complementar`:** em 3 de 6 execuções houve `dial: i/o timeout` entre o container do k6 e o host, sem erro registrado na aplicação. A causa é hipótese não comprovada (veja `resultados-iniciais.md`). Se ocorrer, repita a fase e **registre todas as tentativas**.
+- **Instabilidade observada na fase `complementar`:** em 5 de 10 execuções (3 de 6 na base original e 2 de 4 na corrigida) houve `dial: i/o timeout` entre o container do k6 e o host, sem erro registrado na aplicação. A causa é hipótese não comprovada (veja `resultados-iniciais.md`). Se ocorrer, repita a fase e **registre todas as tentativas**.
 
 ### EXPLAIN
 
@@ -86,6 +91,20 @@ As instruções do script são as que o Hibernate enviou de fato ao PostgreSQL, 
 ```bash
 docker exec -i coleta-seletiva-db psql -U coleta -d coleta_desempenho -v ON_ERROR_STOP=1 < docs/desempenho/limpar-dataset.sql
 # ou, para descartar tudo: docker exec coleta-seletiva-db psql -U coleta -d postgres -c "DROP DATABASE coleta_desempenho"
+```
+
+## Volume ampliado (só para avaliar índices)
+
+A medição oficial usa exatamente 1.000 solicitações. Para justificar índices, um **banco descartável separado** recebe o mesmo dataset e depois o volume ampliado (100.000 solicitações), e os planos são comparados sem e com os índices candidatos. **Os resultados deste volume nunca se misturam com os da medição oficial.**
+
+```bash
+docker exec coleta-seletiva-db psql -U coleta -d postgres -c "CREATE DATABASE coleta_desempenho_xl"
+# esquema: V1 e V2 (o Flyway cria o esquema 'coleta' quando a aplicação sobe; aqui, à mão)
+(echo "CREATE SCHEMA coleta; SET search_path TO coleta;"; cat src/main/resources/db/migration/V1__*.sql src/main/resources/db/migration/V2__*.sql)   | docker exec -i coleta-seletiva-db psql -U coleta -d coleta_desempenho_xl
+docker exec -i coleta-seletiva-db psql -U coleta -d coleta_desempenho_xl -v ON_ERROR_STOP=1 < docs/desempenho/carga-dataset.sql
+docker exec -i coleta-seletiva-db psql -U coleta -d coleta_desempenho_xl -v ON_ERROR_STOP=1 < docs/desempenho/carga-volume-ampliado.sql
+docker exec -i coleta-seletiva-db psql -U coleta -d coleta_desempenho_xl -v ON_ERROR_STOP=1 < docs/desempenho/explain-indices-v3.sql
+docker exec coleta-seletiva-db psql -U coleta -d postgres -c "DROP DATABASE coleta_desempenho_xl"
 ```
 
 ## Comparação futura (V3)

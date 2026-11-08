@@ -1,0 +1,1300 @@
+BEGIN
+SET
+SET
+ANALYZE
+######## ETAPA A: SEM índices (volume ampliado, 100.000 solicitações)
+=== RF09 ADMIN situação CONCLUIDA (45% das linhas): página
+                                                                     QUERY PLAN                                                                      
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=4949.45..4955.20 rows=50 width=46) (actual time=10.622..12.596 rows=50 loops=1)
+   Buffers: shared hit=2392
+   ->  Gather Merge  (cost=4949.45..7965.21 rows=26224 width=46) (actual time=10.621..12.592 rows=50 loops=1)
+         Workers Planned: 1
+         Workers Launched: 1
+         Buffers: shared hit=2392
+         ->  Sort  (cost=3949.44..4015.00 rows=26224 width=46) (actual time=8.057..8.059 rows=42 loops=2)
+               Sort Key: sol_dt_criacao DESC, sol_nr_id DESC
+               Sort Method: top-N heapsort  Memory: 30kB
+               Buffers: shared hit=2392
+               Worker 0:  Sort Method: top-N heapsort  Memory: 31kB
+               ->  Parallel Seq Scan on sol_solicitacao s1_0  (cost=0.00..3078.29 rows=26224 width=46) (actual time=0.008..5.482 rows=22500 loops=2)
+                     Filter: ((sol_tx_situacao)::text = 'CONCLUIDA'::text)
+                     Rows Removed by Filter: 27500
+                     Buffers: shared hit=2343
+ Planning:
+   Buffers: shared hit=52
+ Planning Time: 0.135 ms
+ Execution Time: 12.616 ms
+(19 rows)
+
+=== RF09 ADMIN situação EM_RECOLHIMENTO (5%): página
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=3757.34..3757.46 rows=50 width=46) (actual time=6.852..6.857 rows=50 loops=1)
+   Buffers: shared hit=2343
+   ->  Sort  (cost=3757.34..3769.70 rows=4947 width=46) (actual time=6.851..6.854 rows=50 loops=1)
+         Sort Key: sol_dt_criacao DESC, sol_nr_id DESC
+         Sort Method: top-N heapsort  Memory: 34kB
+         Buffers: shared hit=2343
+         ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..3593.00 rows=4947 width=46) (actual time=0.006..6.196 rows=5000 loops=1)
+               Filter: ((sol_tx_situacao)::text = 'EM_RECOLHIMENTO'::text)
+               Rows Removed by Filter: 95000
+               Buffers: shared hit=2343
+ Planning Time: 0.036 ms
+ Execution Time: 6.866 ms
+(12 rows)
+
+=== RF09 ADMIN situação EM_RECOLHIMENTO (5%): contagem
+                                                         QUERY PLAN                                                          
+-----------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=3605.37..3605.38 rows=1 width=8) (actual time=5.995..5.995 rows=1 loops=1)
+   Buffers: shared hit=2343
+   ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..3593.00 rows=4947 width=4) (actual time=0.005..5.701 rows=5000 loops=1)
+         Filter: ((sol_tx_situacao)::text = 'EM_RECOLHIMENTO'::text)
+         Rows Removed by Filter: 95000
+         Buffers: shared hit=2343
+ Planning:
+   Buffers: shared hit=6
+ Planning Time: 0.040 ms
+ Execution Time: 6.006 ms
+(10 rows)
+
+=== RF09 ADMIN por ponto: página
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=3760.41..3760.53 rows=50 width=46) (actual time=5.472..5.478 rows=50 loops=1)
+   Buffers: shared hit=2344
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.009..0.009 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.003..0.006 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   ->  Sort  (cost=3759.10..3771.60 rows=5000 width=46) (actual time=5.472..5.474 rows=50 loops=1)
+         Sort Key: s1_0.sol_dt_criacao DESC, s1_0.sol_nr_id DESC
+         Sort Method: top-N heapsort  Memory: 30kB
+         Buffers: shared hit=2344
+         ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..3593.00 rows=5000 width=46) (actual time=0.014..4.813 rows=5000 loops=1)
+               Filter: (poc_nr_id = (InitPlan 1).col1)
+               Rows Removed by Filter: 95000
+               Buffers: shared hit=2344
+ Planning:
+   Buffers: shared hit=25
+ Planning Time: 0.145 ms
+ Execution Time: 5.492 ms
+(20 rows)
+
+=== RF09 ADMIN por ponto: contagem
+                                                         QUERY PLAN                                                          
+-----------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=3606.81..3606.82 rows=1 width=8) (actual time=5.022..5.022 rows=1 loops=1)
+   Buffers: shared hit=2344
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.007..0.007 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.002..0.004 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..3593.00 rows=5000 width=4) (actual time=0.012..4.772 rows=5000 loops=1)
+         Filter: (poc_nr_id = (InitPlan 1).col1)
+         Rows Removed by Filter: 95000
+         Buffers: shared hit=2344
+ Planning Time: 0.084 ms
+ Execution Time: 5.036 ms
+(14 rows)
+
+=== RF09 ADMIN por período (2 meses): página
+                                                                                QUERY PLAN                                                                                
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=4383.71..4383.84 rows=50 width=46) (actual time=8.815..8.821 rows=50 loops=1)
+   Buffers: shared hit=2343
+   ->  Sort  (cost=4383.71..4424.40 rows=16277 width=46) (actual time=8.815..8.817 rows=50 loops=1)
+         Sort Key: sol_dt_criacao DESC, sol_nr_id DESC
+         Sort Method: top-N heapsort  Memory: 31kB
+         Buffers: shared hit=2343
+         ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..3843.00 rows=16277 width=46) (actual time=0.004..6.808 rows=16300 loops=1)
+               Filter: ((sol_dt_criacao >= '2026-01-01 00:00:00-03'::timestamp with time zone) AND (sol_dt_criacao < '2026-03-01 00:00:00-03'::timestamp with time zone))
+               Rows Removed by Filter: 83700
+               Buffers: shared hit=2343
+ Planning:
+   Buffers: shared hit=3
+ Planning Time: 0.041 ms
+ Execution Time: 8.829 ms
+(14 rows)
+
+=== RF09 ADMIN por período (2 meses): contagem
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=3883.69..3883.70 rows=1 width=8) (actual time=6.958..6.959 rows=1 loops=1)
+   Buffers: shared hit=2343
+   ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..3843.00 rows=16277 width=4) (actual time=0.005..6.221 rows=16300 loops=1)
+         Filter: ((sol_dt_criacao >= '2026-01-01 00:00:00-03'::timestamp with time zone) AND (sol_dt_criacao < '2026-03-01 00:00:00-03'::timestamp with time zone))
+         Rows Removed by Filter: 83700
+         Buffers: shared hit=2343
+ Planning Time: 0.057 ms
+ Execution Time: 6.968 ms
+(8 rows)
+
+=== RF09 ADMIN sem filtro, página 3 de 100
+                                                                     QUERY PLAN                                                                      
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=6802.20..6813.70 rows=100 width=46) (actual time=11.763..13.539 rows=100 loops=1)
+   Buffers: shared hit=2387
+   ->  Gather Merge  (cost=6767.70..13532.46 rows=58824 width=46) (actual time=11.717..13.522 rows=400 loops=1)
+         Workers Planned: 1
+         Workers Launched: 1
+         Buffers: shared hit=2387
+         ->  Sort  (cost=5767.69..5914.75 rows=58824 width=46) (actual time=10.223..10.237 rows=319 loops=2)
+               Sort Key: sol_dt_criacao DESC, sol_nr_id DESC
+               Sort Method: top-N heapsort  Memory: 76kB
+               Buffers: shared hit=2387
+               Worker 0:  Sort Method: top-N heapsort  Memory: 78kB
+               ->  Parallel Seq Scan on sol_solicitacao s1_0  (cost=0.00..2931.24 rows=58824 width=46) (actual time=0.006..4.438 rows=50000 loops=2)
+                     Buffers: shared hit=2343
+ Planning Time: 0.030 ms
+ Execution Time: 13.563 ms
+(15 rows)
+
+=== RF09 ADMIN sem filtro: contagem
+                                                                           QUERY PLAN                                                                            
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=2924.29..2924.30 rows=1 width=8) (actual time=11.207..11.207 rows=1 loops=1)
+   Buffers: shared hit=284
+   ->  Index Only Scan using pk_sol_solicitacao on sol_solicitacao s1_0  (cost=0.29..2674.29 rows=100000 width=4) (actual time=0.023..6.928 rows=100000 loops=1)
+         Heap Fetches: 106
+         Buffers: shared hit=284
+ Planning Time: 0.026 ms
+ Execution Time: 11.216 ms
+(7 rows)
+
+=== RF09 MORADOR sem filtro: página (500 linhas do morador)
+                                                                     QUERY PLAN                                                                      
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=3609.85..3609.98 rows=50 width=46) (actual time=4.319..4.325 rows=50 loops=1)
+   Buffers: shared hit=2345
+   InitPlan 2
+     ->  Result  (cost=0.23..0.24 rows=1 width=4) (actual time=0.007..0.008 rows=1 loops=1)
+           Buffers: shared hit=2
+           InitPlan 1
+             ->  Limit  (cost=0.14..0.23 rows=1 width=4) (actual time=0.006..0.007 rows=1 loops=1)
+                   Buffers: shared hit=2
+                   ->  Index Scan using pk_mor_morador on mor_morador  (cost=0.14..17.64 rows=200 width=4) (actual time=0.006..0.006 rows=1 loops=1)
+                         Filter: ((mor_tx_email)::text ~~ 'perf.morador.%'::text)
+                         Buffers: shared hit=2
+   ->  Sort  (cost=3609.61..3610.86 rows=500 width=46) (actual time=4.318..4.321 rows=50 loops=1)
+         Sort Key: s1_0.sol_dt_criacao DESC, s1_0.sol_nr_id DESC
+         Sort Method: top-N heapsort  Memory: 31kB
+         Buffers: shared hit=2345
+         ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..3593.00 rows=500 width=46) (actual time=0.012..4.189 rows=500 loops=1)
+               Filter: (mor_nr_id = (InitPlan 2).col1)
+               Rows Removed by Filter: 99500
+               Buffers: shared hit=2345
+ Planning:
+   Buffers: shared hit=19
+ Planning Time: 0.130 ms
+ Execution Time: 4.337 ms
+(23 rows)
+
+=== RF09 MORADOR sem filtro: contagem
+                                                                     QUERY PLAN                                                                      
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=3594.49..3594.50 rows=1 width=8) (actual time=4.294..4.295 rows=1 loops=1)
+   Buffers: shared hit=2345
+   InitPlan 2
+     ->  Result  (cost=0.23..0.24 rows=1 width=4) (actual time=0.006..0.007 rows=1 loops=1)
+           Buffers: shared hit=2
+           InitPlan 1
+             ->  Limit  (cost=0.14..0.23 rows=1 width=4) (actual time=0.006..0.006 rows=1 loops=1)
+                   Buffers: shared hit=2
+                   ->  Index Scan using pk_mor_morador on mor_morador  (cost=0.14..17.64 rows=200 width=4) (actual time=0.005..0.005 rows=1 loops=1)
+                         Filter: ((mor_tx_email)::text ~~ 'perf.morador.%'::text)
+                         Buffers: shared hit=2
+   ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..3593.00 rows=500 width=4) (actual time=0.011..4.263 rows=500 loops=1)
+         Filter: (mor_nr_id = (InitPlan 2).col1)
+         Rows Removed by Filter: 99500
+         Buffers: shared hit=2345
+ Planning Time: 0.073 ms
+ Execution Time: 4.308 ms
+(17 rows)
+
+=== RF09 MORADOR por situação: página
+                                                                     QUERY PLAN                                                                      
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=3845.58..3845.70 rows=50 width=46) (actual time=5.767..5.768 rows=0 loops=1)
+   Buffers: shared hit=2345
+   InitPlan 2
+     ->  Result  (cost=0.23..0.24 rows=1 width=4) (actual time=0.006..0.007 rows=1 loops=1)
+           Buffers: shared hit=2
+           InitPlan 1
+             ->  Limit  (cost=0.14..0.23 rows=1 width=4) (actual time=0.006..0.006 rows=1 loops=1)
+                   Buffers: shared hit=2
+                   ->  Index Scan using pk_mor_morador on mor_morador  (cost=0.14..17.64 rows=200 width=4) (actual time=0.005..0.006 rows=1 loops=1)
+                         Filter: ((mor_tx_email)::text ~~ 'perf.morador.%'::text)
+                         Buffers: shared hit=2
+   ->  Sort  (cost=3845.34..3845.52 rows=75 width=46) (actual time=5.767..5.767 rows=0 loops=1)
+         Sort Key: s1_0.sol_dt_criacao DESC, s1_0.sol_nr_id DESC
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=2345
+         ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..3843.00 rows=75 width=46) (actual time=5.765..5.765 rows=0 loops=1)
+               Filter: (((sol_tx_situacao)::text = 'AGENDADA'::text) AND (mor_nr_id = (InitPlan 2).col1))
+               Rows Removed by Filter: 100000
+               Buffers: shared hit=2345
+ Planning Time: 0.088 ms
+ Execution Time: 5.780 ms
+(21 rows)
+
+=== RF09 OPERADOR sem filtro: página (5.000 linhas do ponto)
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=3760.41..3760.53 rows=50 width=46) (actual time=5.342..5.348 rows=50 loops=1)
+   Buffers: shared hit=2344
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.007..0.008 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.002..0.005 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   ->  Sort  (cost=3759.10..3771.60 rows=5000 width=46) (actual time=5.342..5.344 rows=50 loops=1)
+         Sort Key: s1_0.sol_dt_criacao DESC, s1_0.sol_nr_id DESC
+         Sort Method: top-N heapsort  Memory: 30kB
+         Buffers: shared hit=2344
+         ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..3593.00 rows=5000 width=46) (actual time=0.012..4.732 rows=5000 loops=1)
+               Filter: (poc_nr_id = (InitPlan 1).col1)
+               Rows Removed by Filter: 95000
+               Buffers: shared hit=2344
+ Planning Time: 0.097 ms
+ Execution Time: 5.362 ms
+(18 rows)
+
+=== RF09 OPERADOR por situação: página
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=3918.36..3918.48 rows=50 width=46) (actual time=6.867..6.873 rows=50 loops=1)
+   Buffers: shared hit=2344
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.007..0.007 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.002..0.004 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   ->  Sort  (cost=3917.05..3922.62 rows=2229 width=46) (actual time=6.867..6.869 rows=50 loops=1)
+         Sort Key: s1_0.sol_dt_criacao DESC, s1_0.sol_nr_id DESC
+         Sort Method: top-N heapsort  Memory: 30kB
+         Buffers: shared hit=2344
+         ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..3843.00 rows=2229 width=46) (actual time=0.012..6.586 rows=2100 loops=1)
+               Filter: (((sol_tx_situacao)::text = 'CONCLUIDA'::text) AND (poc_nr_id = (InitPlan 1).col1))
+               Rows Removed by Filter: 97900
+               Buffers: shared hit=2344
+ Planning Time: 0.094 ms
+ Execution Time: 6.886 ms
+(18 rows)
+
+=== RF09 OPERADOR por situação: contagem
+                                                         QUERY PLAN                                                          
+-----------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=3849.88..3849.89 rows=1 width=8) (actual time=6.708..6.709 rows=1 loops=1)
+   Buffers: shared hit=2344
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.007..0.008 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.002..0.005 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..3843.00 rows=2229 width=4) (actual time=0.012..6.598 rows=2100 loops=1)
+         Filter: (((sol_tx_situacao)::text = 'CONCLUIDA'::text) AND (poc_nr_id = (InitPlan 1).col1))
+         Rows Removed by Filter: 97900
+         Buffers: shared hit=2344
+ Planning Time: 0.093 ms
+ Execution Time: 6.723 ms
+(14 rows)
+
+=== RF09 OPERADOR por período: página
+                                                                                                  QUERY PLAN                                                                                                  
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=4121.35..4121.48 rows=50 width=46) (actual time=6.313..6.319 rows=50 loops=1)
+   Buffers: shared hit=2344
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.007..0.007 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.002..0.004 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   ->  Sort  (cost=4120.04..4122.08 rows=814 width=46) (actual time=6.312..6.315 rows=50 loops=1)
+         Sort Key: s1_0.sol_dt_criacao DESC, s1_0.sol_nr_id DESC
+         Sort Method: top-N heapsort  Memory: 31kB
+         Buffers: shared hit=2344
+         ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..4093.00 rows=814 width=46) (actual time=0.019..6.208 rows=600 loops=1)
+               Filter: ((sol_dt_criacao >= '2026-01-01 00:00:00-03'::timestamp with time zone) AND (sol_dt_criacao < '2026-03-01 00:00:00-03'::timestamp with time zone) AND (poc_nr_id = (InitPlan 1).col1))
+               Rows Removed by Filter: 99400
+               Buffers: shared hit=2344
+ Planning Time: 0.105 ms
+ Execution Time: 6.332 ms
+(18 rows)
+
+=== RF15 solicitações por situação, sem período
+                                                            QUERY PLAN                                                            
+----------------------------------------------------------------------------------------------------------------------------------
+ HashAggregate  (cost=3843.00..3843.06 rows=6 width=18) (actual time=19.003..19.004 rows=6 loops=1)
+   Group Key: sol_tx_situacao
+   Batches: 1  Memory Usage: 24kB
+   Buffers: shared hit=2343
+   ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..3343.00 rows=100000 width=14) (actual time=0.003..4.453 rows=100000 loops=1)
+         Buffers: shared hit=2343
+ Planning Time: 0.032 ms
+ Execution Time: 19.016 ms
+(8 rows)
+
+=== RF15 solicitações por situação, com período
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ HashAggregate  (cost=3924.39..3924.45 rows=6 width=18) (actual time=9.474..9.476 rows=6 loops=1)
+   Group Key: sol_tx_situacao
+   Batches: 1  Memory Usage: 24kB
+   Buffers: shared hit=2343
+   ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..3843.00 rows=16277 width=14) (actual time=0.005..7.161 rows=16300 loops=1)
+         Filter: ((sol_dt_criacao >= '2026-01-01 00:00:00-03'::timestamp with time zone) AND (sol_dt_criacao < '2026-03-01 00:00:00-03'::timestamp with time zone))
+         Rows Removed by Filter: 83700
+         Buffers: shared hit=2343
+ Planning Time: 0.053 ms
+ Execution Time: 9.488 ms
+(10 rows)
+
+=== RF15 quantidades recolhidas, sem período
+                                                                                    QUERY PLAN                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=8639.32..8639.38 rows=24 width=52) (actual time=48.535..51.210 rows=8 loops=1)
+   Sort Key: m1_0.mat_tx_nome, is1_0.iso_tx_copia_unidade
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=4211
+   ->  Finalize GroupAggregate  (cost=8635.47..8638.77 rows=24 width=52) (actual time=48.520..51.203 rows=8 loops=1)
+         Group Key: is1_0.iso_tx_copia_unidade, m1_0.mat_nr_id
+         Buffers: shared hit=4211
+         ->  Gather Merge  (cost=8635.47..8638.23 rows=24 width=52) (actual time=48.514..51.191 rows=16 loops=1)
+               Workers Planned: 1
+               Workers Launched: 1
+               Buffers: shared hit=4211
+               ->  Sort  (cost=7635.46..7635.52 rows=24 width=52) (actual time=46.816..46.818 rows=8 loops=2)
+                     Sort Key: is1_0.iso_tx_copia_unidade, m1_0.mat_nr_id
+                     Sort Method: quicksort  Memory: 25kB
+                     Buffers: shared hit=4211
+                     Worker 0:  Sort Method: quicksort  Memory: 25kB
+                     ->  Partial HashAggregate  (cost=7634.61..7634.91 rows=24 width=52) (actual time=46.786..46.790 rows=8 loops=2)
+                           Group Key: is1_0.iso_tx_copia_unidade, m1_0.mat_nr_id
+                           Batches: 1  Memory Usage: 24kB
+                           Buffers: shared hit=4196
+                           Worker 0:  Batches: 1  Memory Usage: 24kB
+                           ->  Hash Join  (cost=3407.27..7369.75 rows=35315 width=25) (actual time=7.923..34.628 rows=67550 loops=2)
+                                 Hash Cond: (is1_0.mat_nr_id = m1_0.mat_nr_id)
+                                 Buffers: shared hit=4196
+                                 ->  Parallel Hash Join  (cost=3406.09..7226.76 rows=35315 width=11) (actual time=7.891..25.842 rows=67550 loops=2)
+                                       Hash Cond: (is1_0.sol_nr_id = s1_0.sol_nr_id)
+                                       Buffers: shared hit=4191
+                                       ->  Parallel Seq Scan on iso_item_solicitacao is1_0  (cost=0.00..3612.71 rows=79218 width=15) (actual time=0.006..8.769 rows=67550 loops=2)
+                                             Filter: (iso_nr_quantidade_efetiva IS NOT NULL)
+                                             Rows Removed by Filter: 82450
+                                             Buffers: shared hit=1848
+                                       ->  Parallel Hash  (cost=3078.29..3078.29 rows=26224 width=4) (actual time=7.518..7.519 rows=22500 loops=2)
+                                             Buckets: 65536  Batches: 1  Memory Usage: 2304kB
+                                             Buffers: shared hit=2343
+                                             ->  Parallel Seq Scan on sol_solicitacao s1_0  (cost=0.00..3078.29 rows=26224 width=4) (actual time=0.006..4.261 rows=22500 loops=2)
+                                                   Filter: ((sol_tx_situacao)::text = 'CONCLUIDA'::text)
+                                                   Rows Removed by Filter: 27500
+                                                   Buffers: shared hit=2343
+                                 ->  Hash  (cost=1.08..1.08 rows=8 width=18) (actual time=0.016..0.016 rows=8 loops=2)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                       Buffers: shared hit=2
+                                       ->  Seq Scan on mat_material m1_0  (cost=0.00..1.08 rows=8 width=18) (actual time=0.010..0.011 rows=8 loops=2)
+                                             Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=90
+ Planning Time: 0.336 ms
+ Execution Time: 51.242 ms
+(47 rows)
+
+=== RF15 quantidades recolhidas, com período de conclusão
+                                                                                                                             QUERY PLAN                                                                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=8249.37..8249.43 rows=24 width=52) (actual time=24.714..27.018 rows=8 loops=1)
+   Sort Key: m1_0.mat_tx_nome, is1_0.iso_tx_copia_unidade
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=4211
+   ->  Finalize GroupAggregate  (cost=8245.52..8248.82 rows=24 width=52) (actual time=24.699..27.011 rows=8 loops=1)
+         Group Key: is1_0.iso_tx_copia_unidade, m1_0.mat_nr_id
+         Buffers: shared hit=4211
+         ->  Gather Merge  (cost=8245.52..8248.28 rows=24 width=52) (actual time=24.693..26.999 rows=16 loops=1)
+               Workers Planned: 1
+               Workers Launched: 1
+               Buffers: shared hit=4211
+               ->  Sort  (cost=7245.51..7245.57 rows=24 width=52) (actual time=22.889..22.891 rows=8 loops=2)
+                     Sort Key: is1_0.iso_tx_copia_unidade, m1_0.mat_nr_id
+                     Sort Method: quicksort  Memory: 25kB
+                     Buffers: shared hit=4211
+                     Worker 0:  Sort Method: quicksort  Memory: 25kB
+                     ->  Partial HashAggregate  (cost=7244.66..7244.96 rows=24 width=52) (actual time=22.858..22.862 rows=8 loops=2)
+                           Group Key: is1_0.iso_tx_copia_unidade, m1_0.mat_nr_id
+                           Batches: 1  Memory Usage: 24kB
+                           Buffers: shared hit=4196
+                           Worker 0:  Batches: 1  Memory Usage: 24kB
+                           ->  Hash Join  (cost=3396.08..7226.48 rows=2424 width=25) (actual time=5.699..20.765 rows=10600 loops=2)
+                                 Hash Cond: (is1_0.mat_nr_id = m1_0.mat_nr_id)
+                                 Buffers: shared hit=4196
+                                 ->  Parallel Hash Join  (cost=3394.90..7215.56 rows=2424 width=11) (actual time=5.669..19.288 rows=10600 loops=2)
+                                       Hash Cond: (is1_0.sol_nr_id = s1_0.sol_nr_id)
+                                       Buffers: shared hit=4191
+                                       ->  Parallel Seq Scan on iso_item_solicitacao is1_0  (cost=0.00..3612.71 rows=79218 width=15) (actual time=0.006..8.332 rows=67550 loops=2)
+                                             Filter: (iso_nr_quantidade_efetiva IS NOT NULL)
+                                             Rows Removed by Filter: 82450
+                                             Buffers: shared hit=1848
+                                       ->  Parallel Hash  (cost=3372.41..3372.41 rows=1799 width=4) (actual time=5.409..5.409 rows=3500 loops=2)
+                                             Buckets: 8192 (originally 4096)  Batches: 1 (originally 1)  Memory Usage: 384kB
+                                             Buffers: shared hit=2343
+                                             ->  Parallel Seq Scan on sol_solicitacao s1_0  (cost=0.00..3372.41 rows=1799 width=4) (actual time=0.008..4.743 rows=3500 loops=2)
+                                                   Filter: ((sol_dt_conclusao >= '2026-01-01 00:00:00-03'::timestamp with time zone) AND (sol_dt_conclusao < '2026-03-01 00:00:00-03'::timestamp with time zone) AND ((sol_tx_situacao)::text = 'CONCLUIDA'::text))
+                                                   Rows Removed by Filter: 46500
+                                                   Buffers: shared hit=2343
+                                 ->  Hash  (cost=1.08..1.08 rows=8 width=18) (actual time=0.016..0.016 rows=8 loops=2)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                       Buffers: shared hit=2
+                                       ->  Seq Scan on mat_material m1_0  (cost=0.00..1.08 rows=8 width=18) (actual time=0.010..0.011 rows=8 loops=2)
+                                             Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=29
+ Planning Time: 0.292 ms
+ Execution Time: 27.051 ms
+(47 rows)
+
+=== Detalhe da solicitação: histórico (HistoricoRepository.findBySolicitacaoIdOrderById)
+                                                             QUERY PLAN                                                              
+-------------------------------------------------------------------------------------------------------------------------------------
+ Gather Merge  (cost=5577.41..5577.64 rows=2 width=23) (actual time=6.325..8.174 rows=4 loops=1)
+   Workers Planned: 2
+   Workers Launched: 2
+   Buffers: shared hit=3165
+   ->  Sort  (cost=4577.39..4577.39 rows=1 width=23) (actual time=4.373..4.374 rows=1 loops=3)
+         Sort Key: his_nr_id
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=3165
+         Worker 0:  Sort Method: quicksort  Memory: 25kB
+         Worker 1:  Sort Method: quicksort  Memory: 25kB
+         ->  Parallel Seq Scan on his_historico h1_0  (cost=0.00..4577.38 rows=1 width=23) (actual time=3.602..4.340 rows=1 loops=3)
+               Filter: (sol_nr_id = 50000)
+               Rows Removed by Filter: 94999
+               Buffers: shared hit=3093
+ Planning:
+   Buffers: shared hit=16
+ Planning Time: 0.085 ms
+ Execution Time: 8.184 ms
+(18 rows)
+
+=== RN05: abertas do ponto com item do material (SolicitacaoRepository.contarPorPontoESituacaoComMaterial)
+                                                                                   QUERY PLAN                                                                                   
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=6791.76..6791.77 rows=1 width=8) (actual time=7.969..10.063 rows=1 loops=1)
+   Buffers: shared hit=7458
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.012..0.012 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.005..0.009 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   InitPlan 2
+     ->  Aggregate  (cost=1.10..1.11 rows=1 width=4) (actual time=0.004..0.004 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on mat_material  (cost=0.00..1.08 rows=8 width=4) (actual time=0.002..0.003 rows=8 loops=1)
+                 Buffers: shared hit=1
+   ->  Gather Merge  (cost=6712.70..6787.69 rows=658 width=4) (actual time=7.839..10.008 rows=800 loops=1)
+         Workers Planned: 1
+         Workers Launched: 1
+         Buffers: shared hit=7458
+         ->  Sort  (cost=5712.69..5713.66 rows=387 width=4) (actual time=5.786..5.802 rows=400 loops=2)
+               Sort Key: s.sol_nr_id
+               Sort Method: quicksort  Memory: 25kB
+               Buffers: shared hit=7456
+               Worker 0:  Sort Method: quicksort  Memory: 25kB
+               ->  Nested Loop  (cost=0.42..5696.06 rows=387 width=4) (actual time=0.046..5.751 rows=400 loops=2)
+                     Buffers: shared hit=7449
+                     ->  Parallel Seq Scan on sol_solicitacao s  (cost=0.00..3298.88 rows=1032 width=4) (actual time=0.017..3.961 rows=850 loops=2)
+                           Filter: ((poc_nr_id = (InitPlan 1).col1) AND ((sol_tx_situacao)::text = ANY ('{SOLICITADA,AGENDADA,EM_RECOLHIMENTO}'::text[])))
+                           Rows Removed by Filter: 49150
+                           Buffers: shared hit=2346
+                     ->  Index Only Scan using pk_iso_item_solicitacao on iso_item_solicitacao i  (cost=0.42..2.32 rows=1 width=4) (actual time=0.002..0.002 rows=0 loops=1700)
+                           Index Cond: ((sol_nr_id = s.sol_nr_id) AND (mat_nr_id = (InitPlan 2).col1))
+                           Heap Fetches: 0
+                           Buffers: shared hit=5103
+ Planning:
+   Buffers: shared hit=20
+ Planning Time: 0.260 ms
+ Execution Time: 10.088 ms
+(36 rows)
+
+=== RN05: abertas do ponto (countByPontoIdAndSituacaoIn)
+                                                               QUERY PLAN                                                                
+-----------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=3973.70..3973.71 rows=1 width=8) (actual time=5.477..5.478 rows=1 loops=1)
+   Buffers: shared hit=2344
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.007..0.007 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.002..0.005 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   ->  Seq Scan on sol_solicitacao s  (cost=0.00..3968.00 rows=1755 width=4) (actual time=0.017..5.344 rows=1700 loops=1)
+         Filter: ((poc_nr_id = (InitPlan 1).col1) AND ((sol_tx_situacao)::text = ANY ('{SOLICITADA,AGENDADA,EM_RECOLHIMENTO}'::text[])))
+         Rows Removed by Filter: 98300
+         Buffers: shared hit=2344
+ Planning Time: 0.098 ms
+ Execution Time: 5.491 ms
+(14 rows)
+
+=== ADR 0013: itens do material (MaterialRepository.contarItensDeSolicitacao)
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=5110.25..5110.26 rows=1 width=8) (actual time=9.200..10.804 rows=1 loops=1)
+   Buffers: shared hit=1849
+   InitPlan 1
+     ->  Aggregate  (cost=1.10..1.11 rows=1 width=4) (actual time=0.006..0.006 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on mat_material  (cost=0.00..1.08 rows=8 width=4) (actual time=0.003..0.004 rows=8 loops=1)
+                 Buffers: shared hit=1
+   ->  Gather  (cost=5109.03..5109.14 rows=1 width=8) (actual time=9.099..10.800 rows=2 loops=1)
+         Workers Planned: 1
+         Workers Launched: 1
+         Buffers: shared hit=1849
+         ->  Partial Aggregate  (cost=4109.03..4109.04 rows=1 width=8) (actual time=7.348..7.349 rows=1 loops=2)
+               Buffers: shared hit=1848
+               ->  Parallel Seq Scan on iso_item_solicitacao  (cost=0.00..4053.88 rows=22059 width=0) (actual time=0.005..6.443 rows=21500 loops=2)
+                     Filter: (mat_nr_id = (InitPlan 1).col1)
+                     Rows Removed by Filter: 128500
+                     Buffers: shared hit=1848
+ Planning:
+   Buffers: shared hit=3
+ Planning Time: 0.068 ms
+ Execution Time: 10.819 ms
+(21 rows)
+
+=== ADR 0013: vínculos do material (MaterialRepository.contarVinculosComPontos)
+                                                     QUERY PLAN                                                      
+---------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=3.41..3.42 rows=1 width=8) (actual time=0.016..0.017 rows=1 loops=1)
+   Buffers: shared hit=2
+   InitPlan 1
+     ->  Aggregate  (cost=1.10..1.11 rows=1 width=4) (actual time=0.004..0.004 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on mat_material  (cost=0.00..1.08 rows=8 width=4) (actual time=0.002..0.002 rows=8 loops=1)
+                 Buffers: shared hit=1
+   ->  Seq Scan on mac_material_aceito  (cost=0.00..2.26 rows=13 width=0) (actual time=0.010..0.015 rows=14 loops=1)
+         Filter: (mat_nr_id = (InitPlan 1).col1)
+         Rows Removed by Filter: 87
+         Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=10
+ Planning Time: 0.078 ms
+ Execution Time: 0.028 ms
+(15 rows)
+
+######## ETAPA B: criação dos índices candidatos
+--- I1 idx_sol_poc_criacao
+CREATE INDEX
+--- I2 idx_sol_mor_criacao
+CREATE INDEX
+--- I3 idx_sol_criacao
+CREATE INDEX
+--- I4 idx_sol_situacao_criacao
+CREATE INDEX
+--- I5 idx_sol_conclusao (parcial: CONCLUIDA)
+CREATE INDEX
+--- I6 idx_iso_mat
+CREATE INDEX
+--- I7 idx_his_sol
+CREATE INDEX
+--- I8 idx_mac_mat
+CREATE INDEX
+ANALYZE
+######## ETAPA B: COM os índices candidatos I1 a I8
+=== RF09 ADMIN situação CONCLUIDA (45% das linhas): página
+                                                                          QUERY PLAN                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.42..12.49 rows=50 width=46) (actual time=0.036..0.074 rows=50 loops=1)
+   Buffers: shared hit=50 read=3
+   ->  Index Scan using idx_sol_situacao_criacao on sol_solicitacao s1_0  (cost=0.42..10902.82 rows=45170 width=46) (actual time=0.035..0.069 rows=50 loops=1)
+         Index Cond: ((sol_tx_situacao)::text = 'CONCLUIDA'::text)
+         Buffers: shared hit=50 read=3
+ Planning:
+   Buffers: shared hit=27 read=5
+ Planning Time: 0.176 ms
+ Execution Time: 0.085 ms
+(9 rows)
+
+=== RF09 ADMIN situação EM_RECOLHIMENTO (5%): página
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.42..92.02 rows=50 width=46) (actual time=0.036..0.076 rows=50 loops=1)
+   Buffers: shared hit=51 read=2
+   ->  Index Scan using idx_sol_situacao_criacao on sol_solicitacao s1_0  (cost=0.42..9178.79 rows=5010 width=46) (actual time=0.036..0.072 rows=50 loops=1)
+         Index Cond: ((sol_tx_situacao)::text = 'EM_RECOLHIMENTO'::text)
+         Buffers: shared hit=51 read=2
+ Planning Time: 0.056 ms
+ Execution Time: 0.085 ms
+(7 rows)
+
+=== RF09 ADMIN situação EM_RECOLHIMENTO (5%): contagem
+                                                                            QUERY PLAN                                                                            
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=404.64..404.65 rows=1 width=8) (actual time=0.773..0.773 rows=1 loops=1)
+   Buffers: shared hit=8 read=30
+   ->  Index Only Scan using idx_sol_situacao_criacao on sol_solicitacao s1_0  (cost=0.42..392.12 rows=5010 width=4) (actual time=0.012..0.556 rows=5000 loops=1)
+         Index Cond: (sol_tx_situacao = 'EM_RECOLHIMENTO'::text)
+         Heap Fetches: 5
+         Buffers: shared hit=8 read=30
+ Planning Time: 0.085 ms
+ Execution Time: 0.788 ms
+(8 rows)
+
+=== RF09 ADMIN por ponto: página
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1.73..97.20 rows=50 width=46) (actual time=0.036..0.067 rows=50 loops=1)
+   Buffers: shared hit=51 read=3
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.008..0.008 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.003..0.006 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   ->  Index Scan using idx_sol_poc_criacao on sol_solicitacao s1_0  (cost=0.42..9547.83 rows=5000 width=46) (actual time=0.036..0.063 rows=50 loops=1)
+         Index Cond: (poc_nr_id = (InitPlan 1).col1)
+         Buffers: shared hit=51 read=3
+ Planning:
+   Buffers: shared hit=15
+ Planning Time: 0.116 ms
+ Execution Time: 0.079 ms
+(15 rows)
+
+=== RF09 ADMIN por ponto: contagem
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=389.49..389.50 rows=1 width=8) (actual time=0.688..0.688 rows=1 loops=1)
+   Buffers: shared hit=11 read=24
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.007..0.007 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.003..0.005 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   ->  Index Only Scan using idx_sol_poc_criacao on sol_solicitacao s1_0  (cost=0.42..375.68 rows=5000 width=4) (actual time=0.017..0.482 rows=5000 loops=1)
+         Index Cond: (poc_nr_id = (InitPlan 1).col1)
+         Heap Fetches: 6
+         Buffers: shared hit=11 read=24
+ Planning Time: 0.077 ms
+ Execution Time: 0.700 ms
+(14 rows)
+
+=== RF09 ADMIN por período (2 meses): página
+                                                                               QUERY PLAN                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.42..30.58 rows=50 width=46) (actual time=0.026..0.064 rows=50 loops=1)
+   Buffers: shared hit=50 read=3
+   ->  Index Scan using idx_sol_criacao on sol_solicitacao s1_0  (cost=0.42..9962.65 rows=16512 width=46) (actual time=0.026..0.060 rows=50 loops=1)
+         Index Cond: ((sol_dt_criacao >= '2026-01-01 00:00:00-03'::timestamp with time zone) AND (sol_dt_criacao < '2026-03-01 00:00:00-03'::timestamp with time zone))
+         Buffers: shared hit=50 read=3
+ Planning:
+   Buffers: shared hit=5
+ Planning Time: 0.058 ms
+ Execution Time: 0.071 ms
+(9 rows)
+
+=== RF09 ADMIN por período (2 meses): contagem
+                                                                               QUERY PLAN                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=819.94..819.95 rows=1 width=8) (actual time=2.254..2.255 rows=1 loops=1)
+   Buffers: shared hit=19 read=62
+   ->  Index Only Scan using idx_sol_criacao on sol_solicitacao s1_0  (cost=0.42..778.66 rows=16512 width=4) (actual time=0.010..1.525 rows=16300 loops=1)
+         Index Cond: ((sol_dt_criacao >= '2026-01-01 00:00:00-03'::timestamp with time zone) AND (sol_dt_criacao < '2026-03-01 00:00:00-03'::timestamp with time zone))
+         Heap Fetches: 18
+         Buffers: shared hit=19 read=62
+ Planning Time: 0.044 ms
+ Execution Time: 2.264 ms
+(8 rows)
+
+=== RF09 ADMIN sem filtro, página 3 de 100
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=37.69..50.11 rows=100 width=46) (actual time=0.213..0.269 rows=100 loops=1)
+   Buffers: shared hit=402 read=2
+   ->  Index Scan using idx_sol_criacao on sol_solicitacao s1_0  (cost=0.42..12424.41 rows=100000 width=46) (actual time=0.019..0.251 rows=400 loops=1)
+         Buffers: shared hit=402 read=2
+ Planning Time: 0.038 ms
+ Execution Time: 0.279 ms
+(6 rows)
+
+=== RF09 ADMIN sem filtro: contagem
+                                                                           QUERY PLAN                                                                            
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=2924.29..2924.30 rows=1 width=8) (actual time=11.486..11.486 rows=1 loops=1)
+   Buffers: shared hit=284
+   ->  Index Only Scan using pk_sol_solicitacao on sol_solicitacao s1_0  (cost=0.29..2674.29 rows=100000 width=4) (actual time=0.013..7.206 rows=100000 loops=1)
+         Heap Fetches: 106
+         Buffers: shared hit=284
+ Planning Time: 0.038 ms
+ Execution Time: 11.495 ms
+(7 rows)
+
+=== RF09 MORADOR sem filtro: página (500 linhas do morador)
+                                                                      QUERY PLAN                                                                       
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.66..183.52 rows=50 width=46) (actual time=0.040..0.076 rows=50 loops=1)
+   Buffers: shared hit=52 read=3
+   InitPlan 2
+     ->  Result  (cost=0.23..0.24 rows=1 width=4) (actual time=0.008..0.008 rows=1 loops=1)
+           Buffers: shared hit=2
+           InitPlan 1
+             ->  Limit  (cost=0.14..0.23 rows=1 width=4) (actual time=0.007..0.007 rows=1 loops=1)
+                   Buffers: shared hit=2
+                   ->  Index Scan using pk_mor_morador on mor_morador  (cost=0.14..17.64 rows=200 width=4) (actual time=0.007..0.007 rows=1 loops=1)
+                         Filter: ((mor_tx_email)::text ~~ 'perf.morador.%'::text)
+                         Buffers: shared hit=2
+   ->  Index Scan using idx_sol_mor_criacao on sol_solicitacao s1_0  (cost=0.42..1829.06 rows=500 width=46) (actual time=0.040..0.072 rows=50 loops=1)
+         Index Cond: (mor_nr_id = (InitPlan 2).col1)
+         Buffers: shared hit=52 read=3
+ Planning:
+   Buffers: shared hit=8
+ Planning Time: 0.113 ms
+ Execution Time: 0.088 ms
+(18 rows)
+
+=== RF09 MORADOR sem filtro: contagem
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=58.66..58.67 rows=1 width=8) (actual time=0.102..0.103 rows=1 loops=1)
+   Buffers: shared hit=7 read=2
+   InitPlan 2
+     ->  Result  (cost=0.23..0.24 rows=1 width=4) (actual time=0.007..0.007 rows=1 loops=1)
+           Buffers: shared hit=2
+           InitPlan 1
+             ->  Limit  (cost=0.14..0.23 rows=1 width=4) (actual time=0.006..0.006 rows=1 loops=1)
+                   Buffers: shared hit=2
+                   ->  Index Scan using pk_mor_morador on mor_morador  (cost=0.14..17.64 rows=200 width=4) (actual time=0.006..0.006 rows=1 loops=1)
+                         Filter: ((mor_tx_email)::text ~~ 'perf.morador.%'::text)
+                         Buffers: shared hit=2
+   ->  Index Only Scan using idx_sol_mor_criacao on sol_solicitacao s1_0  (cost=0.42..57.17 rows=500 width=4) (actual time=0.018..0.074 rows=500 loops=1)
+         Index Cond: (mor_nr_id = (InitPlan 2).col1)
+         Heap Fetches: 1
+         Buffers: shared hit=7 read=2
+ Planning Time: 0.082 ms
+ Execution Time: 0.116 ms
+(17 rows)
+
+=== RF09 MORADOR por situação: página
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=740.58..740.70 rows=50 width=46) (actual time=1.054..1.055 rows=0 loops=1)
+   Buffers: shared hit=9 read=91
+   InitPlan 2
+     ->  Result  (cost=0.23..0.24 rows=1 width=4) (actual time=0.006..0.007 rows=1 loops=1)
+           Buffers: shared hit=2
+           InitPlan 1
+             ->  Limit  (cost=0.14..0.23 rows=1 width=4) (actual time=0.005..0.006 rows=1 loops=1)
+                   Buffers: shared hit=2
+                   ->  Index Scan using pk_mor_morador on mor_morador  (cost=0.14..17.64 rows=200 width=4) (actual time=0.005..0.005 rows=1 loops=1)
+                         Filter: ((mor_tx_email)::text ~~ 'perf.morador.%'::text)
+                         Buffers: shared hit=2
+   ->  Sort  (cost=740.33..740.52 rows=73 width=46) (actual time=1.054..1.054 rows=0 loops=1)
+         Sort Key: s1_0.sol_dt_criacao DESC, s1_0.sol_nr_id DESC
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=9 read=91
+         ->  Bitmap Heap Scan on sol_solicitacao s1_0  (cost=486.84..738.07 rows=73 width=46) (actual time=1.051..1.052 rows=0 loops=1)
+               Recheck Cond: ((mor_nr_id = (InitPlan 2).col1) AND ((sol_tx_situacao)::text = 'AGENDADA'::text))
+               Buffers: shared hit=9 read=91
+               ->  BitmapAnd  (cost=486.84..486.84 rows=73 width=0) (actual time=1.049..1.049 rows=0 loops=1)
+                     Buffers: shared hit=9 read=91
+                     ->  Bitmap Index Scan on idx_sol_mor_criacao  (cost=0.00..16.17 rows=500 width=0) (actual time=0.042..0.042 rows=500 loops=1)
+                           Index Cond: (mor_nr_id = (InitPlan 2).col1)
+                           Buffers: shared hit=7
+                     ->  Bitmap Index Scan on idx_sol_situacao_criacao  (cost=0.00..470.39 rows=14663 width=0) (actual time=0.991..0.991 rows=15000 loops=1)
+                           Index Cond: ((sol_tx_situacao)::text = 'AGENDADA'::text)
+                           Buffers: shared hit=2 read=91
+ Planning Time: 0.092 ms
+ Execution Time: 1.067 ms
+(28 rows)
+
+=== RF09 OPERADOR sem filtro: página (5.000 linhas do ponto)
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1.73..97.20 rows=50 width=46) (actual time=0.016..0.033 rows=50 loops=1)
+   Buffers: shared hit=54
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.007..0.008 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.003..0.005 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   ->  Index Scan using idx_sol_poc_criacao on sol_solicitacao s1_0  (cost=0.42..9547.83 rows=5000 width=46) (actual time=0.016..0.030 rows=50 loops=1)
+         Index Cond: (poc_nr_id = (InitPlan 1).col1)
+         Buffers: shared hit=54
+ Planning Time: 0.085 ms
+ Execution Time: 0.045 ms
+(13 rows)
+
+=== RF09 OPERADOR por situação: página
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1.73..213.32 rows=50 width=46) (actual time=0.020..0.043 rows=50 loops=1)
+   Buffers: shared hit=54
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.009..0.010 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.004..0.007 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   ->  Index Scan using idx_sol_poc_criacao on sol_solicitacao s1_0  (cost=0.42..9560.33 rows=2259 width=46) (actual time=0.020..0.039 rows=50 loops=1)
+         Index Cond: (poc_nr_id = (InitPlan 1).col1)
+         Filter: ((sol_tx_situacao)::text = 'CONCLUIDA'::text)
+         Buffers: shared hit=54
+ Planning Time: 0.125 ms
+ Execution Time: 0.058 ms
+(14 rows)
+
+=== RF09 OPERADOR por situação: contagem
+                                                                QUERY PLAN                                                                
+------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=2563.44..2563.45 rows=1 width=8) (actual time=2.171..2.172 rows=1 loops=1)
+   Buffers: shared hit=2328
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.007..0.008 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.003..0.005 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   ->  Bitmap Heap Scan on sol_solicitacao s1_0  (cost=138.48..2556.48 rows=2259 width=4) (actual time=0.456..2.076 rows=2100 loops=1)
+         Recheck Cond: (poc_nr_id = (InitPlan 1).col1)
+         Filter: ((sol_tx_situacao)::text = 'CONCLUIDA'::text)
+         Rows Removed by Filter: 2900
+         Heap Blocks: exact=2300
+         Buffers: shared hit=2328
+         ->  Bitmap Index Scan on idx_sol_poc_criacao  (cost=0.00..137.92 rows=5000 width=0) (actual time=0.247..0.247 rows=5000 loops=1)
+               Index Cond: (poc_nr_id = (InitPlan 1).col1)
+               Buffers: shared hit=28
+ Planning Time: 0.113 ms
+ Execution Time: 2.186 ms
+(19 rows)
+
+=== RF09 OPERADOR por período: página
+                                                                                                 QUERY PLAN                                                                                                 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1.73..174.06 rows=50 width=46) (actual time=0.022..0.044 rows=50 loops=1)
+   Buffers: shared hit=54
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.009..0.010 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.004..0.007 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   ->  Index Scan using idx_sol_poc_criacao on sol_solicitacao s1_0  (cost=0.42..2847.36 rows=826 width=46) (actual time=0.021..0.039 rows=50 loops=1)
+         Index Cond: ((poc_nr_id = (InitPlan 1).col1) AND (sol_dt_criacao >= '2026-01-01 00:00:00-03'::timestamp with time zone) AND (sol_dt_criacao < '2026-03-01 00:00:00-03'::timestamp with time zone))
+         Buffers: shared hit=54
+ Planning Time: 0.129 ms
+ Execution Time: 0.059 ms
+(13 rows)
+
+=== RF15 solicitações por situação, sem período
+                                                            QUERY PLAN                                                            
+----------------------------------------------------------------------------------------------------------------------------------
+ HashAggregate  (cost=3843.00..3843.06 rows=6 width=18) (actual time=21.400..21.401 rows=6 loops=1)
+   Group Key: sol_tx_situacao
+   Batches: 1  Memory Usage: 24kB
+   Buffers: shared hit=2343
+   ->  Seq Scan on sol_solicitacao s1_0  (cost=0.00..3343.00 rows=100000 width=14) (actual time=0.004..4.641 rows=100000 loops=1)
+         Buffers: shared hit=2343
+ Planning Time: 0.044 ms
+ Execution Time: 21.413 ms
+(8 rows)
+
+=== RF15 solicitações por situação, com período
+                                                                                  QUERY PLAN                                                                                  
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ HashAggregate  (cost=3102.91..3102.97 rows=6 width=18) (actual time=5.466..5.467 rows=6 loops=1)
+   Group Key: sol_tx_situacao
+   Batches: 1  Memory Usage: 24kB
+   Buffers: shared hit=2365
+   ->  Bitmap Heap Scan on sol_solicitacao s1_0  (cost=429.67..3020.35 rows=16512 width=14) (actual time=0.940..2.863 rows=16300 loops=1)
+         Recheck Cond: ((sol_dt_criacao >= '2026-01-01 00:00:00-03'::timestamp with time zone) AND (sol_dt_criacao < '2026-03-01 00:00:00-03'::timestamp with time zone))
+         Heap Blocks: exact=2300
+         Buffers: shared hit=2365
+         ->  Bitmap Index Scan on idx_sol_criacao  (cost=0.00..425.54 rows=16512 width=0) (actual time=0.688..0.689 rows=16300 loops=1)
+               Index Cond: ((sol_dt_criacao >= '2026-01-01 00:00:00-03'::timestamp with time zone) AND (sol_dt_criacao < '2026-03-01 00:00:00-03'::timestamp with time zone))
+               Buffers: shared hit=65
+ Planning Time: 0.065 ms
+ Execution Time: 5.481 ms
+(13 rows)
+
+=== RF15 quantidades recolhidas, sem período
+                                                                                                       QUERY PLAN                                                                                                       
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=7287.62..7287.68 rows=24 width=52) (actual time=47.580..49.705 rows=8 loops=1)
+   Sort Key: m1_0.mat_tx_nome, is1_0.iso_tx_copia_unidade
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=1905 read=270
+   ->  Finalize GroupAggregate  (cost=7283.77..7287.07 rows=24 width=52) (actual time=47.567..49.699 rows=8 loops=1)
+         Group Key: is1_0.iso_tx_copia_unidade, m1_0.mat_nr_id
+         Buffers: shared hit=1905 read=270
+         ->  Gather Merge  (cost=7283.77..7286.53 rows=24 width=52) (actual time=47.563..49.690 rows=16 loops=1)
+               Workers Planned: 1
+               Workers Launched: 1
+               Buffers: shared hit=1905 read=270
+               ->  Sort  (cost=6283.76..6283.82 rows=24 width=52) (actual time=45.014..45.016 rows=8 loops=2)
+                     Sort Key: is1_0.iso_tx_copia_unidade, m1_0.mat_nr_id
+                     Sort Method: quicksort  Memory: 25kB
+                     Buffers: shared hit=1905 read=270
+                     Worker 0:  Sort Method: quicksort  Memory: 25kB
+                     ->  Partial HashAggregate  (cost=6282.91..6283.21 rows=24 width=52) (actual time=44.976..44.980 rows=8 loops=2)
+                           Group Key: is1_0.iso_tx_copia_unidade, m1_0.mat_nr_id
+                           Batches: 1  Memory Usage: 24kB
+                           Buffers: shared hit=1890 read=270
+                           Worker 0:  Batches: 1  Memory Usage: 24kB
+                           ->  Hash Join  (cost=2048.66..6013.88 rows=35871 width=25) (actual time=6.093..32.723 rows=67550 loops=2)
+                                 Hash Cond: (is1_0.mat_nr_id = m1_0.mat_nr_id)
+                                 Buffers: shared hit=1890 read=270
+                                 ->  Parallel Hash Join  (cost=2047.48..5868.65 rows=35871 width=11) (actual time=6.062..23.957 rows=67550 loops=2)
+                                       Hash Cond: (is1_0.sol_nr_id = s1_0.sol_nr_id)
+                                       Buffers: shared hit=1885 read=270
+                                       ->  Parallel Seq Scan on iso_item_solicitacao is1_0  (cost=0.00..3612.71 rows=79412 width=15) (actual time=0.006..8.454 rows=67550 loops=2)
+                                             Filter: (iso_nr_quantidade_efetiva IS NOT NULL)
+                                             Rows Removed by Filter: 82450
+                                             Buffers: shared hit=1848
+                                       ->  Parallel Hash  (cost=1812.22..1812.22 rows=18821 width=4) (actual time=5.691..5.691 rows=22500 loops=2)
+                                             Buckets: 65536  Batches: 1  Memory Usage: 2304kB
+                                             Buffers: shared hit=37 read=270
+                                             ->  Parallel Index Only Scan using idx_sol_situacao_criacao on sol_solicitacao s1_0  (cost=0.42..1812.22 rows=18821 width=4) (actual time=0.024..2.946 rows=22500 loops=2)
+                                                   Index Cond: (sol_tx_situacao = 'CONCLUIDA'::text)
+                                                   Heap Fetches: 44
+                                                   Buffers: shared hit=37 read=270
+                                 ->  Hash  (cost=1.08..1.08 rows=8 width=18) (actual time=0.016..0.016 rows=8 loops=2)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                       Buffers: shared hit=2
+                                       ->  Seq Scan on mat_material m1_0  (cost=0.00..1.08 rows=8 width=18) (actual time=0.010..0.011 rows=8 loops=2)
+                                             Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=59 read=1
+ Planning Time: 0.343 ms
+ Execution Time: 49.737 ms
+(47 rows)
+
+=== RF15 quantidades recolhidas, com período de conclusão
+                                                                                                                                QUERY PLAN                                                                                                                                
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=7448.20..7448.26 rows=24 width=52) (actual time=19.857..21.708 rows=8 loops=1)
+   Sort Key: m1_0.mat_tx_nome, is1_0.iso_tx_copia_unidade
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=4168 read=22
+   ->  Finalize GroupAggregate  (cost=7444.35..7447.65 rows=24 width=52) (actual time=19.842..21.702 rows=8 loops=1)
+         Group Key: is1_0.iso_tx_copia_unidade, m1_0.mat_nr_id
+         Buffers: shared hit=4168 read=22
+         ->  Gather Merge  (cost=7444.35..7447.11 rows=24 width=52) (actual time=19.837..21.691 rows=16 loops=1)
+               Workers Planned: 1
+               Workers Launched: 1
+               Buffers: shared hit=4168 read=22
+               ->  Sort  (cost=6444.34..6444.40 rows=24 width=52) (actual time=18.111..18.112 rows=8 loops=2)
+                     Sort Key: is1_0.iso_tx_copia_unidade, m1_0.mat_nr_id
+                     Sort Method: quicksort  Memory: 25kB
+                     Buffers: shared hit=4168 read=22
+                     Worker 0:  Sort Method: quicksort  Memory: 25kB
+                     ->  Partial HashAggregate  (cost=6443.49..6443.79 rows=24 width=52) (actual time=18.087..18.091 rows=8 loops=2)
+                           Group Key: is1_0.iso_tx_copia_unidade, m1_0.mat_nr_id
+                           Batches: 1  Memory Usage: 24kB
+                           Buffers: shared hit=4153 read=22
+                           Worker 0:  Batches: 1  Memory Usage: 24kB
+                           ->  Hash Join  (cost=2593.36..6424.63 rows=2515 width=25) (actual time=1.526..16.068 rows=10600 loops=2)
+                                 Hash Cond: (is1_0.mat_nr_id = m1_0.mat_nr_id)
+                                 Buffers: shared hit=4153 read=22
+                                 ->  Parallel Hash Join  (cost=2592.18..6413.35 rows=2515 width=11) (actual time=1.498..14.626 rows=10600 loops=2)
+                                       Hash Cond: (is1_0.sol_nr_id = s1_0.sol_nr_id)
+                                       Buffers: shared hit=4148 read=22
+                                       ->  Parallel Seq Scan on iso_item_solicitacao is1_0  (cost=0.00..3612.71 rows=79412 width=15) (actual time=0.003..7.882 rows=67550 loops=2)
+                                             Filter: (iso_nr_quantidade_efetiva IS NOT NULL)
+                                             Rows Removed by Filter: 82450
+                                             Buffers: shared hit=1848
+                                       ->  Parallel Hash  (cost=2568.89..2568.89 rows=1863 width=4) (actual time=1.325..1.325 rows=3500 loops=2)
+                                             Buckets: 8192 (originally 4096)  Batches: 1 (originally 1)  Memory Usage: 384kB
+                                             Buffers: shared hit=2300 read=22
+                                             ->  Parallel Bitmap Heap Scan on sol_solicitacao s1_0  (cost=68.75..2568.89 rows=1863 width=4) (actual time=0.754..1.950 rows=7000 loops=1)
+                                                   Recheck Cond: ((sol_dt_conclusao >= '2026-01-01 00:00:00-03'::timestamp with time zone) AND (sol_dt_conclusao < '2026-03-01 00:00:00-03'::timestamp with time zone) AND ((sol_tx_situacao)::text = 'CONCLUIDA'::text))
+                                                   Heap Blocks: exact=2300
+                                                   Buffers: shared hit=2300 read=22
+                                                   ->  Bitmap Index Scan on idx_sol_conclusao  (cost=0.00..67.96 rows=3167 width=0) (actual time=0.553..0.553 rows=7000 loops=1)
+                                                         Index Cond: ((sol_dt_conclusao >= '2026-01-01 00:00:00-03'::timestamp with time zone) AND (sol_dt_conclusao < '2026-03-01 00:00:00-03'::timestamp with time zone))
+                                                         Buffers: shared read=22
+                                 ->  Hash  (cost=1.08..1.08 rows=8 width=18) (actual time=0.015..0.015 rows=8 loops=2)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                       Buffers: shared hit=2
+                                       ->  Seq Scan on mat_material m1_0  (cost=0.00..1.08 rows=8 width=18) (actual time=0.010..0.011 rows=8 loops=2)
+                                             Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=26
+ Planning Time: 0.295 ms
+ Execution Time: 21.739 ms
+(50 rows)
+
+=== Detalhe da solicitação: histórico (HistoricoRepository.findBySolicitacaoIdOrderById)
+                                                              QUERY PLAN                                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=8.50..8.51 rows=3 width=23) (actual time=0.029..0.029 rows=4 loops=1)
+   Sort Key: his_nr_id
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=1 read=3
+   ->  Index Scan using idx_his_sol on his_historico h1_0  (cost=0.42..8.48 rows=3 width=23) (actual time=0.024..0.026 rows=4 loops=1)
+         Index Cond: (sol_nr_id = 50000)
+         Buffers: shared hit=1 read=3
+ Planning:
+   Buffers: shared hit=22 read=1
+ Planning Time: 0.077 ms
+ Execution Time: 0.036 ms
+(11 rows)
+
+=== RN05: abertas do ponto com item do material (SolicitacaoRepository.contarPorPontoESituacaoComMaterial)
+                                                                         QUERY PLAN                                                                         
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=5458.72..5458.73 rows=1 width=8) (actual time=10.488..10.490 rows=1 loops=1)
+   Buffers: shared hit=4177 read=39
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.008..0.008 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.003..0.006 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   InitPlan 2
+     ->  Aggregate  (cost=1.10..1.11 rows=1 width=4) (actual time=0.006..0.006 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on mat_material  (cost=0.00..1.08 rows=8 width=4) (actual time=0.004..0.004 rows=8 loops=1)
+                 Buffers: shared hit=1
+   ->  Sort  (cost=5453.04..5454.67 rows=652 width=4) (actual time=10.419..10.446 rows=800 loops=1)
+         Sort Key: s.sol_nr_id
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=4177 read=39
+         ->  Hash Join  (cost=3007.37..5422.56 rows=652 width=4) (actual time=3.217..10.385 rows=800 loops=1)
+               Hash Cond: (i.sol_nr_id = s.sol_nr_id)
+               Buffers: shared hit=4177 read=39
+               ->  Bitmap Heap Scan on iso_item_solicitacao i  (cost=423.05..2739.80 rows=37500 width=4) (actual time=1.251..4.897 rows=43000 loops=1)
+                     Recheck Cond: (mat_nr_id = (InitPlan 2).col1)
+                     Heap Blocks: exact=1848
+                     Buffers: shared hit=1849 read=39
+                     ->  Bitmap Index Scan on idx_iso_mat  (cost=0.00..413.67 rows=37500 width=0) (actual time=1.051..1.051 rows=43000 loops=1)
+                           Index Cond: (mat_nr_id = (InitPlan 2).col1)
+                           Buffers: shared hit=1 read=39
+               ->  Hash  (cost=2562.60..2562.60 rows=1738 width=4) (actual time=1.948..1.949 rows=1700 loops=1)
+                     Buckets: 2048  Batches: 1  Memory Usage: 76kB
+                     Buffers: shared hit=2328
+                     ->  Bitmap Heap Scan on sol_solicitacao s  (cost=138.35..2562.60 rows=1738 width=4) (actual time=0.454..1.804 rows=1700 loops=1)
+                           Recheck Cond: (poc_nr_id = (InitPlan 1).col1)
+                           Filter: ((sol_tx_situacao)::text = ANY ('{SOLICITADA,AGENDADA,EM_RECOLHIMENTO}'::text[]))
+                           Rows Removed by Filter: 3300
+                           Heap Blocks: exact=2300
+                           Buffers: shared hit=2328
+                           ->  Bitmap Index Scan on idx_sol_poc_criacao  (cost=0.00..137.92 rows=5000 width=0) (actual time=0.246..0.246 rows=5000 loops=1)
+                                 Index Cond: (poc_nr_id = (InitPlan 1).col1)
+                                 Buffers: shared hit=28
+ Planning:
+   Buffers: shared hit=20
+ Planning Time: 0.293 ms
+ Execution Time: 10.514 ms
+(43 rows)
+
+=== RN05: abertas do ponto (countByPontoIdAndSituacaoIn)
+                                                                QUERY PLAN                                                                
+------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=2568.26..2568.27 rows=1 width=8) (actual time=1.971..1.972 rows=1 loops=1)
+   Buffers: shared hit=2328
+   InitPlan 1
+     ->  Aggregate  (cost=1.30..1.31 rows=1 width=4) (actual time=0.009..0.010 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on poc_ponto_coleta  (cost=0.00..1.25 rows=20 width=4) (actual time=0.004..0.007 rows=20 loops=1)
+                 Filter: ((poc_tx_nome)::text ~~ 'PERF %'::text)
+                 Buffers: shared hit=1
+   ->  Bitmap Heap Scan on sol_solicitacao s  (cost=138.35..2562.60 rows=1738 width=4) (actual time=0.561..1.892 rows=1700 loops=1)
+         Recheck Cond: (poc_nr_id = (InitPlan 1).col1)
+         Filter: ((sol_tx_situacao)::text = ANY ('{SOLICITADA,AGENDADA,EM_RECOLHIMENTO}'::text[]))
+         Rows Removed by Filter: 3300
+         Heap Blocks: exact=2300
+         Buffers: shared hit=2328
+         ->  Bitmap Index Scan on idx_sol_poc_criacao  (cost=0.00..137.92 rows=5000 width=0) (actual time=0.301..0.301 rows=5000 loops=1)
+               Index Cond: (poc_nr_id = (InitPlan 1).col1)
+               Buffers: shared hit=28
+ Planning Time: 0.120 ms
+ Execution Time: 1.988 ms
+(19 rows)
+
+=== ADR 0013: itens do material (MaterialRepository.contarItensDeSolicitacao)
+                                                                      QUERY PLAN                                                                       
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=883.53..883.54 rows=1 width=8) (actual time=4.027..4.028 rows=1 loops=1)
+   Buffers: shared hit=41
+   InitPlan 1
+     ->  Aggregate  (cost=1.10..1.11 rows=1 width=4) (actual time=0.005..0.006 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on mat_material  (cost=0.00..1.08 rows=8 width=4) (actual time=0.003..0.004 rows=8 loops=1)
+                 Buffers: shared hit=1
+   ->  Index Only Scan using idx_iso_mat on iso_item_solicitacao  (cost=0.42..788.67 rows=37500 width=0) (actual time=0.012..2.233 rows=43000 loops=1)
+         Index Cond: (mat_nr_id = (InitPlan 1).col1)
+         Heap Fetches: 0
+         Buffers: shared hit=41
+ Planning Time: 0.051 ms
+ Execution Time: 4.040 ms
+(13 rows)
+
+=== ADR 0013: vínculos do material (MaterialRepository.contarVinculosComPontos)
+                                                     QUERY PLAN                                                      
+---------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=3.41..3.42 rows=1 width=8) (actual time=0.016..0.017 rows=1 loops=1)
+   Buffers: shared hit=2
+   InitPlan 1
+     ->  Aggregate  (cost=1.10..1.11 rows=1 width=4) (actual time=0.004..0.004 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on mat_material  (cost=0.00..1.08 rows=8 width=4) (actual time=0.002..0.002 rows=8 loops=1)
+                 Buffers: shared hit=1
+   ->  Seq Scan on mac_material_aceito  (cost=0.00..2.26 rows=13 width=0) (actual time=0.010..0.015 rows=14 loops=1)
+         Filter: (mat_nr_id = (InitPlan 1).col1)
+         Rows Removed by Filter: 87
+         Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=11 read=1
+ Planning Time: 0.099 ms
+ Execution Time: 0.028 ms
+(15 rows)
+
+######## ETAPA C: poc_ponto_coleta com 20.020 pontos sintéticos
+INSERT 0 20000
+INSERT 0 1
+ANALYZE
+######## ETAPA C: pontos SEM índices de expressão
+=== RF06 por município (lower)
+                                                                      QUERY PLAN                                                                       
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.29..280.98 rows=20 width=4) (actual time=0.011..6.550 rows=4 loops=1)
+   Buffers: shared hit=343
+   ->  Index Scan using pk_poc_ponto_coleta on poc_ponto_coleta pc1_0  (cost=0.29..1403.76 rows=100 width=4) (actual time=0.010..6.548 rows=4 loops=1)
+         Filter: (((poc_tx_situacao)::text = 'ATIVO'::text) AND (lower((poc_tx_municipio)::text) = 'lagarto'::text))
+         Rows Removed by Filter: 20017
+         Buffers: shared hit=343
+ Planning:
+   Buffers: shared hit=35
+ Planning Time: 0.123 ms
+ Execution Time: 6.561 ms
+(10 rows)
+
+=== RF06 por bairro (lower)
+                                                                      QUERY PLAN                                                                       
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.29..280.98 rows=20 width=4) (actual time=0.008..6.584 rows=5 loops=1)
+   Buffers: shared hit=343
+   ->  Index Scan using pk_poc_ponto_coleta on poc_ponto_coleta pc1_0  (cost=0.29..1403.76 rows=100 width=4) (actual time=0.007..6.582 rows=5 loops=1)
+         Filter: (((poc_tx_situacao)::text = 'ATIVO'::text) AND (lower((poc_tx_bairro)::text) = 'centro'::text))
+         Rows Removed by Filter: 20016
+         Buffers: shared hit=343
+ Planning Time: 0.035 ms
+ Execution Time: 6.591 ms
+(8 rows)
+
+--- I9 idx_poc_municipio_lower
+CREATE INDEX
+--- I10 idx_poc_bairro_lower
+CREATE INDEX
+ANALYZE
+######## ETAPA C: pontos COM índices de expressão I9 e I10
+=== RF06 por município (lower)
+                                                                 QUERY PLAN                                                                 
+--------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=19.01..19.02 rows=4 width=4) (actual time=0.030..0.031 rows=4 loops=1)
+   Buffers: shared hit=2 read=2
+   ->  Sort  (cost=19.01..19.02 rows=4 width=4) (actual time=0.029..0.030 rows=4 loops=1)
+         Sort Key: poc_nr_id
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=2 read=2
+         ->  Bitmap Heap Scan on poc_ponto_coleta pc1_0  (cost=4.32..18.97 rows=4 width=4) (actual time=0.024..0.026 rows=4 loops=1)
+               Recheck Cond: (lower((poc_tx_municipio)::text) = 'lagarto'::text)
+               Filter: ((poc_tx_situacao)::text = 'ATIVO'::text)
+               Heap Blocks: exact=2
+               Buffers: shared hit=2 read=2
+               ->  Bitmap Index Scan on idx_poc_municipio_lower  (cost=0.00..4.32 rows=4 width=0) (actual time=0.019..0.019 rows=4 loops=1)
+                     Index Cond: (lower((poc_tx_municipio)::text) = 'lagarto'::text)
+                     Buffers: shared read=2
+ Planning:
+   Buffers: shared hit=17 read=2
+ Planning Time: 0.101 ms
+ Execution Time: 0.040 ms
+(18 rows)
+
+=== RF06 por bairro (lower)
+                                                                QUERY PLAN                                                                
+------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=163.27..163.32 rows=20 width=4) (actual time=0.025..0.026 rows=5 loops=1)
+   Buffers: shared hit=2 read=2
+   ->  Sort  (cost=163.27..163.43 rows=65 width=4) (actual time=0.025..0.025 rows=5 loops=1)
+         Sort Key: poc_nr_id
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=2 read=2
+         ->  Bitmap Heap Scan on poc_ponto_coleta pc1_0  (cost=4.79..161.54 rows=65 width=4) (actual time=0.022..0.023 rows=5 loops=1)
+               Recheck Cond: (lower((poc_tx_bairro)::text) = 'centro'::text)
+               Filter: ((poc_tx_situacao)::text = 'ATIVO'::text)
+               Heap Blocks: exact=2
+               Buffers: shared hit=2 read=2
+               ->  Bitmap Index Scan on idx_poc_bairro_lower  (cost=0.00..4.77 rows=65 width=0) (actual time=0.018..0.018 rows=5 loops=1)
+                     Index Cond: (lower((poc_tx_bairro)::text) = 'centro'::text)
+                     Buffers: shared read=2
+ Planning:
+   Buffers: shared hit=3
+ Planning Time: 0.055 ms
+ Execution Time: 0.033 ms
+(18 rows)
+
+######## ETAPA D: custo de escrita (1.000 inserções de solicitação, descartadas no ROLLBACK)
+=== COM os índices I1 a I5 em sol_solicitacao
+                                                                  QUERY PLAN                                                                   
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ Insert on sol_solicitacao  (cost=3895.92..3913.42 rows=0 width=0) (actual time=33.864..33.864 rows=0 loops=1)
+   Buffers: shared hit=21114 read=1374 dirtied=1517 written=55
+   ->  Subquery Scan on "*SELECT*"  (cost=3895.92..3913.42 rows=1000 width=279) (actual time=11.272..11.917 rows=1000 loops=1)
+         Buffers: shared hit=3351
+         ->  Limit  (cost=3895.92..3898.42 rows=1000 width=191) (actual time=11.248..11.372 rows=1000 loops=1)
+               Buffers: shared hit=2343
+               ->  Sort  (cost=3895.92..3898.45 rows=1010 width=191) (actual time=11.247..11.306 rows=1000 loops=1)
+                     Sort Key: o.sol_nr_id
+                     Sort Method: quicksort  Memory: 266kB
+                     Buffers: shared hit=2343
+                     ->  Seq Scan on sol_solicitacao o  (cost=0.00..3845.53 rows=1010 width=191) (actual time=0.006..11.054 rows=1000 loops=1)
+                           Filter: (((sol_tx_protocolo)::text !~~ '%-X%'::text) AND ((sol_tx_protocolo)::text !~~ '%-Y%'::text))
+                           Rows Removed by Filter: 99000
+                           Buffers: shared hit=2343
+ Planning:
+   Buffers: shared hit=14
+ Planning Time: 0.140 ms
+ Trigger for constraint fk_sol_mor: time=7.864 calls=1000
+ Trigger for constraint fk_sol_poc: time=3.942 calls=1000
+ Execution Time: 45.782 ms
+(20 rows)
+
+DROP INDEX
+=== SEM os índices (somente a PK e a UNIQUE do protocolo)
+                                                                  QUERY PLAN                                                                   
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ Insert on sol_solicitacao  (cost=3932.55..3950.05 rows=0 width=0) (actual time=18.027..18.028 rows=0 loops=1)
+   Buffers: shared hit=10491 dirtied=25 written=25
+   ->  Subquery Scan on "*SELECT*"  (cost=3932.55..3950.05 rows=1000 width=279) (actual time=10.505..11.014 rows=1000 loops=1)
+         Buffers: shared hit=3365
+         ->  Limit  (cost=3932.55..3935.05 rows=1000 width=191) (actual time=10.502..10.605 rows=1000 loops=1)
+               Buffers: shared hit=2365
+               ->  Sort  (cost=3932.55..3935.09 rows=1019 width=191) (actual time=10.501..10.548 rows=1000 loops=1)
+                     Sort Key: o.sol_nr_id
+                     Sort Method: quicksort  Memory: 266kB
+                     Buffers: shared hit=2365
+                     ->  Seq Scan on sol_solicitacao o  (cost=0.00..3881.63 rows=1019 width=191) (actual time=0.005..10.330 rows=1000 loops=1)
+                           Filter: (((sol_tx_protocolo)::text !~~ '%-X%'::text) AND ((sol_tx_protocolo)::text !~~ '%-Y%'::text))
+                           Rows Removed by Filter: 100000
+                           Buffers: shared hit=2365
+ Planning:
+   Buffers: shared hit=4
+ Planning Time: 0.103 ms
+ Trigger for constraint fk_sol_mor: time=7.840 calls=1000
+ Trigger for constraint fk_sol_poc: time=3.954 calls=1000
+ Execution Time: 29.951 ms
+(20 rows)
+
+ROLLBACK
