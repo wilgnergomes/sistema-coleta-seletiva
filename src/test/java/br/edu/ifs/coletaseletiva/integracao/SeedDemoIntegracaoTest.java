@@ -15,7 +15,9 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -299,6 +301,35 @@ class SeedDemoIntegracaoTest {
         assertEquals(0, new java.math.BigDecimal("18.5").compareTo(quantidade(setembro, "Papel", "KG")));
         assertEquals(0, new java.math.BigDecimal("10").compareTo(quantidade(setembro, "Pilhas e baterias", "UN")));
         assertEquals(2, ((java.util.List<?>) com.jayway.jsonpath.JsonPath.read(setembro, "$.quantidadesRecolhidas")).size());
+    }
+
+    // ---------- RN05: roteiro de demonstração com o perfil demo ----------
+
+    @Test
+    void rn05_noPerfilDemoNaoSeInativaOPontoNemSeRemoveOVinculoComSolicitacoesAbertas() throws Exception {
+        int verdeVida = jdbc.queryForObject(
+                "SELECT poc_nr_id FROM coleta.poc_ponto_coleta WHERE poc_tx_nome = 'Cooperativa Verde Vida'", Integer.class);
+        int vidro = jdbc.queryForObject("SELECT mat_nr_id FROM coleta.mat_material WHERE mat_tx_nome = 'Vidro'", Integer.class);
+
+        // A Cooperativa Verde Vida tem 3 abertas no seed 070 (SOLICITADA, AGENDADA e EM_RECOLHIMENTO).
+        mockMvc.perform(put("/pontos-coleta/" + verdeVida).header("X-Perfil", "ADMINISTRADOR")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"nome\": \"Cooperativa Verde Vida\", \"recolhimentoDomiciliar\": true, \"situacao\": \"INATIVO\", "
+                                + "\"endereco\": {\"logradouro\": \"Avenida Principal\", \"numero\": \"S/N\", \"bairro\": \"Distrito Industrial\", "
+                                + "\"municipio\": \"Lagarto\", \"uf\": \"SE\", \"cep\": \"49400000\"}}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.mensagem").value("Não é possível inativar o ponto: ele possui 3 solicitações abertas. "
+                        + "Recuse ou cancele os atendimentos antes de inativá-lo."));
+        // O vidro é pedido em duas abertas (a AGENDADA e a EM_RECOLHIMENTO); a concluída com vidro não conta.
+        mockMvc.perform(delete("/pontos-coleta/" + verdeVida + "/materiais/" + vidro).header("X-Perfil", "ADMINISTRADOR"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.mensagem").value("Não é possível remover o vínculo do material Vidro: o ponto possui "
+                        + "2 solicitações abertas com esse material. Recuse ou cancele os atendimentos antes de remover o vínculo."));
+
+        assertEquals("ATIVO", jdbc.queryForObject(
+                "SELECT poc_tx_situacao FROM coleta.poc_ponto_coleta WHERE poc_nr_id = ?", String.class, verdeVida));
+        assertEquals(1, contar("SELECT COUNT(*) FROM coleta.mac_material_aceito WHERE poc_nr_id = " + verdeVida
+                + " AND mat_nr_id = " + vidro));
     }
 
     private java.math.BigDecimal quantidade(String json, String material, String unidade) {

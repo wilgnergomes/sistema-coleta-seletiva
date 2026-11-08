@@ -426,8 +426,13 @@ paths:
       tags: [Pontos de coleta]
       summary: Atualiza ou inativa um ponto de coleta (RF04)
       description: |
-        A inativação é feita pelo campo `situacao`. Inativar um ponto com solicitações
-        abertas afetadas é bloqueado com 409 (RN05).
+        A inativação é feita pelo campo `situacao`. Inativar um ponto (ATIVO para INATIVO) que tem
+        solicitação aberta, isto é, SOLICITADA, AGENDADA ou EM_RECOLHIMENTO, é bloqueado com 409
+        `CONFLITO_REGRA` (RN05); a mensagem informa a quantidade de solicitações abertas e nada muda.
+        Solicitações em situação final (CONCLUIDA, RECUSADA, CANCELADA) não bloqueiam, e o bloqueio
+        some depois que o atendimento é recusado ou cancelado. Reativar o ponto e editar outros dados
+        não são bloqueados. A linha do ponto é travada durante a operação (ADR 0024), então uma criação
+        de solicitação concorrente não escapa da regra.
       operationId: atualizarPontoColeta
       requestBody:
         required: true
@@ -481,7 +486,11 @@ paths:
     delete:
       tags: [Materiais aceitos]
       summary: Remove o vínculo entre material e ponto (RF05)
-      description: Bloqueado com 409 enquanto houver solicitações abertas afetadas (RN05).
+      description: |
+        Bloqueado com 409 `CONFLITO_REGRA` (RN05) enquanto houver solicitação aberta (SOLICITADA, AGENDADA ou
+        EM_RECOLHIMENTO) **do ponto contendo item daquele material**; a mensagem informa o nome do material e a
+        quantidade de solicitações abertas, e nada muda. Solicitações em situação final, de outro material ou de
+        outro ponto não bloqueiam. A linha do ponto é travada durante a operação (ADR 0024).
       operationId: removerVinculoMaterial
       responses:
         '204':

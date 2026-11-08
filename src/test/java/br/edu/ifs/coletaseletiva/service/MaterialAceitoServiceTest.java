@@ -7,13 +7,16 @@ import br.edu.ifs.coletaseletiva.entity.MaterialAceito;
 import br.edu.ifs.coletaseletiva.entity.MaterialAceitoId;
 import br.edu.ifs.coletaseletiva.entity.PontoColeta;
 import br.edu.ifs.coletaseletiva.enumeration.Perfil;
+import br.edu.ifs.coletaseletiva.enumeration.SituacaoSolicitacao;
 import br.edu.ifs.coletaseletiva.enumeration.Unidade;
 import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
+import br.edu.ifs.coletaseletiva.exception.ConflitoRegraException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
 import br.edu.ifs.coletaseletiva.form.VinculoForm;
 import br.edu.ifs.coletaseletiva.mapper.MaterialAceitoMapper;
 import br.edu.ifs.coletaseletiva.repository.MaterialAceitoRepository;
 import br.edu.ifs.coletaseletiva.repository.MaterialRepository;
+import br.edu.ifs.coletaseletiva.repository.SolicitacaoRepository;
 import br.edu.ifs.coletaseletiva.repository.PontoColetaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,6 +48,8 @@ class MaterialAceitoServiceTest {
     private PontoColetaRepository pontoRepository;
     @Mock
     private MaterialRepository materialRepository;
+    @Mock
+    private SolicitacaoRepository solicitacaoRepository;
 
     private MaterialAceitoService service;
     private PontoColeta ponto;
@@ -52,7 +57,8 @@ class MaterialAceitoServiceTest {
 
     @BeforeEach
     void preparar() {
-        service = new MaterialAceitoService(repository, pontoRepository, materialRepository, new MaterialAceitoMapper());
+        service = new MaterialAceitoService(repository, pontoRepository, materialRepository, solicitacaoRepository,
+                new MaterialAceitoMapper());
         ponto = PontoColeta.builder().id(1).nome("Ponto").build();
         vidro = Material.builder().id(2).nome("Vidro").unidade(Unidade.KG).orientacao("Lavar").build();
     }
@@ -120,6 +126,7 @@ class MaterialAceitoServiceTest {
     @Test
     void rf05_removerApagaOVinculoEVinculoInexistenteEhNaoEncontrado() {
         MaterialAceito existente = MaterialAceito.builder().id(ID).ponto(ponto).material(vidro).build();
+        when(pontoRepository.findComBloqueioById(1)).thenReturn(Optional.of(ponto));
         when(repository.findById(ID)).thenReturn(Optional.of(existente));
         when(repository.findById(new MaterialAceitoId(1, 3))).thenReturn(Optional.empty());
 
@@ -127,5 +134,47 @@ class MaterialAceitoServiceTest {
 
         verify(repository).delete(existente);
         assertThrows(NaoEncontradoException.class, () -> service.remover(ADMINISTRADOR, 1, 3));
+    }
+
+    // ---------- RN05: remoção bloqueada por solicitações abertas com o material ----------
+
+    @Test
+    void rn05_removerComSolicitacaoAbertaDoPontoComOMaterialEh409ComONomeEAQuantidadeENadaMuda() {
+        MaterialAceito existente = MaterialAceito.builder().id(ID).ponto(ponto).material(vidro).build();
+        when(pontoRepository.findComBloqueioById(1)).thenReturn(Optional.of(ponto));
+        when(repository.findById(ID)).thenReturn(Optional.of(existente));
+        when(solicitacaoRepository.contarPorPontoESituacaoComMaterial(1, SituacaoSolicitacao.abertas(), 2)).thenReturn(2L);
+
+        ConflitoRegraException erro = assertThrows(ConflitoRegraException.class, () -> service.remover(ADMINISTRADOR, 1, 2));
+
+        assertEquals("erro.vinculo.remocao-bloqueada", erro.getChave());
+        assertEquals("Vidro", erro.getArgumentos()[0]);
+        assertEquals(2L, erro.getArgumentos()[1]);
+        verify(repository, never()).delete(any());
+    }
+
+    @Test
+    void rn05_removerSemSolicitacoesAbertasComOMaterialPassaEOPontoEhTravadoPrimeiro() {
+        MaterialAceito existente = MaterialAceito.builder().id(ID).ponto(ponto).material(vidro).build();
+        when(pontoRepository.findComBloqueioById(1)).thenReturn(Optional.of(ponto));
+        when(repository.findById(ID)).thenReturn(Optional.of(existente));
+        when(solicitacaoRepository.contarPorPontoESituacaoComMaterial(1, SituacaoSolicitacao.abertas(), 2)).thenReturn(0L);
+
+        service.remover(ADMINISTRADOR, 1, 2);
+
+        org.mockito.InOrder ordem = org.mockito.Mockito.inOrder(pontoRepository, repository, solicitacaoRepository);
+        ordem.verify(pontoRepository).findComBloqueioById(1);
+        ordem.verify(repository).findById(ID);
+        ordem.verify(solicitacaoRepository).contarPorPontoESituacaoComMaterial(1, SituacaoSolicitacao.abertas(), 2);
+        ordem.verify(repository).delete(existente);
+    }
+
+    @Test
+    void rn05_pontoInexistenteNaRemocaoEhNaoEncontradoSemConsultarSolicitacoes() {
+        when(pontoRepository.findComBloqueioById(99)).thenReturn(Optional.empty());
+
+        assertThrows(NaoEncontradoException.class, () -> service.remover(ADMINISTRADOR, 99, 2));
+
+        verifyNoInteractions(solicitacaoRepository);
     }
 }

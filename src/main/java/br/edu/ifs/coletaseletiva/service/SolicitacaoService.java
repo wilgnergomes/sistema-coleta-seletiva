@@ -95,7 +95,9 @@ public class SolicitacaoService {
     @Transactional
     public SolicitacaoDetalheDTO criar(Ator ator, SolicitacaoForm formulario) {
         Morador morador = moradorAutenticado(ator);
-        PontoColeta ponto = pontoRepository.findById(formulario.pontoId())
+        // ADR 0024: o ponto é lido com bloqueio, antes de qualquer outra linha. Uma inativação do ponto ou a remoção de um
+        // vínculo (RN05) não pode confirmar entre a validação da RN01 e a gravação da solicitação.
+        PontoColeta ponto = pontoRepository.findComBloqueioById(formulario.pontoId())
                 .orElseThrow(() -> new NaoEncontradoException("erro.ponto.nao-encontrado"));
         Endereco endereco = enderecoDoMorador(formulario.enderecoId(), morador);
 
@@ -193,9 +195,13 @@ public class SolicitacaoService {
             throw new ConflitoVersaoException("erro.solicitacao.versao-desatualizada");
         }
 
+        // ADR 0024: a solicitação foi lida sem bloqueio, mas o ponto só é lido (e validado) depois de travado. Assim a
+        // RN01 usa o estado do ponto confirmado até agora, e não um estado antigo carregado antes da espera.
+        PontoColeta ponto = pontoRepository.findComBloqueioById(solicitacao.getPonto().getId())
+                .orElseThrow(() -> new NaoEncontradoException("erro.ponto.nao-encontrado"));
         Endereco endereco = enderecoDoMorador(formulario.enderecoId(), morador);
-        exigirPontoDisponivel(solicitacao.getPonto());
-        List<ItemSolicitacao> novos = validarEMontarItens(solicitacao.getPonto(), formulario.itens());
+        exigirPontoDisponivel(ponto);
+        List<ItemSolicitacao> novos = validarEMontarItens(ponto, formulario.itens());
 
         String novaCopia = copiarEndereco(endereco);
         String novasObservacoes = vazioParaNulo(formulario.observacoes());

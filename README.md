@@ -304,6 +304,7 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 - [x] Solicitação de recolhimento (compatibilidade, itens e protocolo) (RF08)
 - [x] Transições de situação e histórico (RF10 a RF14)
 - [x] Resumo gerencial (RF15)
+- [x] Bloqueio da inativação de ponto e da remoção de vínculo com solicitações abertas (RN05)
 - [ ] Testes de integração e de concorrência
 - [ ] Interface web responsiva (segunda unidade)
 

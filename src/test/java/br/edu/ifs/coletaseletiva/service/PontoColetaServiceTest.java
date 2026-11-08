@@ -6,6 +6,8 @@ import br.edu.ifs.coletaseletiva.entity.EnderecoPonto;
 import br.edu.ifs.coletaseletiva.entity.PontoColeta;
 import br.edu.ifs.coletaseletiva.enumeration.Perfil;
 import br.edu.ifs.coletaseletiva.enumeration.SituacaoCadastro;
+import br.edu.ifs.coletaseletiva.enumeration.SituacaoSolicitacao;
+import br.edu.ifs.coletaseletiva.exception.ConflitoRegraException;
 import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
 import br.edu.ifs.coletaseletiva.form.EnderecoForm;
@@ -14,6 +16,7 @@ import br.edu.ifs.coletaseletiva.mapper.MaterialAceitoMapper;
 import br.edu.ifs.coletaseletiva.mapper.PontoColetaMapper;
 import br.edu.ifs.coletaseletiva.repository.MaterialAceitoRepository;
 import br.edu.ifs.coletaseletiva.repository.PontoColetaRepository;
+import br.edu.ifs.coletaseletiva.repository.SolicitacaoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -49,12 +53,14 @@ class PontoColetaServiceTest {
     private PontoColetaRepository repository;
     @Mock
     private MaterialAceitoRepository vinculoRepository;
+    @Mock
+    private SolicitacaoRepository solicitacaoRepository;
 
     private PontoColetaService service;
 
     @BeforeEach
     void preparar() {
-        service = new PontoColetaService(repository, vinculoRepository, new PontoColetaMapper(),
+        service = new PontoColetaService(repository, vinculoRepository, solicitacaoRepository, new PontoColetaMapper(),
                 new MaterialAceitoMapper());
     }
 
@@ -124,7 +130,7 @@ class PontoColetaServiceTest {
 
     @Test
     void rf04_atualizarAlteraCamposEInativa() {
-        when(repository.findById(1)).thenReturn(Optional.of(ponto(SituacaoCadastro.ATIVO)));
+        when(repository.findComBloqueioById(1)).thenReturn(Optional.of(ponto(SituacaoCadastro.ATIVO)));
         when(repository.save(any(PontoColeta.class))).thenAnswer(c -> c.getArgument(0));
 
         PontoColetaDTO dto = service.atualizar(ADMINISTRADOR, 1,
@@ -139,9 +145,71 @@ class PontoColetaServiceTest {
 
     @Test
     void rf04_atualizarPontoInexistenteLancaNaoEncontrado() {
-        when(repository.findById(99)).thenReturn(Optional.empty());
+        when(repository.findComBloqueioById(99)).thenReturn(Optional.empty());
         PontoColetaForm form = new PontoColetaForm("P", null, null, null, null, endereco("1", null));
 
         assertThrows(NaoEncontradoException.class, () -> service.atualizar(ADMINISTRADOR, 99, form));
+    }
+
+    // ---------- RN05: inativação bloqueada por solicitações abertas ----------
+
+    private PontoColetaForm formularioComSituacao(SituacaoCadastro situacao) {
+        return new PontoColetaForm("Ponto", null, null, true, situacao, endereco("1", null));
+    }
+
+    @Test
+    void rn05_inativarComSolicitacoesAbertasEh409ComAQuantidadeENadaMuda() {
+        PontoColeta ativo = ponto(SituacaoCadastro.ATIVO);
+        when(repository.findComBloqueioById(1)).thenReturn(Optional.of(ativo));
+        when(solicitacaoRepository.countByPontoIdAndSituacaoIn(1, SituacaoSolicitacao.abertas())).thenReturn(3L);
+
+        ConflitoRegraException erro = assertThrows(ConflitoRegraException.class,
+                () -> service.atualizar(ADMINISTRADOR, 1, formularioComSituacao(SituacaoCadastro.INATIVO)));
+
+        assertEquals("erro.ponto.inativacao-bloqueada", erro.getChave());
+        assertEquals(3L, erro.getArgumentos()[0]);
+        assertEquals(SituacaoCadastro.ATIVO, ativo.getSituacao());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void rn05_inativarSemSolicitacoesAbertasPassaEUsaALeituraComBloqueio() {
+        when(repository.findComBloqueioById(1)).thenReturn(Optional.of(ponto(SituacaoCadastro.ATIVO)));
+        when(solicitacaoRepository.countByPontoIdAndSituacaoIn(1, SituacaoSolicitacao.abertas())).thenReturn(0L);
+        when(repository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        PontoColetaDTO dto = service.atualizar(ADMINISTRADOR, 1, formularioComSituacao(SituacaoCadastro.INATIVO));
+
+        assertEquals(SituacaoCadastro.INATIVO, dto.situacao());
+        verify(repository).findComBloqueioById(1);
+        verify(repository, never()).findById(any());
+    }
+
+    @Test
+    void rn05_soAPassagemDeAtivoParaInativoEVerificada() {
+        // Reativar, editar mantendo a situação e atualizar um ponto já inativo não consultam as solicitações.
+        when(repository.findComBloqueioById(1))
+                .thenReturn(Optional.of(ponto(SituacaoCadastro.INATIVO)))
+                .thenReturn(Optional.of(ponto(SituacaoCadastro.ATIVO)))
+                .thenReturn(Optional.of(ponto(SituacaoCadastro.INATIVO)));
+        when(repository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        service.atualizar(ADMINISTRADOR, 1, formularioComSituacao(SituacaoCadastro.ATIVO));
+        service.atualizar(ADMINISTRADOR, 1, formularioComSituacao(SituacaoCadastro.ATIVO));
+        service.atualizar(ADMINISTRADOR, 1, formularioComSituacao(SituacaoCadastro.INATIVO));
+
+        verifyNoInteractions(solicitacaoRepository);
+    }
+
+    @Test
+    void rn05_aContagemUsaExatamenteAsSituacoesAbertas() {
+        when(repository.findComBloqueioById(1)).thenReturn(Optional.of(ponto(SituacaoCadastro.ATIVO)));
+        when(solicitacaoRepository.countByPontoIdAndSituacaoIn(any(), any())).thenReturn(1L);
+
+        assertThrows(ConflitoRegraException.class,
+                () -> service.atualizar(ADMINISTRADOR, 1, formularioComSituacao(SituacaoCadastro.INATIVO)));
+
+        verify(solicitacaoRepository).countByPontoIdAndSituacaoIn(1,
+                java.util.EnumSet.of(SituacaoSolicitacao.SOLICITADA, SituacaoSolicitacao.AGENDADA, SituacaoSolicitacao.EM_RECOLHIMENTO));
     }
 }

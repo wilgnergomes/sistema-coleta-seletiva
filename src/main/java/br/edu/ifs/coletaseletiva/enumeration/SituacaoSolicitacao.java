@@ -37,4 +37,18 @@ public enum SituacaoSolicitacao {
     public boolean ehFinal() {
         return proximas().isEmpty();
     }
+
+    /**
+     * Situações em que a solicitação ainda está aberta (RN05): SOLICITADA, AGENDADA e EM_RECOLHIMENTO, o complemento das
+     * finais. Só as abertas bloqueiam a inativação do ponto e a remoção de um vínculo de material.
+     */
+    public static Set<SituacaoSolicitacao> abertas() {
+        EnumSet<SituacaoSolicitacao> abertas = EnumSet.noneOf(SituacaoSolicitacao.class);
+        for (SituacaoSolicitacao situacao : values()) {
+            if (!situacao.ehFinal()) {
+                abertas.add(situacao);
+            }
+        }
+        return abertas;
+    }
 }
