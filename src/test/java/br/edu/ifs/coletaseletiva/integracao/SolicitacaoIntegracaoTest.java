@@ -109,6 +109,55 @@ class SolicitacaoIntegracaoTest extends IntegracaoBase {
         assertEquals(2, jdbc.queryForObject("SELECT COUNT(DISTINCT sol_tx_protocolo) FROM coleta.sol_solicitacao", Integer.class));
     }
 
+    // ---------- cópia do endereço (ADR 0008): o endereço de tamanho máximo cabe inteiro ----------
+
+    /** Endereço com todos os campos no limite do cadastro; devolve [id, texto esperado da cópia]. */
+    private Object[] enderecoMaximo(int moradorId, String letra) throws Exception {
+        String logradouro = letra.repeat(150);
+        String bairro = letra.repeat(100);
+        String municipio = letra.repeat(100);
+        String complemento = letra.repeat(100);
+        String corpo = ("{\"logradouro\": \"%s\", \"numero\": \"1234567890\", \"complemento\": \"%s\", \"bairro\": \"%s\", "
+                + "\"municipio\": \"%s\", \"uf\": \"SE\", \"cep\": \"49400000\"}")
+                .formatted(logradouro, complemento, bairro, municipio);
+        int id = CenarioSolicitacao.id(mockMvc.perform(post("/moradores/" + moradorId + "/enderecos").header("X-Perfil", ADMIN)
+                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+        String texto = logradouro + ", 1234567890 (" + complemento + ") - " + bairro + " - " + municipio + "/SE - CEP 49400000";
+        return new Object[] {id, texto};
+    }
+
+    @Test
+    void rf08_colunaDaCopiaDoEnderecoComporta500Caracteres() {
+        assertEquals(500, jdbc.queryForObject("""
+                SELECT character_maximum_length FROM information_schema.columns
+                WHERE table_schema = 'coleta' AND table_name = 'sol_solicitacao' AND column_name = 'sol_tx_endereco_copia'
+                """, Integer.class));
+    }
+
+    @Test
+    void rf08_enderecoDeTamanhoMaximoEhAceitoEPreservadoNaCriacaoENaCorrecao() throws Exception {
+        Object[] maximo = enderecoMaximo(maria, "a");
+        String texto = (String) maximo[1];
+        assertEquals(489, texto.length());
+
+        String resposta = criar(maria, corpo(ponto, (int) maximo[0], item(papel, "1")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.enderecoCopia").value(texto))
+                .andReturn().getResponse().getContentAsString();
+        int id = CenarioSolicitacao.id(resposta);
+        assertEquals(texto, jdbc.queryForObject(
+                "SELECT sol_tx_endereco_copia FROM coleta.sol_solicitacao WHERE sol_nr_id = ?", String.class, id));
+
+        // Correção para outro endereço também de tamanho máximo
+        Object[] outro = enderecoMaximo(maria, "b");
+        corrigir(id, maria, correcao((int) outro[0], item(papel, "1"), 0))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.enderecoCopia").value((String) outro[1]));
+        assertEquals(outro[1], jdbc.queryForObject(
+                "SELECT sol_tx_endereco_copia FROM coleta.sol_solicitacao WHERE sol_nr_id = ?", String.class, id));
+    }
+
     @Test
     void rf08_limiteIgualAoCadastradoEhAceitoEPilhasInteirasTambem() throws Exception {
         criar(maria, corpo(ponto, enderecoMaria, item(papel, "10") + "," + item(pilhas, "3.0")))
@@ -234,19 +283,6 @@ class SolicitacaoIntegracaoTest extends IntegracaoBase {
                 .contentType(MediaType.APPLICATION_JSON).content(corpo)).andExpect(status().isForbidden());
         jdbc.update("UPDATE coleta.mor_morador SET mor_tx_situacao = 'INATIVO' WHERE mor_nr_id = ?", maria);
         criar(maria, corpo).andExpect(status().isForbidden());
-
-        naoGravouNada();
-    }
-
-    @Test
-    void rf08_enderecoQueNaoCabeNaCopiaDe400CaracteresEhRecusadoEmVezDeTruncado() throws Exception {
-        int enderecoLongo = c.endereco(maria, "L".repeat(150), "C".repeat(100));
-        jdbc.update("UPDATE coleta.end_endereco SET end_tx_bairro = ?, end_tx_municipio = ? WHERE end_nr_id = ?",
-                "B".repeat(100), "M".repeat(100), enderecoLongo);
-
-        criar(maria, corpo(ponto, enderecoLongo, item(papel, "1")))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.mensagem").value(org.hamcrest.Matchers.containsString("excede 400 caracteres")));
 
         naoGravouNada();
     }
