@@ -1,4 +1,7 @@
-# RNF04 — medição inicial (sem os índices da V3)
+# RNF04 — medição inicial com o dataset original (histórico)
+
+> **HISTÓRICO — NÃO COMPARAR COM A BASE CORRIGIDA.** Estes são os resultados da medição inicial feita com o **dataset original**, em que cada ponto e cada morador tinham uma única situação (defeito descrito na seção "Limitações"). O dataset foi corrigido na Issue #33 e a medição inicial foi repetida; os resultados vigentes estão em [`../resultados-iniciais.md`](../resultados-iniciais.md). Os números abaixo ficam preservados como registro e **não devem ser comparados diretamente** com os da base corrigida, porque a seletividade dos filtros é diferente.
+
 
 **Data:** 2026-11-08 · **Issue:** #58 (etapa 1) · **Meta:** p95 ≤ 2.000 ms com 1.000 solicitações · **Resultado: meta atendida, com folga de mais de 200 vezes.**
 
@@ -23,7 +26,7 @@ Confirmação do banco: o JAR abriu 10 conexões JDBC em `coleta_desempenho`, e 
 
 ## Método
 
-Aplicação e dataset fixos; fases em sequência, sempre com a mesma aplicação em execução (veja o [README](README.md)):
+Aplicação e dataset fixos; fases em sequência, sempre com a mesma aplicação em execução (veja o [README](../README.md)):
 
 1. **Aquecimento**: 1 VU, 40 iterações, fora dos resultados.
 2. **Principal**: 1 VU, 200 iterações = **200 requisições de cada tipo** (600 medidas).

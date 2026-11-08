@@ -1,0 +1,757 @@
+{
+    "metrics": {
+        "http_req_duration{consulta:RF06,variante:combinado}": {
+            "avg": 3.037051914634144,
+            "med": 2.980961,
+            "p(90)": 3.5285314999999997,
+            "p(95)": 3.7296755,
+            "max": 6.396753,
+            "min": 2.354296,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_duration{consulta:RF09}": {
+            "med": 3.561912,
+            "p(90)": 6.0534785,
+            "p(95)": 6.729152399999999,
+            "max": 11.33613,
+            "min": 0,
+            "avg": 4.004332933870973,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_duration{consulta:RF09,variante:periodo,perfil:ADMINISTRADOR}": {
+            "max": 7.728265,
+            "min": 3.207731,
+            "avg": 4.902709428571426,
+            "med": 4.8728985,
+            "p(90)": 5.967207999999999,
+            "p(95)": 6.316361,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_duration{consulta:RF09,variante:periodo,perfil:OPERADOR}": {
+            "max": 4.545527,
+            "min": 2.336357,
+            "avg": 2.9760013416666666,
+            "med": 2.9192894999999996,
+            "p(90)": 3.4442276,
+            "p(95)": 3.7237497499999996,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_duration{consulta:RF09,variante:geral,perfil:MORADOR}": {
+            "min": 2.290004,
+            "avg": 2.8855466774193546,
+            "med": 2.8285945000000003,
+            "p(90)": 3.4684217,
+            "p(95)": 3.66233475,
+            "max": 4.553189,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_connecting": {
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "max": 2.469286,
+            "min": 0,
+            "avg": 0.016189957852348995
+        },
+        "http_req_duration{consulta:RF15}": {
+            "med": 3.6351775,
+            "p(90)": 4.5722536,
+            "p(95)": 4.8718731,
+            "max": 9.626814,
+            "min": 0,
+            "avg": 3.7296879620967753,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_duration{consulta:RF09,variante:ponto,perfil:ADMINISTRADOR}": {
+            "p(90)": 6.3079205,
+            "p(95)": 7.14742925,
+            "max": 8.884609,
+            "min": 2.909324,
+            "avg": 4.767374611111114,
+            "med": 4.536408,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_duration{consulta:RF09,variante:situacao,perfil:MORADOR}": {
+            "min": 2.166884,
+            "avg": 2.7748427096774178,
+            "med": 2.718885,
+            "p(90)": 3.2229053000000003,
+            "p(95)": 3.36126225,
+            "max": 3.613983,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "iterations": {
+            "rate": 37.54011093909834,
+            "count": 1240
+        },
+        "http_req_sending": {
+            "min": 0,
+            "avg": 0.012095946308724818,
+            "med": 0.008326,
+            "p(90)": 0.02502899999999997,
+            "p(95)": 0.037351800000000004,
+            "max": 0.394365
+        },
+        "http_req_duration{consulta:RF15,variante:periodo}": {
+            "med": 3.4722315000000004,
+            "p(90)": 4.2687435,
+            "p(95)": 4.596698,
+            "max": 6.682127,
+            "min": 2.677742,
+            "avg": 3.5791922970779235,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_blocked": {
+            "p(95)": 0.004025199999999998,
+            "max": 2.618419,
+            "min": 0,
+            "avg": 0.020649649127516802,
+            "med": 0.002795,
+            "p(90)": 0.0035866
+        },
+        "http_req_duration{consulta:RF06,variante:bairro}": {
+            "p(95)": 4.349212799999998,
+            "max": 5.663754,
+            "min": 2.462839,
+            "avg": 3.2459418999999974,
+            "med": 3.145709,
+            "p(90)": 3.8440814,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "data_received": {
+            "count": 20728976,
+            "rate": 627554.8860434734
+        },
+        "http_req_duration{consulta:RF09,variante:pagina,perfil:ADMINISTRADOR}": {
+            "p(95)": 8.415372999999999,
+            "max": 11.33613,
+            "min": 0,
+            "avg": 6.282557341269842,
+            "med": 6.154362000000001,
+            "p(90)": 8.106853000000001,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_duration{consulta:RF15,variante:geral}": {
+            "p(95)": 4.970744300000001,
+            "max": 9.626814,
+            "min": 0,
+            "avg": 3.8782541955128145,
+            "med": 3.770449,
+            "p(90)": 4.6954175000000005,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_failed": {
+            "fails": 3715,
+            "passes": 10,
+            "thresholds": {
+                "rate==0": true
+            },
+            "value": 0.0026845637583892616
+        },
+        "http_req_waiting": {
+            "p(90)": 4.2881561999999995,
+            "p(95)": 4.570406599999999,
+            "max": 9.587841,
+            "min": 0,
+            "avg": 3.391030723489939,
+            "med": 3.301261
+        },
+        "http_req_duration{consulta:RF06,variante:municipio}": {
+            "min": 0,
+            "avg": 3.0133127480314967,
+            "med": 2.995743,
+            "p(90)": 3.4717493000000004,
+            "p(95)": 3.6656043499999997,
+            "max": 4.80184,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "checks": {
+            "passes": 7420,
+            "fails": 20,
+            "thresholds": {
+                "rate==1": true
+            },
+            "value": 0.9973118279569892
+        },
+        "http_req_duration{consulta:RF09,variante:situacao,perfil:OPERADOR}": {
+            "med": 2.8809515,
+            "p(90)": 3.4505654000000003,
+            "p(95)": 3.4763088,
+            "max": 4.386463,
+            "min": 2.258033,
+            "avg": 2.9550481250000016,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "data_sent": {
+            "count": 550761,
+            "rate": 16673.894387845758
+        },
+        "http_req_duration": {
+            "min": 0,
+            "avg": 3.7412134775838854,
+            "med": 3.489701,
+            "p(90)": 5.0644298,
+            "p(95)": 5.757545399999997,
+            "max": 11.33613
+        },
+        "http_req_tls_handshaking": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "max": 0,
+            "min": 0,
+            "avg": 0,
+            "med": 0
+        },
+        "http_req_duration{consulta:RF06,variante:material}": {
+            "max": 8.97659,
+            "min": 2.801663,
+            "avg": 4.312249504065043,
+            "med": 4.1189695,
+            "p(90)": 5.397192499999999,
+            "p(95)": 5.92332175,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "iteration_duration": {
+            "p(90)": 15.906139800000005,
+            "p(95)": 17.149617099999997,
+            "max": 30013.531795,
+            "min": 7.566759,
+            "avg": 253.91168474274193,
+            "med": 11.5454
+        },
+        "vus": {
+            "min": 1,
+            "max": 10,
+            "value": 1
+        },
+        "http_req_duration{consulta:RF06}": {
+            "min": 0,
+            "avg": 3.488150384677425,
+            "med": 3.3302265,
+            "p(90)": 4.4399898,
+            "p(95)": 4.8228803000000005,
+            "max": 8.97659,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_duration{consulta:RF09,variante:situacao,perfil:ADMINISTRADOR}": {
+            "max": 9.151874,
+            "min": 2.78605,
+            "avg": 4.556873800000001,
+            "med": 4.2534465,
+            "p(90)": 5.9732365000000005,
+            "p(95)": 7.097443049999999,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_duration{consulta:RF09,variante:geral,perfil:OPERADOR}": {
+            "p(95)": 6.6559823,
+            "max": 8.418351,
+            "min": 3.44529,
+            "avg": 5.003124775,
+            "med": 4.8366105,
+            "p(90)": 6.2064781,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_receiving": {
+            "max": 5.788439,
+            "min": 0,
+            "avg": 0.338086807785234,
+            "med": 0.054263,
+            "p(90)": 1.117865,
+            "p(95)": 1.6839073999999994
+        },
+        "http_reqs": {
+            "count": 3725,
+            "rate": 112.77170423237203
+        },
+        "http_req_duration{expected_response:true}": {
+            "min": 2.166884,
+            "avg": 3.7512840387617694,
+            "med": 3.49268,
+            "p(90)": 5.0685725999999995,
+            "p(95)": 5.763847599999996,
+            "max": 11.33613
+        },
+        "vus_max": {
+            "value": 10,
+            "min": 10,
+            "max": 10
+        },
+        "http_req_duration{consulta:RF09,variante:periodo,perfil:MORADOR}": {
+            "med": 2.845515,
+            "p(90)": 3.1791199,
+            "p(95)": 3.2506182999999997,
+            "max": 4.138695,
+            "min": 2.203468,
+            "avg": 2.8141712661290312,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_duration{consulta:RF06,variante:paginacao}": {
+            "p(90)": 4.4803393,
+            "p(95)": 4.71032565,
+            "max": 5.889704,
+            "min": 2.895674,
+            "avg": 3.8545549795081966,
+            "med": 3.802703,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_duration{etapa:medicao}": {
+            "min": 0,
+            "avg": 3.7407237602150465,
+            "med": 3.4890365,
+            "p(90)": 5.0644008000000005,
+            "p(95)": 5.760112099999996,
+            "max": 11.33613,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        }
+    },
+    "setup_data": {
+        "moradorIds": [
+            201,
+            202,
+            203,
+            204,
+            205,
+            206,
+            207,
+            208,
+            209,
+            210,
+            211,
+            212,
+            213,
+            214,
+            215,
+            216,
+            217,
+            218,
+            219,
+            220,
+            221,
+            222,
+            223,
+            224,
+            225,
+            226,
+            227,
+            228,
+            229,
+            230,
+            231,
+            232,
+            233,
+            234,
+            235,
+            236,
+            237,
+            238,
+            239,
+            240,
+            241,
+            242,
+            243,
+            244,
+            245,
+            246,
+            247,
+            248,
+            249,
+            250,
+            251,
+            252,
+            253,
+            254,
+            255,
+            256,
+            257,
+            258,
+            259,
+            260,
+            261,
+            262,
+            263,
+            264,
+            265,
+            266,
+            267,
+            268,
+            269,
+            270,
+            271,
+            272,
+            273,
+            274,
+            275,
+            276,
+            277,
+            278,
+            279,
+            280,
+            281,
+            282,
+            283,
+            284,
+            285,
+            286,
+            287,
+            288,
+            289,
+            290,
+            291,
+            292,
+            293,
+            294,
+            295,
+            296,
+            297,
+            298,
+            299,
+            300,
+            301,
+            302,
+            303,
+            304,
+            305,
+            306,
+            307,
+            308,
+            309,
+            310,
+            311,
+            312,
+            313,
+            314,
+            315,
+            316,
+            317,
+            318,
+            319,
+            320,
+            321,
+            322,
+            323,
+            324,
+            325,
+            326,
+            327,
+            328,
+            329,
+            330,
+            331,
+            332,
+            333,
+            334,
+            335,
+            336,
+            337,
+            338,
+            339,
+            340,
+            341,
+            342,
+            343,
+            344,
+            345,
+            346,
+            347,
+            348,
+            349,
+            350,
+            351,
+            352,
+            353,
+            354,
+            355,
+            356,
+            357,
+            358,
+            359,
+            360,
+            361,
+            362,
+            363,
+            364,
+            365,
+            366,
+            367,
+            368,
+            369,
+            370,
+            371,
+            372,
+            373,
+            374,
+            375,
+            376,
+            377,
+            378,
+            379,
+            380,
+            381,
+            382,
+            383,
+            384,
+            385,
+            386,
+            387,
+            388,
+            389,
+            390,
+            391,
+            392,
+            393,
+            394,
+            395,
+            396,
+            397,
+            398,
+            399,
+            400
+        ],
+        "operadorIds": [
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40
+        ],
+        "pontos": [
+            {
+                "bairro": "Centro",
+                "id": 21,
+                "materialId": 9,
+                "municipio": "Lagarto"
+            },
+            {
+                "bairro": "Siqueira Campos",
+                "id": 22,
+                "materialId": 9,
+                "municipio": "Aracaju"
+            },
+            {
+                "materialId": 9,
+                "municipio": "Itabaiana",
+                "bairro": "Centro",
+                "id": 23
+            },
+            {
+                "bairro": "Jardim",
+                "id": 24,
+                "materialId": 9,
+                "municipio": "Estância"
+            },
+            {
+                "municipio": "São Cristóvão",
+                "bairro": "Industrial",
+                "id": 25,
+                "materialId": 9
+            },
+            {
+                "bairro": "Santa Maria",
+                "id": 26,
+                "materialId": 11,
+                "municipio": "Nossa Senhora do Socorro"
+            },
+            {
+                "municipio": "Simão Dias",
+                "bairro": "Siqueira Campos",
+                "id": 27,
+                "materialId": 10
+            },
+            {
+                "municipio": "Tobias Barreto",
+                "bairro": "Centro",
+                "id": 28,
+                "materialId": 9
+            },
+            {
+                "municipio": "Lagarto",
+                "bairro": "Jardim",
+                "id": 29,
+                "materialId": 9
+            },
+            {
+                "id": 30,
+                "materialId": 9,
+                "municipio": "Aracaju",
+                "bairro": "Industrial"
+            },
+            {
+                "bairro": "Santa Maria",
+                "id": 31,
+                "materialId": 9,
+                "municipio": "Itabaiana"
+            },
+            {
+                "bairro": "Jardim",
+                "id": 32,
+                "materialId": 13,
+                "municipio": "Aracaju"
+            },
+            {
+                "municipio": "Estância",
+                "bairro": "Siqueira Campos",
+                "id": 33,
+                "materialId": 12
+            },
+            {
+                "bairro": "Industrial",
+                "id": 34,
+                "materialId": 11,
+                "municipio": "Itabaiana"
+            },
+            {
+                "materialId": 10,
+                "municipio": "Estância",
+                "bairro": "Santa Maria",
+                "id": 35
+            },
+            {
+                "bairro": "Siqueira Campos",
+                "id": 36,
+                "materialId": 9,
+                "municipio": "São Cristóvão"
+            },
+            {
+                "id": 37,
+                "materialId": 9,
+                "municipio": "Nossa Senhora do Socorro",
+                "bairro": "Centro"
+            },
+            {
+                "bairro": "Jardim",
+                "id": 38,
+                "materialId": 9,
+                "municipio": "Simão Dias"
+            },
+            {
+                "materialId": 9,
+                "municipio": "Tobias Barreto",
+                "bairro": "Industrial",
+                "id": 39
+            },
+            {
+                "municipio": "Lagarto",
+                "bairro": "Santa Maria",
+                "id": 40,
+                "materialId": 9
+            }
+        ],
+        "materiais": [
+            9,
+            10,
+            11,
+            12,
+            16,
+            15,
+            14,
+            13
+        ]
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "RF06: status 200": {
+                    "fails": 4,
+                    "name": "RF06: status 200",
+                    "path": "::RF06: status 200",
+                    "id": "af4e001edc3d91ce3ebb0412c41bd63c",
+                    "passes": 1236
+                },
+                "RF06: conteúdo esperado": {
+                    "name": "RF06: conteúdo esperado",
+                    "path": "::RF06: conteúdo esperado",
+                    "id": "60eaf8022fafc23a5eaa078a9040b62e",
+                    "passes": 1236,
+                    "fails": 4
+                },
+                "RF09: status 200": {
+                    "name": "RF09: status 200",
+                    "path": "::RF09: status 200",
+                    "id": "446fb24eedd667b7fddd675d03a69393",
+                    "passes": 1238,
+                    "fails": 2
+                },
+                "RF09: conteúdo esperado": {
+                    "name": "RF09: conteúdo esperado",
+                    "path": "::RF09: conteúdo esperado",
+                    "id": "7342bc9cb33821d13b1e6ce915fc080a",
+                    "passes": 1238,
+                    "fails": 2
+                },
+                "RF15: status 200": {
+                    "name": "RF15: status 200",
+                    "path": "::RF15: status 200",
+                    "id": "6b5ba759945afffc8f58a1a37c9ee3c3",
+                    "passes": 1236,
+                    "fails": 4
+                },
+                "RF15: conteúdo esperado": {
+                    "path": "::RF15: conteúdo esperado",
+                    "id": "c517680d38c1df671ea1548234df16a0",
+                    "passes": 1236,
+                    "fails": 4,
+                    "name": "RF15: conteúdo esperado"
+                }
+            }
+    }
+}
