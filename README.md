@@ -302,7 +302,7 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 - [x] Pesquisa de pontos e materiais com filtros e paginação (RF06)
 - [x] Consultas de solicitações com filtros e paginação (RF09)
 - [x] Solicitação de recolhimento (compatibilidade, itens e protocolo) (RF08)
-- [ ] Transições de situação e histórico
+- [ ] Transições de situação e histórico (RF10 concluído; RF11 a RF14 pendentes)
 - [ ] Resumo gerencial
 - [ ] Testes de integração e de concorrência
 - [ ] Interface web responsiva (segunda unidade)
