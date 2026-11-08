@@ -97,3 +97,92 @@ join mat_material m1_0 on m1_0.mat_nr_id = is1_0.mat_nr_id
 where s1_0.sol_tx_situacao = 'CONCLUIDA' and is1_0.iso_nr_quantidade_efetiva is not null
   and s1_0.sol_dt_conclusao >= '2026-01-01 00:00:00-03' and s1_0.sol_dt_conclusao < '2026-03-01 00:00:00-03'
 group by 1, 2, 3 order by 2, 3;
+
+-- ---------------------------------------------------------------------------------------------------------
+-- Variantes acrescentadas ao roteiro definitivo do k6 (SQL capturado do Hibernate com os mesmos parâmetros).
+-- Os ids do ponto, do morador e do operador vêm de subconsultas "min(...)" sobre os registros PERF, então valem
+-- mesmo depois de limpar e recarregar o dataset.
+-- ---------------------------------------------------------------------------------------------------------
+
+\echo '=== RF06 (e) pesquisa por material (EXISTS no vínculo)'
+EXPLAIN (ANALYZE, BUFFERS)
+select pc1_0.poc_nr_id, pc1_0.poc_tx_nome from poc_ponto_coleta pc1_0
+where 1=1 and lower(pc1_0.poc_tx_nome) like '%perf%' escape '\'
+  and exists(select 1 from mac_material_aceito ma1_0
+             where ma1_0.poc_nr_id = pc1_0.poc_nr_id
+               and ma1_0.mat_nr_id = (select min(mat_nr_id) from mat_material where mat_tx_nome like 'PERF %'))
+  and pc1_0.poc_tx_situacao = 'ATIVO'
+order by pc1_0.poc_nr_id offset 0 rows fetch first 20 rows only;
+
+\echo '=== RF06 (f) filtros combinados: nome, município, bairro e material'
+EXPLAIN (ANALYZE, BUFFERS)
+select pc1_0.poc_nr_id, pc1_0.poc_tx_nome from poc_ponto_coleta pc1_0
+where 1=1 and lower(pc1_0.poc_tx_nome) like '%perf%' escape '\'
+  and lower(pc1_0.poc_tx_municipio) = 'lagarto' and lower(pc1_0.poc_tx_bairro) = 'centro'
+  and exists(select 1 from mac_material_aceito ma1_0
+             where ma1_0.poc_nr_id = pc1_0.poc_nr_id
+               and ma1_0.mat_nr_id = (select min(mat_nr_id) from mat_material where mat_tx_nome like 'PERF %'))
+  and pc1_0.poc_tx_situacao = 'ATIVO'
+order by pc1_0.poc_nr_id offset 0 rows fetch first 20 rows only;
+
+\echo '=== RF06 (g) paginação: página 1 de 5 pontos'
+EXPLAIN (ANALYZE, BUFFERS)
+select pc1_0.poc_nr_id, pc1_0.poc_tx_nome from poc_ponto_coleta pc1_0
+where 1=1 and lower(pc1_0.poc_tx_nome) like '%perf%' escape '\' and pc1_0.poc_tx_situacao = 'ATIVO'
+order by pc1_0.poc_nr_id offset 5 rows fetch first 5 rows only;
+
+\echo '=== RF06 (g) paginação: contagem'
+EXPLAIN (ANALYZE, BUFFERS)
+select count(pc1_0.poc_nr_id) from poc_ponto_coleta pc1_0
+where 1=1 and lower(pc1_0.poc_tx_nome) like '%perf%' escape '\' and pc1_0.poc_tx_situacao = 'ATIVO';
+
+\echo '=== RF09 (e) MORADOR sem filtro (contexto: só as do morador)'
+EXPLAIN (ANALYZE, BUFFERS)
+select s1_0.sol_nr_id, s1_0.sol_tx_protocolo, s1_0.sol_tx_situacao, s1_0.sol_dt_criacao from sol_solicitacao s1_0
+where 1=1 and s1_0.mor_nr_id = (select min(mor_nr_id) from mor_morador where mor_tx_email like 'perf.morador.%')
+order by s1_0.sol_dt_criacao desc, s1_0.sol_nr_id desc offset 0 rows fetch first 50 rows only;
+
+\echo '=== RF09 (f) MORADOR por situação'
+EXPLAIN (ANALYZE, BUFFERS)
+select s1_0.sol_nr_id, s1_0.sol_tx_protocolo, s1_0.sol_tx_situacao, s1_0.sol_dt_criacao from sol_solicitacao s1_0
+where 1=1 and s1_0.sol_tx_situacao = 'CONCLUIDA'
+  and s1_0.mor_nr_id = (select min(mor_nr_id) from mor_morador where mor_tx_email like 'perf.morador.%')
+order by s1_0.sol_dt_criacao desc, s1_0.sol_nr_id desc offset 0 rows fetch first 50 rows only;
+
+\echo '=== RF09 (g) MORADOR por período'
+EXPLAIN (ANALYZE, BUFFERS)
+select s1_0.sol_nr_id, s1_0.sol_tx_protocolo, s1_0.sol_tx_situacao, s1_0.sol_dt_criacao from sol_solicitacao s1_0
+where 1=1 and s1_0.sol_dt_criacao >= '2026-01-01 00:00:00-03' and s1_0.sol_dt_criacao < '2026-03-01 00:00:00-03'
+  and s1_0.mor_nr_id = (select min(mor_nr_id) from mor_morador where mor_tx_email like 'perf.morador.%')
+order by s1_0.sol_dt_criacao desc, s1_0.sol_nr_id desc offset 0 rows fetch first 50 rows only;
+
+\echo '=== RF09 (h) OPERADOR sem filtro (contexto: só as do ponto do operador)'
+EXPLAIN (ANALYZE, BUFFERS)
+select s1_0.sol_nr_id, s1_0.sol_tx_protocolo, s1_0.sol_tx_situacao, s1_0.sol_dt_criacao from sol_solicitacao s1_0
+where 1=1 and s1_0.poc_nr_id = (select min(poc_nr_id) from poc_ponto_coleta where poc_tx_nome like 'PERF %')
+order by s1_0.sol_dt_criacao desc, s1_0.sol_nr_id desc offset 0 rows fetch first 50 rows only;
+
+\echo '=== RF09 (h) OPERADOR sem filtro: contagem'
+EXPLAIN (ANALYZE, BUFFERS)
+select count(s1_0.sol_nr_id) from sol_solicitacao s1_0
+where 1=1 and s1_0.poc_nr_id = (select min(poc_nr_id) from poc_ponto_coleta where poc_tx_nome like 'PERF %');
+
+\echo '=== RF09 (i) OPERADOR por situação'
+EXPLAIN (ANALYZE, BUFFERS)
+select s1_0.sol_nr_id, s1_0.sol_tx_protocolo, s1_0.sol_tx_situacao, s1_0.sol_dt_criacao from sol_solicitacao s1_0
+where 1=1 and s1_0.sol_tx_situacao = 'CONCLUIDA'
+  and s1_0.poc_nr_id = (select min(poc_nr_id) from poc_ponto_coleta where poc_tx_nome like 'PERF %')
+order by s1_0.sol_dt_criacao desc, s1_0.sol_nr_id desc offset 0 rows fetch first 50 rows only;
+
+\echo '=== RF09 (i) OPERADOR por situação: contagem'
+EXPLAIN (ANALYZE, BUFFERS)
+select count(s1_0.sol_nr_id) from sol_solicitacao s1_0
+where 1=1 and s1_0.sol_tx_situacao = 'CONCLUIDA'
+  and s1_0.poc_nr_id = (select min(poc_nr_id) from poc_ponto_coleta where poc_tx_nome like 'PERF %');
+
+\echo '=== RF09 (j) OPERADOR por período'
+EXPLAIN (ANALYZE, BUFFERS)
+select s1_0.sol_nr_id, s1_0.sol_tx_protocolo, s1_0.sol_tx_situacao, s1_0.sol_dt_criacao from sol_solicitacao s1_0
+where 1=1 and s1_0.sol_dt_criacao >= '2026-01-01 00:00:00-03' and s1_0.sol_dt_criacao < '2026-03-01 00:00:00-03'
+  and s1_0.poc_nr_id = (select min(poc_nr_id) from poc_ponto_coleta where poc_tx_nome like 'PERF %')
+order by s1_0.sol_dt_criacao desc, s1_0.sol_nr_id desc offset 0 rows fetch first 50 rows only;
