@@ -1,0 +1,58 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: -
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 5m30s max duration (incl. graceful stop):
+              * aquecimento: 40 iterations for each of 1 VUs (maxDuration: 5m0s, gracefulStop: 30s)
+
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate==1' rate=100.00%
+
+    http_req_failed
+    ✓ 'rate==0' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 240     318.526207/s
+    checks_succeeded...: 100.00% 240 out of 240
+    checks_failed......: 0.00%   0 out of 240
+
+    ✓ RF06: status 200
+    ✓ RF06: conteúdo esperado
+    ✓ RF09: status 200
+    ✓ RF09: conteúdo esperado
+    ✓ RF15: status 200
+    ✓ RF15: conteúdo esperado
+
+    HTTP
+    http_req_duration..............: min=3.27ms  avg=5.56ms  med=4.88ms  p(90)=7.31ms  p(95)=9.12ms  max=27.13ms
+      { expected_response:true }...: min=3.27ms  avg=5.56ms  med=4.88ms  p(90)=7.31ms  p(95)=9.12ms  max=27.13ms
+    http_req_failed................: 0.00%  0 out of 125
+    http_reqs......................: 125    165.899066/s
+
+    EXECUTION
+    iteration_duration.............: min=11.23ms avg=17.01ms med=15.44ms p(90)=21.95ms p(95)=28.91ms max=39.88ms
+    iterations.....................: 40     53.087701/s
+
+    NETWORK
+    data_received..................: 710 kB 942 kB/s
+    data_sent......................: 19 kB  25 kB/s
+
+
+
+
+running (0m00.8s), 0/1 VUs, 40 complete and 0 interrupted iterations
+aquecimento ✓ [ 100% ] 1 VUs  0m00.7s/5m0s  40/40 iters, 40 per VU

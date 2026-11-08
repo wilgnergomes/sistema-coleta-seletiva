@@ -1,0 +1,24 @@
+rodada | k6 | duração | maior silêncio do forwarder na janela (s) | eventos do forwarder
+repro-complementar-01 | aprovada | 31s | 0.9 | 961
+repro-complementar-02 | REPROVADA | 61s | 28.3 | 1038
+repro-complementar-03 | REPROVADA | 58s | 25.1 | 913
+repro-complementar-04 | REPROVADA | 48s | 14.2 | 605
+repro-complementar-05 | REPROVADA | 47s | 23.7 | 401
+repro-complementar-06 | aprovada | 31s | 0.6 | 942
+repro-complementar-07 | REPROVADA | 36s | 25.2 | 31
+repro-complementar-08 | REPROVADA | 59s | 27.3 | 1124
+testeB-k6-01 | aprovada | 31s | 0.6 | 1130
+testeB-k6-02 | aprovada | 31s | 0.5 | 1148
+testeB-k6-03 | aprovada | 32s | 0.5 | 1151
+testeB-k6-04 | REPROVADA | 60s | 29.2 | 1135
+testeB-k6-05 | aprovada | 31s | 0.5 | 1175
+testeC-complementar-01 | aprovada | 31s | 0.0 | 2
+testeC-complementar-02 | aprovada | 32s | 0.2 | 5
+testeC-complementar-03 | aprovada | 31s | n/a (quase nenhuma conexão nova: keep-alive ilimitado) | 1
+testeC-complementar-04 | aprovada | 31s | 0.2 | 5
+testeC-complementar-05 | aprovada | 31s | n/a (quase nenhuma conexão nova: keep-alive ilimitado) | 0
+testeC-complementar-06 | aprovada | 31s | 0.2 | 5
+testeC-complementar-07 | aprovada | 31s | n/a (quase nenhuma conexão nova: keep-alive ilimitado) | 0
+testeC-complementar-08 | aprovada | 31s | 0.2 | 5
+testeC-complementar-09 | aprovada | 31s | n/a (quase nenhuma conexão nova: keep-alive ilimitado) | 0
+testeC-complementar-10 | aprovada | 31s | 0.2 | 5

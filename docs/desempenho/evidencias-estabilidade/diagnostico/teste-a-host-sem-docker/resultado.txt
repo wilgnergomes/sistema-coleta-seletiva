@@ -1,0 +1,8 @@
+rodada 1 18:20:57: duracao=30.0s requisicoes=84194 (2806/s) conexoes_abertas=849 connect_max=29.4ms erros=0 segundos_quase_parados=[] lentos(>1s)=[]
+rodada 2 18:21:28: duracao=30.0s requisicoes=84015 (2800/s) conexoes_abertas=845 connect_max=26.3ms erros=0 segundos_quase_parados=[] lentos(>1s)=[]
+rodada 3 18:21:58: duracao=30.0s requisicoes=83485 (2783/s) conexoes_abertas=840 connect_max=25.7ms erros=0 segundos_quase_parados=[] lentos(>1s)=[]
+rodada 4 18:22:28: duracao=30.0s requisicoes=84655 (2822/s) conexoes_abertas=850 connect_max=26.3ms erros=0 segundos_quase_parados=[] lentos(>1s)=[]
+rodada 5 18:22:58: duracao=30.0s requisicoes=84568 (2819/s) conexoes_abertas=850 connect_max=26.0ms erros=0 segundos_quase_parados=[] lentos(>1s)=[]
+rodada 6 18:23:28: duracao=30.0s requisicoes=83147 (2770/s) conexoes_abertas=839 connect_max=26.0ms erros=0 segundos_quase_parados=[] lentos(>1s)=[]
+rodada 7 18:23:59: duracao=30.0s requisicoes=82569 (2752/s) conexoes_abertas=830 connect_max=25.3ms erros=0 segundos_quase_parados=[] lentos(>1s)=[]
+rodada 8 18:24:29: duracao=30.0s requisicoes=83555 (2785/s) conexoes_abertas=840 connect_max=25.7ms erros=0 segundos_quase_parados=[] lentos(>1s)=[]

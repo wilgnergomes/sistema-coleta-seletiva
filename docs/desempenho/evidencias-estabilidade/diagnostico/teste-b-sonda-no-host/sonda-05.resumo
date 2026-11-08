@@ -1,0 +1,1 @@
+sonda: tentativas=300 erros=0 acima_de_200ms=0 pior_connect=25.1ms pior_resposta=7.4ms
