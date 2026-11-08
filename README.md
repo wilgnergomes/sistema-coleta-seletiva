@@ -167,7 +167,7 @@ Executar a aplicação:
 
 ### Dados de demonstração (perfil `demo`)
 
-Para carregar os dados fictícios de demonstração (hoje, 5 moradores do RF01, 7 endereços do RF02, 7 materiais do RF03 5 pontos de coleta do RF04 e 13 vínculos de materiais do RF05), ative o perfil `demo`:
+Para carregar os dados fictícios de demonstração (hoje, 5 moradores do RF01, 7 endereços do RF02, 7 materiais do RF03, 5 pontos de coleta do RF04, 13 vínculos de materiais do RF05 e 3 operadores do RF07), ative o perfil `demo`:
 
 ```bash
 # Windows (PowerShell/CMD)
@@ -298,7 +298,7 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 - [x] Cadastro de materiais recicláveis (RF03)
 - [x] Cadastro de pontos de coleta (RF04)
 - [x] Vínculo de materiais aos pontos de coleta (RF05)
-- [ ] Cadastros: operadores
+- [x] Cadastro de operadores e vínculo com os pontos (RF07)
 - [x] Pesquisa de pontos e materiais com filtros e paginação (RF06)
 - [ ] Consultas de solicitações com filtros e paginação
 - [ ] Solicitação de recolhimento (compatibilidade, itens e protocolo)
