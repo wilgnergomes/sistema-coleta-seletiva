@@ -24,7 +24,7 @@ info:
     **Idioma (ADR 0023).** As mensagens de erro e de validação saem em português do Brasil
     (padrão) ou em inglês, conforme o cabeçalho `Accept-Language`. Os endpoints passam a
     documentar o cabeçalho conforme cada funcionalidade recebe suas mensagens nos dois idiomas
-    (hoje, RF01 a RF09).
+    (hoje, RF01 a RF10).
 
     **Períodos (ADR 0014).** Os filtros `de` e `ate` são datas no fuso de
     negócio (America/Sao_Paulo). O intervalo é semiaberto: do início do dia `de`
@@ -691,12 +691,18 @@ paths:
   /solicitacoes/{id}/agendamento:
     parameters:
       - { $ref: '#/components/parameters/Id' }
+      - { $ref: '#/components/parameters/AcceptLanguage' }
     post:
       tags: [Situação da solicitação]
       summary: Agenda o recolhimento (RF10)
       description: |
-        Operador do ponto da solicitação. Só a partir de SOLICITADA. A data e hora precisam ser
-        futuras. Muda a situação para AGENDADA e grava o histórico.
+        Só o operador ativo do ponto da solicitação (o responsável do histórico vem do ator, nunca do
+        corpo). Só a partir de SOLICITADA: o reagendamento é do RF14. A `dataHora` precisa ser
+        posterior ao instante atual; caso contrário a resposta é 400 no campo `dataHora` e a solicitação
+        continua SOLICITADA. Muda a situação para AGENDADA, grava `agendadaPara` e o histórico na mesma
+        transação, e soma 1 à versão. Perfil sem permissão (morador, administrador) ou operador
+        inexistente ou inativo: 403. Solicitação inexistente ou de outro ponto: 404. Fora de SOLICITADA
+        ou versão diferente da atual: 409.
       operationId: agendarSolicitacao
       requestBody:
         required: true
