@@ -3,7 +3,9 @@ package br.edu.ifs.coletaseletiva.controller;
 import br.edu.ifs.coletaseletiva.config.Ator;
 import br.edu.ifs.coletaseletiva.dto.SolicitacaoDetalheDTO;
 import br.edu.ifs.coletaseletiva.form.AgendamentoForm;
+import br.edu.ifs.coletaseletiva.form.ConclusaoForm;
 import br.edu.ifs.coletaseletiva.form.MotivoForm;
+import br.edu.ifs.coletaseletiva.form.VersaoForm;
 import br.edu.ifs.coletaseletiva.service.TransicaoSolicitacaoService;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
@@ -44,5 +46,21 @@ public class TransicaoSolicitacaoController {
                                           @PathVariable Integer id,
                                           @Valid @RequestBody MotivoForm formulario) {
         return service.cancelar(ator, id, formulario);
+    }
+
+    /** RF13: o operador do ponto inicia o recolhimento de uma solicitação AGENDADA. */
+    @PostMapping("/inicio")
+    public SolicitacaoDetalheDTO iniciar(@Parameter(hidden = true) Ator ator,
+                                         @PathVariable Integer id,
+                                         @Valid @RequestBody VersaoForm formulario) {
+        return service.iniciar(ator, id, formulario);
+    }
+
+    /** RF13: o operador do ponto conclui o recolhimento, informando a quantidade efetiva de cada item. */
+    @PostMapping("/conclusao")
+    public SolicitacaoDetalheDTO concluir(@Parameter(hidden = true) Ator ator,
+                                          @PathVariable Integer id,
+                                          @Valid @RequestBody ConclusaoForm formulario) {
+        return service.concluir(ator, id, formulario);
     }
 }
