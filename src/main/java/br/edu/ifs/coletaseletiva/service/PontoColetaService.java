@@ -7,6 +7,8 @@ import br.edu.ifs.coletaseletiva.dto.PontoColetaDTO;
 import br.edu.ifs.coletaseletiva.entity.PontoColeta;
 import br.edu.ifs.coletaseletiva.enumeration.Perfil;
 import br.edu.ifs.coletaseletiva.enumeration.SituacaoCadastro;
+import br.edu.ifs.coletaseletiva.enumeration.SituacaoSolicitacao;
+import br.edu.ifs.coletaseletiva.exception.ConflitoRegraException;
 import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
 import br.edu.ifs.coletaseletiva.form.FiltroPontoColeta;
@@ -16,6 +18,7 @@ import br.edu.ifs.coletaseletiva.mapper.MaterialAceitoMapper;
 import br.edu.ifs.coletaseletiva.mapper.PontoColetaMapper;
 import br.edu.ifs.coletaseletiva.repository.MaterialAceitoRepository;
 import br.edu.ifs.coletaseletiva.repository.PontoColetaRepository;
+import br.edu.ifs.coletaseletiva.repository.SolicitacaoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,6 +38,7 @@ public class PontoColetaService {
 
     private final PontoColetaRepository repository;
     private final MaterialAceitoRepository vinculoRepository;
+    private final SolicitacaoRepository solicitacaoRepository;
     private final PontoColetaMapper mapper;
     private final MaterialAceitoMapper vinculoMapper;
 
@@ -75,10 +79,27 @@ public class PontoColetaService {
     @Transactional
     public PontoColetaDTO atualizar(Ator ator, Integer id, PontoColetaForm formulario) {
         exigirAdministrador(ator);
-        PontoColeta ponto = buscarOuFalhar(id);
-        // O bloqueio da inativação com solicitações abertas (RN05) entra no ciclo das solicitações.
-        mapper.atualizar(ponto, normalizar(formulario));
+        // RN05 e ADR 0024: a linha do ponto é travada antes de contar as solicitações abertas, para que uma criação
+        // concorrente não passe entre a contagem e a gravação.
+        PontoColeta ponto = repository.findComBloqueioById(id)
+                .orElseThrow(() -> new NaoEncontradoException("erro.ponto.nao-encontrado"));
+        PontoColetaForm novo = normalizar(formulario);
+        exigirSemSolicitacoesAbertasAoInativar(ponto, novo);
+        mapper.atualizar(ponto, novo);
         return mapper.paraDTO(repository.save(ponto), materiaisDo(id));
+    }
+
+    /**
+     * RN05: inativar um ponto é bloqueado enquanto houver solicitação aberta (SOLICITADA, AGENDADA ou EM_RECOLHIMENTO)
+     * naquele ponto. Só a passagem de ATIVO para INATIVO é verificada: reativar ou editar outros dados passa.
+     */
+    private void exigirSemSolicitacoesAbertasAoInativar(PontoColeta ponto, PontoColetaForm novo) {
+        if (ponto.getSituacao() == SituacaoCadastro.ATIVO && novo.situacao() == SituacaoCadastro.INATIVO) {
+            long abertas = solicitacaoRepository.countByPontoIdAndSituacaoIn(ponto.getId(), SituacaoSolicitacao.abertas());
+            if (abertas > 0) {
+                throw new ConflitoRegraException("erro.ponto.inativacao-bloqueada", abertas);
+            }
+        }
     }
 
     // ---------- apoio ----------

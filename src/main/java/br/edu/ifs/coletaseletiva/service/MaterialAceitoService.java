@@ -7,12 +7,15 @@ import br.edu.ifs.coletaseletiva.entity.MaterialAceito;
 import br.edu.ifs.coletaseletiva.entity.MaterialAceitoId;
 import br.edu.ifs.coletaseletiva.entity.PontoColeta;
 import br.edu.ifs.coletaseletiva.enumeration.Perfil;
+import br.edu.ifs.coletaseletiva.enumeration.SituacaoSolicitacao;
 import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
+import br.edu.ifs.coletaseletiva.exception.ConflitoRegraException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
 import br.edu.ifs.coletaseletiva.form.VinculoForm;
 import br.edu.ifs.coletaseletiva.mapper.MaterialAceitoMapper;
 import br.edu.ifs.coletaseletiva.repository.MaterialAceitoRepository;
 import br.edu.ifs.coletaseletiva.repository.MaterialRepository;
+import br.edu.ifs.coletaseletiva.repository.SolicitacaoRepository;
 import br.edu.ifs.coletaseletiva.repository.PontoColetaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,7 @@ public class MaterialAceitoService {
     private final MaterialAceitoRepository repository;
     private final PontoColetaRepository pontoRepository;
     private final MaterialRepository materialRepository;
+    private final SolicitacaoRepository solicitacaoRepository;
     private final MaterialAceitoMapper mapper;
 
     /**
@@ -47,12 +51,24 @@ public class MaterialAceitoService {
         return mapper.paraDTO(repository.save(vinculo));
     }
 
-    /** Remove o vínculo. O bloqueio por solicitações abertas (RN05) entra no ciclo das solicitações. */
+    /**
+     * Remove o vínculo. RN05: é bloqueado enquanto houver solicitação aberta do ponto com item daquele material. A linha
+     * do ponto é travada antes da contagem (ADR 0024), então uma criação ou correção concorrente que usaria o vínculo
+     * espera e, depois, enxerga a remoção (ou a remoção enxerga a nova solicitação).
+     */
     @Transactional
     public void remover(Ator ator, Integer pontoId, Integer materialId) {
         exigirAdministrador(ator);
+        pontoRepository.findComBloqueioById(pontoId)
+                .orElseThrow(() -> new NaoEncontradoException("erro.vinculo.nao-encontrado"));
         MaterialAceito vinculo = repository.findById(new MaterialAceitoId(pontoId, materialId))
                 .orElseThrow(() -> new NaoEncontradoException("erro.vinculo.nao-encontrado"));
+
+        long abertas = solicitacaoRepository.contarPorPontoESituacaoComMaterial(
+                pontoId, SituacaoSolicitacao.abertas(), materialId);
+        if (abertas > 0) {
+            throw new ConflitoRegraException("erro.vinculo.remocao-bloqueada", vinculo.getMaterial().getNome(), abertas);
+        }
         repository.delete(vinculo);
     }
 
