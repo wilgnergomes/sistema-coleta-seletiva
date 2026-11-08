@@ -1,0 +1,106 @@
+-- Instruções SQL reais enviadas pelo Hibernate (log_statement=all no banco coleta_desempenho), com parâmetros.
+
+select pc1_0.poc_nr_id,pc1_0.poc_tx_contato,pc1_0.poc_tx_bairro,pc1_0.poc_tx_cep,pc1_0.poc_tx_complemento,pc1_0.poc_tx_logradouro,pc1_0.poc_tx_municipio,pc1_0.poc_tx_numero,pc1_0.poc_tx_uf,pc1_0.poc_tx_horarios,pc1_0.poc_tx_nome,pc1_0.poc_bl_rec_domiciliar,pc1_0.poc_tx_situacao from coleta.poc_ponto_coleta pc1_0 where 1=1 and lower(pc1_0.poc_tx_municipio)=$1 and pc1_0.poc_tx_situacao=$2 order by pc1_0.poc_nr_id offset $3 rows fetch first $4 rows only;
+   -- Parameters: $1 = 'lagarto', $2 = 'ATIVO', $3 = '0', $4 = '20'
+
+select ma1_0.mat_nr_id,ma1_0.poc_nr_id,ma1_0.mac_nr_limite,m1_0.mat_nr_id,m1_0.mat_tx_descricao,m1_0.mat_tx_nome,m1_0.mat_tx_orientacao,m1_0.mat_tx_situacao,m1_0.mat_tx_unidade,ma1_0.mac_tx_observacoes from coleta.mac_material_aceito ma1_0 join coleta.mat_material m1_0 on m1_0.mat_nr_id=ma1_0.mat_nr_id where ma1_0.poc_nr_id in ($1,$2,$3) order by ma1_0.mat_nr_id;
+   -- Parameters: $1 = '1', $2 = '9', $3 = '20'
+
+select pc1_0.poc_nr_id,pc1_0.poc_tx_contato,pc1_0.poc_tx_bairro,pc1_0.poc_tx_cep,pc1_0.poc_tx_complemento,pc1_0.poc_tx_logradouro,pc1_0.poc_tx_municipio,pc1_0.poc_tx_numero,pc1_0.poc_tx_uf,pc1_0.poc_tx_horarios,pc1_0.poc_tx_nome,pc1_0.poc_bl_rec_domiciliar,pc1_0.poc_tx_situacao from coleta.poc_ponto_coleta pc1_0 where 1=1 and lower(pc1_0.poc_tx_nome) like $1 escape '\' and lower(pc1_0.poc_tx_bairro)=$2 and pc1_0.poc_tx_situacao=$3 order by pc1_0.poc_nr_id offset $4 rows fetch first $5 rows only;
+   -- Parameters: $1 = '%perf%', $2 = 'centro', $3 = 'ATIVO', $4 = '0', $5 = '20'
+
+select ma1_0.mat_nr_id,ma1_0.poc_nr_id,ma1_0.mac_nr_limite,m1_0.mat_nr_id,m1_0.mat_tx_descricao,m1_0.mat_tx_nome,m1_0.mat_tx_orientacao,m1_0.mat_tx_situacao,m1_0.mat_tx_unidade,ma1_0.mac_tx_observacoes from coleta.mac_material_aceito ma1_0 join coleta.mat_material m1_0 on m1_0.mat_nr_id=ma1_0.mat_nr_id where ma1_0.poc_nr_id in ($1,$2,$3,$4) order by ma1_0.mat_nr_id;
+   -- Parameters: $1 = '1', $2 = '3', $3 = '8', $4 = '17'
+
+select s1_0.sol_nr_id,s1_0.sol_dt_agendamento,s1_0.sol_dt_conclusao,s1_0.sol_dt_criacao,s1_0.sol_tx_endereco_copia,s1_0.mor_nr_id,s1_0.sol_tx_observacoes,s1_0.poc_nr_id,s1_0.sol_tx_protocolo,s1_0.sol_tx_situacao,s1_0.sol_nr_versao from coleta.sol_solicitacao s1_0 where 1=1 and s1_0.sol_tx_situacao=$1 and 1=1 order by s1_0.sol_dt_criacao desc,s1_0.sol_nr_id desc offset $2 rows fetch first $3 rows only;
+   -- Parameters: $1 = 'CONCLUIDA', $2 = '0', $3 = '50'
+
+select count(s1_0.sol_nr_id) from coleta.sol_solicitacao s1_0 where 1=1 and s1_0.sol_tx_situacao=$1 and 1=1;
+   -- Parameters: $1 = 'CONCLUIDA'
+
+select s1_0.sol_nr_id,s1_0.sol_dt_agendamento,s1_0.sol_dt_conclusao,s1_0.sol_dt_criacao,s1_0.sol_tx_endereco_copia,s1_0.mor_nr_id,s1_0.sol_tx_observacoes,s1_0.poc_nr_id,s1_0.sol_tx_protocolo,s1_0.sol_tx_situacao,s1_0.sol_nr_versao from coleta.sol_solicitacao s1_0 where 1=1 and s1_0.poc_nr_id=$1 and 1=1 order by s1_0.sol_dt_criacao desc,s1_0.sol_nr_id desc offset $2 rows fetch first $3 rows only;
+   -- Parameters: $1 = '1', $2 = '0', $3 = '50'
+
+select count(s1_0.sol_nr_id) from coleta.sol_solicitacao s1_0 where 1=1 and s1_0.poc_nr_id=$1 and 1=1;
+   -- Parameters: $1 = '1'
+
+select s1_0.sol_nr_id,s1_0.sol_dt_agendamento,s1_0.sol_dt_conclusao,s1_0.sol_dt_criacao,s1_0.sol_tx_endereco_copia,s1_0.mor_nr_id,s1_0.sol_tx_observacoes,s1_0.poc_nr_id,s1_0.sol_tx_protocolo,s1_0.sol_tx_situacao,s1_0.sol_nr_versao from coleta.sol_solicitacao s1_0 where 1=1 and s1_0.sol_dt_criacao>=$1 and s1_0.sol_dt_criacao<$2 and 1=1 order by s1_0.sol_dt_criacao desc,s1_0.sol_nr_id desc offset $3 rows fetch first $4 rows only;
+   -- Parameters: $1 = '2026-01-01 00:00:00-03', $2 = '2026-03-01 00:00:00-03', $3 = '0', $4 = '50'
+
+select count(s1_0.sol_nr_id) from coleta.sol_solicitacao s1_0 where 1=1 and s1_0.sol_dt_criacao>=$1 and s1_0.sol_dt_criacao<$2 and 1=1;
+   -- Parameters: $1 = '2026-01-01 00:00:00-03', $2 = '2026-03-01 00:00:00-03'
+
+select s1_0.sol_nr_id,s1_0.sol_dt_agendamento,s1_0.sol_dt_conclusao,s1_0.sol_dt_criacao,s1_0.sol_tx_endereco_copia,s1_0.mor_nr_id,s1_0.sol_tx_observacoes,s1_0.poc_nr_id,s1_0.sol_tx_protocolo,s1_0.sol_tx_situacao,s1_0.sol_nr_versao from coleta.sol_solicitacao s1_0 where 1=1 and 1=1 order by s1_0.sol_dt_criacao desc,s1_0.sol_nr_id desc offset $1 rows fetch first $2 rows only;
+   -- Parameters: $1 = '300', $2 = '100'
+
+select count(s1_0.sol_nr_id) from coleta.sol_solicitacao s1_0 where 1=1 and 1=1;
+   -- sem parâmetros
+
+select s1_0.sol_tx_situacao,count(s1_0.sol_nr_id) from coleta.sol_solicitacao s1_0 group by 1;
+   -- sem parâmetros
+
+select m1_0.mat_nr_id,m1_0.mat_tx_nome,is1_0.iso_tx_copia_unidade,sum(is1_0.iso_nr_quantidade_efetiva) from coleta.iso_item_solicitacao is1_0 join coleta.sol_solicitacao s1_0 on s1_0.sol_nr_id=is1_0.sol_nr_id join coleta.mat_material m1_0 on m1_0.mat_nr_id=is1_0.mat_nr_id where s1_0.sol_tx_situacao=$1 and is1_0.iso_nr_quantidade_efetiva is not null group by 1,2,3 order by 2,3;
+   -- Parameters: $1 = 'CONCLUIDA'
+
+select s1_0.sol_tx_situacao,count(s1_0.sol_nr_id) from coleta.sol_solicitacao s1_0 where s1_0.sol_dt_criacao>=$1 and s1_0.sol_dt_criacao<$2 group by 1;
+   -- Parameters: $1 = '2026-01-01 00:00:00-03', $2 = '2026-03-01 00:00:00-03'
+
+select m1_0.mat_nr_id,m1_0.mat_tx_nome,is1_0.iso_tx_copia_unidade,sum(is1_0.iso_nr_quantidade_efetiva) from coleta.iso_item_solicitacao is1_0 join coleta.sol_solicitacao s1_0 on s1_0.sol_nr_id=is1_0.sol_nr_id join coleta.mat_material m1_0 on m1_0.mat_nr_id=is1_0.mat_nr_id where s1_0.sol_tx_situacao=$1 and is1_0.iso_nr_quantidade_efetiva is not null and s1_0.sol_dt_conclusao>=$2 and s1_0.sol_dt_conclusao<$3 group by 1,2,3 order by 2,3;
+   -- Parameters: $1 = 'CONCLUIDA', $2 = '2026-01-01 00:00:00-03', $3 = '2026-03-01 00:00:00-03'
+
+-- ---------------------------------------------------------------------------------------------
+-- Variantes acrescentadas ao roteiro definitivo (RF06 material/combinado/paginação; RF09 MORADOR/OPERADOR)
+-- ---------------------------------------------------------------------------------------------
+
+-- RF06 material | GET /pontos-coleta?nome=PERF&materialId=1&size=20 | perfil PUBLICO
+select pc1_0.poc_nr_id,pc1_0.poc_tx_contato,pc1_0.poc_tx_bairro,pc1_0.poc_tx_cep,pc1_0.poc_tx_complemento,pc1_0.poc_tx_logradouro,pc1_0.poc_tx_municipio,pc1_0.poc_tx_numero,pc1_0.poc_tx_uf,pc1_0.poc_tx_horarios,pc1_0.poc_tx_nome,pc1_0.poc_bl_rec_domiciliar,pc1_0.poc_tx_situacao from coleta.poc_ponto_coleta pc1_0 where 1=1 and lower(pc1_0.poc_tx_nome) like $1 escape '\' and pc1_0.poc_tx_situacao=$2 order by pc1_0.poc_nr_id offset $3 rows fetch first $4 rows only;
+   -- Parameters: $1 = '%perf%', $2 = 'ATIVO', $3 = '0', $4 = '100'
+select ma1_0.mat_nr_id,ma1_0.poc_nr_id,ma1_0.mac_nr_limite,m1_0.mat_nr_id,m1_0.mat_tx_descricao,m1_0.mat_tx_nome,m1_0.mat_tx_orientacao,m1_0.mat_tx_situacao,m1_0.mat_tx_unidade,ma1_0.mac_tx_observacoes from coleta.mac_material_aceito ma1_0 join coleta.mat_material m1_0 on m1_0.mat_nr_id=ma1_0.mat_nr_id where ma1_0.poc_nr_id in ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) order by ma1_0.mat_nr_id;
+   -- Parameters: $1 = '1', $2 = '2', $3 = '3', $4 = '4', $5 = '5', $6 = '6', $7 = '7', $8 = '8', $9 = '9', $10 = '10', $11 = '11', $12 = '12', $13 = '13', $14 = '14', $15 = '15', $16 = '16', $17 = '17', $18 = '18', $19 = '19', $20 = '20'
+select pc1_0.poc_nr_id,pc1_0.poc_tx_contato,pc1_0.poc_tx_bairro,pc1_0.poc_tx_cep,pc1_0.poc_tx_complemento,pc1_0.poc_tx_logradouro,pc1_0.poc_tx_municipio,pc1_0.poc_tx_numero,pc1_0.poc_tx_uf,pc1_0.poc_tx_horarios,pc1_0.poc_tx_nome,pc1_0.poc_bl_rec_domiciliar,pc1_0.poc_tx_situacao from coleta.poc_ponto_coleta pc1_0 where 1=1 and lower(pc1_0.poc_tx_nome) like $1 escape '\' and exists(select 1 from coleta.mac_material_aceito ma1_0 where ma1_0.poc_nr_id=pc1_0.poc_nr_id and ma1_0.mat_nr_id=$2) and pc1_0.poc_tx_situacao=$3 order by pc1_0.poc_nr_id offset $4 rows fetch first $5 rows only;
+   -- Parameters: $1 = '%perf%', $2 = '1', $3 = 'ATIVO', $4 = '0', $5 = '20'
+select ma1_0.mat_nr_id,ma1_0.poc_nr_id,ma1_0.mac_nr_limite,m1_0.mat_nr_id,m1_0.mat_tx_descricao,m1_0.mat_tx_nome,m1_0.mat_tx_orientacao,m1_0.mat_tx_situacao,m1_0.mat_tx_unidade,ma1_0.mac_tx_observacoes from coleta.mac_material_aceito ma1_0 join coleta.mat_material m1_0 on m1_0.mat_nr_id=ma1_0.mat_nr_id where ma1_0.poc_nr_id in ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) order by ma1_0.mat_nr_id;
+   -- Parameters: $1 = '1', $2 = '2', $3 = '3', $4 = '4', $5 = '5', $6 = '8', $7 = '9', $8 = '10', $9 = '11', $10 = '16', $11 = '17', $12 = '18', $13 = '19', $14 = '20'
+
+-- RF06 combinado | GET /pontos-coleta?nome=PERF&municipio=Lagarto&bairro=Centro&materialId=1&size=20 | perfil PUBLICO
+select pc1_0.poc_nr_id,pc1_0.poc_tx_contato,pc1_0.poc_tx_bairro,pc1_0.poc_tx_cep,pc1_0.poc_tx_complemento,pc1_0.poc_tx_logradouro,pc1_0.poc_tx_municipio,pc1_0.poc_tx_numero,pc1_0.poc_tx_uf,pc1_0.poc_tx_horarios,pc1_0.poc_tx_nome,pc1_0.poc_bl_rec_domiciliar,pc1_0.poc_tx_situacao from coleta.poc_ponto_coleta pc1_0 where 1=1 and lower(pc1_0.poc_tx_nome) like $1 escape '\' and lower(pc1_0.poc_tx_municipio)=$2 and lower(pc1_0.poc_tx_bairro)=$3 and exists(select 1 from coleta.mac_material_aceito ma1_0 where ma1_0.poc_nr_id=pc1_0.poc_nr_id and ma1_0.mat_nr_id=$4) and pc1_0.poc_tx_situacao=$5 order by pc1_0.poc_nr_id offset $6 rows fetch first $7 rows only;
+   -- Parameters: $1 = '%perf%', $2 = 'lagarto', $3 = 'centro', $4 = '1', $5 = 'ATIVO', $6 = '0', $7 = '20'
+select ma1_0.mat_nr_id,ma1_0.poc_nr_id,ma1_0.mac_nr_limite,m1_0.mat_nr_id,m1_0.mat_tx_descricao,m1_0.mat_tx_nome,m1_0.mat_tx_orientacao,m1_0.mat_tx_situacao,m1_0.mat_tx_unidade,ma1_0.mac_tx_observacoes from coleta.mac_material_aceito ma1_0 join coleta.mat_material m1_0 on m1_0.mat_nr_id=ma1_0.mat_nr_id where ma1_0.poc_nr_id in ($1) order by ma1_0.mat_nr_id;
+   -- Parameters: $1 = '1'
+
+-- RF06 paginacao | GET /pontos-coleta?nome=PERF&size=5&page=1 | perfil PUBLICO
+select pc1_0.poc_nr_id,pc1_0.poc_tx_contato,pc1_0.poc_tx_bairro,pc1_0.poc_tx_cep,pc1_0.poc_tx_complemento,pc1_0.poc_tx_logradouro,pc1_0.poc_tx_municipio,pc1_0.poc_tx_numero,pc1_0.poc_tx_uf,pc1_0.poc_tx_horarios,pc1_0.poc_tx_nome,pc1_0.poc_bl_rec_domiciliar,pc1_0.poc_tx_situacao from coleta.poc_ponto_coleta pc1_0 where 1=1 and lower(pc1_0.poc_tx_nome) like $1 escape '\' and pc1_0.poc_tx_situacao=$2 order by pc1_0.poc_nr_id offset $3 rows fetch first $4 rows only;
+   -- Parameters: $1 = '%perf%', $2 = 'ATIVO', $3 = '5', $4 = '5'
+select count(pc1_0.poc_nr_id) from coleta.poc_ponto_coleta pc1_0 where 1=1 and lower(pc1_0.poc_tx_nome) like $1 escape '\' and pc1_0.poc_tx_situacao=$2;
+   -- Parameters: $1 = '%perf%', $2 = 'ATIVO'
+select ma1_0.mat_nr_id,ma1_0.poc_nr_id,ma1_0.mac_nr_limite,m1_0.mat_nr_id,m1_0.mat_tx_descricao,m1_0.mat_tx_nome,m1_0.mat_tx_orientacao,m1_0.mat_tx_situacao,m1_0.mat_tx_unidade,ma1_0.mac_tx_observacoes from coleta.mac_material_aceito ma1_0 join coleta.mat_material m1_0 on m1_0.mat_nr_id=ma1_0.mat_nr_id where ma1_0.poc_nr_id in ($1,$2,$3,$4,$5) order by ma1_0.mat_nr_id;
+   -- Parameters: $1 = '6', $2 = '7', $3 = '8', $4 = '9', $5 = '10'
+
+-- RF09 morador geral | GET /solicitacoes?size=50 | perfil MORADOR
+select s1_0.sol_nr_id,s1_0.sol_dt_agendamento,s1_0.sol_dt_conclusao,s1_0.sol_dt_criacao,s1_0.sol_tx_endereco_copia,s1_0.mor_nr_id,s1_0.sol_tx_observacoes,s1_0.poc_nr_id,s1_0.sol_tx_protocolo,s1_0.sol_tx_situacao,s1_0.sol_nr_versao from coleta.sol_solicitacao s1_0 where 1=1 and s1_0.mor_nr_id=$1 order by s1_0.sol_dt_criacao desc,s1_0.sol_nr_id desc offset $2 rows fetch first $3 rows only;
+   -- Parameters: $1 = '1', $2 = '0', $3 = '50'
+
+-- RF09 morador situacao | GET /solicitacoes?situacao=CONCLUIDA&size=50 | perfil MORADOR
+select s1_0.sol_nr_id,s1_0.sol_dt_agendamento,s1_0.sol_dt_conclusao,s1_0.sol_dt_criacao,s1_0.sol_tx_endereco_copia,s1_0.mor_nr_id,s1_0.sol_tx_observacoes,s1_0.poc_nr_id,s1_0.sol_tx_protocolo,s1_0.sol_tx_situacao,s1_0.sol_nr_versao from coleta.sol_solicitacao s1_0 where 1=1 and s1_0.sol_tx_situacao=$1 and s1_0.mor_nr_id=$2 order by s1_0.sol_dt_criacao desc,s1_0.sol_nr_id desc offset $3 rows fetch first $4 rows only;
+   -- Parameters: $1 = 'CONCLUIDA', $2 = '1', $3 = '0', $4 = '50'
+
+-- RF09 morador periodo | GET /solicitacoes?de=2026-01-01&ate=2026-02-28&size=50 | perfil MORADOR
+select s1_0.sol_nr_id,s1_0.sol_dt_agendamento,s1_0.sol_dt_conclusao,s1_0.sol_dt_criacao,s1_0.sol_tx_endereco_copia,s1_0.mor_nr_id,s1_0.sol_tx_observacoes,s1_0.poc_nr_id,s1_0.sol_tx_protocolo,s1_0.sol_tx_situacao,s1_0.sol_nr_versao from coleta.sol_solicitacao s1_0 where 1=1 and s1_0.sol_dt_criacao>=$1 and s1_0.sol_dt_criacao<$2 and s1_0.mor_nr_id=$3 order by s1_0.sol_dt_criacao desc,s1_0.sol_nr_id desc offset $4 rows fetch first $5 rows only;
+   -- Parameters: $1 = '2026-01-01 00:00:00-03', $2 = '2026-03-01 00:00:00-03', $3 = '1', $4 = '0', $5 = '50'
+
+-- RF09 operador geral | GET /solicitacoes?size=50 | perfil OPERADOR
+select s1_0.sol_nr_id,s1_0.sol_dt_agendamento,s1_0.sol_dt_conclusao,s1_0.sol_dt_criacao,s1_0.sol_tx_endereco_copia,s1_0.mor_nr_id,s1_0.sol_tx_observacoes,s1_0.poc_nr_id,s1_0.sol_tx_protocolo,s1_0.sol_tx_situacao,s1_0.sol_nr_versao from coleta.sol_solicitacao s1_0 where 1=1 and s1_0.poc_nr_id=$1 order by s1_0.sol_dt_criacao desc,s1_0.sol_nr_id desc offset $2 rows fetch first $3 rows only;
+   -- Parameters: $1 = '1', $2 = '0', $3 = '50'
+select count(s1_0.sol_nr_id) from coleta.sol_solicitacao s1_0 where 1=1 and s1_0.poc_nr_id=$1;
+   -- Parameters: $1 = '1'
+
+-- RF09 operador situacao | GET /solicitacoes?situacao=CONCLUIDA&size=50 | perfil OPERADOR
+select s1_0.sol_nr_id,s1_0.sol_dt_agendamento,s1_0.sol_dt_conclusao,s1_0.sol_dt_criacao,s1_0.sol_tx_endereco_copia,s1_0.mor_nr_id,s1_0.sol_tx_observacoes,s1_0.poc_nr_id,s1_0.sol_tx_protocolo,s1_0.sol_tx_situacao,s1_0.sol_nr_versao from coleta.sol_solicitacao s1_0 where 1=1 and s1_0.sol_tx_situacao=$1 and s1_0.poc_nr_id=$2 order by s1_0.sol_dt_criacao desc,s1_0.sol_nr_id desc offset $3 rows fetch first $4 rows only;
+   -- Parameters: $1 = 'CONCLUIDA', $2 = '1', $3 = '0', $4 = '50'
+select count(s1_0.sol_nr_id) from coleta.sol_solicitacao s1_0 where 1=1 and s1_0.sol_tx_situacao=$1 and s1_0.poc_nr_id=$2;
+   -- Parameters: $1 = 'CONCLUIDA', $2 = '1'
+
+-- RF09 operador periodo | GET /solicitacoes?de=2026-01-01&ate=2026-02-28&size=50 | perfil OPERADOR
+select s1_0.sol_nr_id,s1_0.sol_dt_agendamento,s1_0.sol_dt_conclusao,s1_0.sol_dt_criacao,s1_0.sol_tx_endereco_copia,s1_0.mor_nr_id,s1_0.sol_tx_observacoes,s1_0.poc_nr_id,s1_0.sol_tx_protocolo,s1_0.sol_tx_situacao,s1_0.sol_nr_versao from coleta.sol_solicitacao s1_0 where 1=1 and s1_0.sol_dt_criacao>=$1 and s1_0.sol_dt_criacao<$2 and s1_0.poc_nr_id=$3 order by s1_0.sol_dt_criacao desc,s1_0.sol_nr_id desc offset $4 rows fetch first $5 rows only;
+   -- Parameters: $1 = '2026-01-01 00:00:00-03', $2 = '2026-03-01 00:00:00-03', $3 = '1', $4 = '0', $5 = '50'
+

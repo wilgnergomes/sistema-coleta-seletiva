@@ -123,7 +123,7 @@ Estes critérios pertencem a um RF, mas dependem de outro estar pronto ou de uma
 
 | RNF | Evidência a registrar | Quando |
 |-----|----------------------|--------|
-| RNF04 | Relatório de desempenho com máquina, ferramenta e resultados, medido sobre o dataset de desempenho. **Medição inicial feita** (2026-11-08, Issue #58 etapa 1): p95 geral 4,59 ms com 1 VU e 9,48 ms com 10 VUs, contra a meta de 2.000 ms ([resultados](../desempenho/resultados-iniciais.md)). Pendentes: medição final depois da V3 (Issue #33) e relatório completo, que encerra a #58 | Ciclo 6 |
+| RNF04 | Relatório de desempenho com máquina, ferramenta e resultados, medido sobre o dataset de desempenho. **Medição inicial feita** (2026-11-08, Issue #58 etapa 1): p95 geral 4,22 ms com 1 VU e 8,12 ms com 10 VUs, em 21 variantes de consulta (RF06 com material, filtros combinados e paginação; RF09 como administrador, morador e operador), contra a meta de 2.000 ms ([resultados](../desempenho/resultados-iniciais.md)). Pendentes: medição final depois da V3 (Issue #33) e relatório completo, que encerra a #58 | Ciclo 6 |
 | RNF06 | Dados de demonstração fictícios; nenhuma senha, token ou credencial de banco versionados (variáveis de ambiente); consultas públicas sem informações pessoais | Ao longo dos ciclos; conferir na entrega |
 | RNF07 | Documentação OpenAPI (ou coleção Postman) com exemplos e respostas; README com requisitos, configuração e comandos; migrações e dados de demonstração reproduzíveis | Atualizar a cada ciclo |
 | RNF08 | Resultado da execução dos testes automatizados, incluindo o teste de integração com rollback | Ao fechar cada ciclo |
@@ -137,7 +137,7 @@ O RNF04 não pertence a um único RF: a meta de 95% das consultas em até 2 segu
 | Consultas medidas | RF06 (pesquisa de pontos), RF09 (consulta de solicitações com filtros e paginação) e RF15 (resumo gerencial) |
 | Conteúdo | 1.000 solicitações com itens e histórico coerentes, distribuídas entre situações, pontos, materiais e períodos |
 | Como é carregado | **Implementado** (Issue #58): `docs/desempenho/carga-dataset.sql`, em banco dedicado `coleta_desempenho`, executado sob demanda, com guarda contra segunda carga e `limpar-dataset.sql` (apaga só o marcador `PERF`). Nunca junto da carga de demonstração |
-| Como é medido | k6 `1.8.2` via Docker (`docs/desempenho/k6-consultas.js`): aquecimento, 1 VU com 200 iterações por consulta e 10 VUs por 30 s; `EXPLAIN (ANALYZE, BUFFERS)` em `explain-consultas.sql`. Método completo em `docs/desempenho/README.md` |
+| Como é medido | k6 `1.8.2` via Docker (`docs/desempenho/k6-consultas.js`, ids descobertos no `setup()`): aquecimento, 1 VU com 200 iterações por consulta e 10 VUs por 30 s; `EXPLAIN (ANALYZE, BUFFERS)` em `explain-consultas.sql`. Método completo em `docs/desempenho/README.md` |
 | Testes | `DatasetDesempenhoIntegracaoTest`: contagens exatas, coerência com as regras, carga repetida recusada, limpeza que preserva outros dados, determinismo e consultas da API sobre o dataset |
 | Quando medir | Linha de base feita (ciclo 6, antes da V3). Repetir depois dos índices da V3 (Issue #33), com o mesmo dataset, parâmetros e método |
 | Evidência | Máquina, ferramenta, versões, p95 e planos em `docs/desempenho/resultados-iniciais.md`, como exige o RNF04 |
