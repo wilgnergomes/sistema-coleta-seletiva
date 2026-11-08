@@ -3,6 +3,7 @@ package br.edu.ifs.coletaseletiva.controller;
 import br.edu.ifs.coletaseletiva.config.Ator;
 import br.edu.ifs.coletaseletiva.dto.SolicitacaoDetalheDTO;
 import br.edu.ifs.coletaseletiva.form.AgendamentoForm;
+import br.edu.ifs.coletaseletiva.form.MotivoForm;
 import br.edu.ifs.coletaseletiva.service.TransicaoSolicitacaoService;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
@@ -27,5 +28,13 @@ public class TransicaoSolicitacaoController {
                                          @PathVariable Integer id,
                                          @Valid @RequestBody AgendamentoForm formulario) {
         return service.agendar(ator, id, formulario);
+    }
+
+    /** RF11: o operador do ponto recusa a solicitação, com justificativa. */
+    @PostMapping("/recusa")
+    public SolicitacaoDetalheDTO recusar(@Parameter(hidden = true) Ator ator,
+                                         @PathVariable Integer id,
+                                         @Valid @RequestBody MotivoForm formulario) {
+        return service.recusar(ator, id, formulario);
     }
 }
