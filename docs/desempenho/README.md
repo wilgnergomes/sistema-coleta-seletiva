@@ -71,7 +71,7 @@ No Git Bash do Windows, prefixe o `docker run` com `MSYS_NO_PATHCONV=1` e use `$
 - O `setup()` **se recusa a medir** se o banco não tiver exatamente 1.000 solicitações, 20 pontos, 200 moradores e 20 operadores `PERF` (protege contra medir o banco errado).
 - Cada requisição verifica o **status 200 e o conteúdo** (lista não vazia quando o filtro garante resultado; o ponto esperado no filtro combinado; 5 itens e total 20 na paginação; o morador sem filtro vê exatamente as suas 5 e o operador as 50 do seu ponto). Uma resposta de erro rápida reprova a medição: o limiar de `checks` exige 100% e o de falhas HTTP exige 0%.
 - Limiares: p95 < 2.000 ms no geral (`etapa:medicao`), em cada tipo de consulta e em **cada variante** (o limiar por variante faz o k6 exportar o p95 de cada uma). Se algum falhar, o k6 termina com código 99.
-- **Instabilidade conhecida da fase `complementar`:** no Docker Desktop do Windows, a conexão do container do k6 ao host às vezes dá `dial: i/o timeout` e reprova a fase (a aplicação não registra erro). Se ocorrer, repita a fase e **registre todas as tentativas**, como em `resultados-iniciais.md`.
+- **Instabilidade observada na fase `complementar`:** em 3 de 6 execuções houve `dial: i/o timeout` entre o container do k6 e o host, sem erro registrado na aplicação. A causa é hipótese não comprovada (veja `resultados-iniciais.md`). Se ocorrer, repita a fase e **registre todas as tentativas**.
 
 ### EXPLAIN
 

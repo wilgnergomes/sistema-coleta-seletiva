@@ -4,7 +4,7 @@
 
 Esta é a linha de base **antes** dos índices da V3 (Issue #33). O esquema é o da V1, sem índices além das chaves e das restrições `UNIQUE`.
 
-> **Roteiro definitivo.** Os números deste documento vêm do roteiro `k6-consultas.js` **definitivo** (21 variantes de consulta). Uma primeira versão do roteiro, com 8 variantes (RF06: município e bairro; RF09: só ADMINISTRADOR; RF15: duas), foi medida antes e **ficou apenas como histórico**, em [`evidencias/historico-roteiro-v1/`](evidencias/historico-roteiro-v1). Ela não é comparável com a V3. A comparação futura deve usar o roteiro definitivo.
+> **Roteiro definitivo.** Os números deste documento vêm do roteiro `k6-consultas.js` **definitivo** (17 variantes de consulta: 5 de RF06, 10 de RF09 e 2 de RF15). Uma primeira versão do roteiro, com 8 variantes (RF06: município e bairro; RF09: só ADMINISTRADOR; RF15: duas), foi medida antes e **ficou apenas como histórico**, em [`evidencias/historico-roteiro-v1/`](evidencias/historico-roteiro-v1). Ela não é comparável com a V3. A comparação futura deve usar o roteiro definitivo.
 
 ## Ambiente
 
@@ -90,7 +90,9 @@ Com o roteiro definitivo, a fase complementar foi executada **6 vezes**. Os resu
 | 5 | aprovada | 52.358 (1.743) | 0 | 8,20 ms | |
 | 6 | aprovada | 36.725 (1.110) | 0 | 7,80 ms | |
 
-As três reprovações foram **apenas timeouts na abertura de conexão** entre o container do k6 e o host (`dial: i/o timeout`, 8 a 10 requisições perdidas em cada). A aplicação não registrou nenhum erro, todas as respostas recebidas foram rápidas (p95 entre 6,7 e 8,1 ms em todas as tentativas, aprovadas ou não) e a fase principal, de 1 VU, nunca falhou. A hipótese é a camada de rede do Docker Desktop no Windows (`host.docker.internal`) sob carga concorrente, não o sistema (hipótese não verificada; registrada em `docs/melhorias-pendentes.md`). O roteiro tratou essas falhas como deve: reprovou a medição em vez de ignorá-las. A conclusão não muda: nas 6 tentativas o p95 geral ficou entre 6,67 e 8,20 ms.
+Fatos observados nas três reprovações: foram **apenas timeouts na abertura de conexão** entre o container do k6 e o host (`dial: i/o timeout`, 8 a 20 requisições perdidas em cada); a aplicação não registrou nenhum erro; todas as respostas recebidas foram rápidas (p95 entre 6,7 e 8,1 ms em todas as tentativas, aprovadas ou não); e a fase principal, de 1 VU, nunca falhou. O roteiro tratou as falhas como deve: reprovou a medição em vez de ignorá-las. Nas 6 tentativas o p95 geral ficou entre 6,67 e 8,20 ms.
+
+**Causa: hipótese não comprovada.** A suspeita inicial é a rede do Docker Desktop no Windows (`host.docker.internal`) sob carga concorrente, mas **não foi verificada**: o problema também pode estar na configuração do servidor (fila de conexões do Tomcat, pool) ou no próprio roteiro. Nenhuma dessas causas está descartada. A investigação e a estabilidade da medição final são acompanhadas na Issue #58; a entrada em `docs/melhorias-pendentes.md` só aponta para cá.
 
 ## EXPLAIN (ANALYZE, BUFFERS)
 
@@ -119,7 +121,7 @@ As instruções SQL reais ([`evidencias/sql-real-inicial.txt`](evidencias/sql-re
 
 ## Limitações
 
-- **Correlação no dataset (defeito confirmado, registrado em `docs/melhorias-pendentes.md`).** As fórmulas determinísticas fazem com que **cada ponto tenha uma única situação** (as 50 solicitações do ponto são todas da mesma situação), **cada morador tenha uma única situação** e **um único ponto**. Por isso, "operador por situação" devolve as 50 do ponto ou nenhuma, e o filtro por ponto equivale ao filtro por situação. A distribuição global (450/150/150/100/100/50) está correta. Isso não afeta a conclusão atual (tudo é `Seq Scan` e abaixo de 1 ms), mas **afeta a seletividade vista pelo planejador** e deve pesar na decisão da V3. O dataset **não foi alterado** nesta etapa para preservar a linha de base; se for corrigido, a medição inicial precisa ser refeita.
+- **Defeito confirmado no dataset: correlação entre ponto, morador e situação.** Diagnóstico e evidência (fonte única; o plano de correção está na Issue #33). Consulta ao banco `coleta_desempenho`: `count(DISTINCT sol_tx_situacao)` por ponto e por morador é **1** em todos (mínimo 1, máximo 1), e `count(DISTINCT poc_nr_id)` por morador também é **1**. Causa: as fórmulas determinísticas de `carga-dataset.sql` (`ponto = (i*7) mod 20`, situação por `i mod 20`, `morador = (i-1) mod 200`) ligam as três dimensões, então as 50 solicitações de um ponto são todas da mesma situação e as 5 de um morador, também do mesmo ponto. Efeitos: "operador por situação" devolve as 50 do ponto ou nenhuma, o filtro por ponto equivale ao filtro por situação, e a **seletividade vista pelo planejador é irreal**. A distribuição global (450/150/150/100/100/50) está correta, e a conclusão atual (tudo é `Seq Scan` e abaixo de 1 ms) não muda. O dataset **não foi alterado** nesta etapa. **Estes resultados são o histórico da base original: depois de corrigida a distribuição, a medição inicial é repetida e os números novos não devem ser comparados diretamente com estes.**
 - Uma máquina e uma sequência de execuções; os números variam entre execuções (décimos de milissegundo na fase principal). O que importa para a comparação é a ordem de grandeza e o plano.
 - Aplicação e banco no mesmo computador, via rede local do Docker; um ambiente de produção terá latência de rede adicional.
 - O dataset é sintético. A distribuição de situações e datas é plausível, não derivada de dados reais.
