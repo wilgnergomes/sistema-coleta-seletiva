@@ -11,6 +11,7 @@ import br.edu.ifs.coletaseletiva.exception.ConflitoVersaoException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
 import br.edu.ifs.coletaseletiva.exception.ParametroInvalidoException;
 import br.edu.ifs.coletaseletiva.form.AgendamentoForm;
+import br.edu.ifs.coletaseletiva.form.MotivoForm;
 import br.edu.ifs.coletaseletiva.service.TransicaoSolicitacaoService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -121,6 +122,76 @@ class TransicaoSolicitacaoControllerTest {
                 .andExpect(jsonPath("$.codigo").value("CONFLITO_REGRA"))
                 .andExpect(jsonPath("$.mensagem").value("A solicitação está CANCELADA e não pode passar para AGENDADA."));
         agendar(VALIDO).andExpect(status().isConflict()).andExpect(jsonPath("$.codigo").value("CONFLITO_VERSAO"));
+    }
+
+    // ---------- RF11: recusa ----------
+
+    private ResultActions recusar(String corpo, String... idioma) throws Exception {
+        var requisicao = post("/solicitacoes/9/recusa").header("X-Perfil", "OPERADOR").header("X-Usuario-Id", "5")
+                .contentType(MediaType.APPLICATION_JSON).content(corpo);
+        if (idioma.length > 0) {
+            requisicao.header("Accept-Language", idioma[0]);
+        }
+        return mockMvc.perform(requisicao);
+    }
+
+    @Test
+    void rf11_recusaValidaRetorna200ERepassaOMotivoSemEspacosNasPontas() throws Exception {
+        when(service.recusar(any(Ator.class), eq(9), any(MotivoForm.class))).thenReturn(
+                new SolicitacaoDetalheDTO(9, "SOL-20261107-ABC234", 1, 1, "Rua A, 1", SituacaoSolicitacao.RECUSADA,
+                        OffsetDateTime.now(), null, null, null, 1, List.of(), List.of()));
+
+        recusar("{\"motivo\": \"  Fora da área de atendimento  \", \"versao\": 0}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.situacao").value("RECUSADA"))
+                .andExpect(jsonPath("$.versao").value(1));
+
+        ArgumentCaptor<MotivoForm> form = ArgumentCaptor.forClass(MotivoForm.class);
+        verify(service).recusar(any(Ator.class), eq(9), form.capture());
+        assertEquals("Fora da área de atendimento", form.getValue().motivo());
+    }
+
+    @Test
+    void rf11_motivoAusenteVazioOuSoComEspacosRetorna400NoCampoMotivoSemChamarOService() throws Exception {
+        recusar("{\"versao\": 0}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='motivo')].mensagem").value("o motivo é obrigatório"));
+        recusar("{\"motivo\": \"\", \"versao\": 0}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='motivo')]").exists());
+        recusar("{\"motivo\": \"     \", \"versao\": 0}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.codigo").value("VALIDACAO"))
+                .andExpect(jsonPath("$.erros[?(@.campo=='motivo')]").exists());
+        recusar("{\"motivo\": null, \"versao\": 0}").andExpect(status().isBadRequest());
+        recusar("{\"versao\": 0}", "en").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='motivo')].mensagem").value("the reason is required"));
+
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void rf11_motivoComMaisDe500CaracteresEVersaoInvalidaRetornam400() throws Exception {
+        recusar("{\"motivo\": \"" + "a".repeat(501) + "\", \"versao\": 0}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='motivo')].mensagem").value("deve ter no máximo 500 caracteres"));
+        recusar("{\"motivo\": \"" + "a".repeat(500) + "\", \"versao\": 0}").andExpect(status().isOk());
+        recusar("{\"motivo\": \"Sem condições\"}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='versao')]").exists());
+        recusar("{\"motivo\": \"Sem condições\", \"versao\": -1}").andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void rf11_violacoesRetornam403404E409() throws Exception {
+        when(service.recusar(any(Ator.class), eq(9), any(MotivoForm.class)))
+                .thenThrow(new AcessoNegadoException("erro.solicitacao.somente-operador"))
+                .thenThrow(new NaoEncontradoException("erro.solicitacao.nao-encontrada"))
+                .thenThrow(new ConflitoRegraException("erro.solicitacao.transicao-invalida",
+                        SituacaoSolicitacao.AGENDADA, SituacaoSolicitacao.RECUSADA))
+                .thenThrow(new ConflitoVersaoException("erro.solicitacao.versao-desatualizada"));
+        String corpo = "{\"motivo\": \"Sem condições\", \"versao\": 0}";
+
+        recusar(corpo).andExpect(status().isForbidden()).andExpect(jsonPath("$.codigo").value("ACESSO_NEGADO"));
+        recusar(corpo).andExpect(status().isNotFound()).andExpect(jsonPath("$.codigo").value("NAO_ENCONTRADO"));
+        recusar(corpo).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.mensagem").value("A solicitação está AGENDADA e não pode passar para RECUSADA."));
+        recusar(corpo).andExpect(status().isConflict()).andExpect(jsonPath("$.codigo").value("CONFLITO_VERSAO"));
     }
 
     @Test

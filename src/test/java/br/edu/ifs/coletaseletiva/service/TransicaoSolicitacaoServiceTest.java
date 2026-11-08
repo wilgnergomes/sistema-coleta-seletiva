@@ -15,6 +15,7 @@ import br.edu.ifs.coletaseletiva.exception.ConflitoVersaoException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
 import br.edu.ifs.coletaseletiva.exception.ParametroInvalidoException;
 import br.edu.ifs.coletaseletiva.form.AgendamentoForm;
+import br.edu.ifs.coletaseletiva.form.MotivoForm;
 import br.edu.ifs.coletaseletiva.mapper.SolicitacaoMapper;
 import br.edu.ifs.coletaseletiva.repository.HistoricoRepository;
 import br.edu.ifs.coletaseletiva.repository.SolicitacaoRepository;
@@ -169,6 +170,72 @@ class TransicaoSolicitacaoServiceTest {
     void rf10_soOOperadorAgendaOutrosPerfisSaoNegadosSemConsultarNada(Perfil perfil) {
         assertThrows(AcessoNegadoException.class,
                 () -> service.agendar(new Ator(perfil, 1), 9, depoisDeAgora(60, 0)));
+
+        verifyNoInteractions(repository, historicoRepository, operadorService);
+    }
+
+    // ---------- RF11: recusa ----------
+
+    @Test
+    void rf11_recusaGravaRecusadaComOMotivoSemEspacosENoHistoricoDoOperador() {
+        operadorEncontraASolicitacao();
+        when(historicoRepository.findBySolicitacaoIdOrderById(9)).thenReturn(List.of());
+
+        SolicitacaoDetalheDTO resposta = service.recusar(OPERADOR, 9, new MotivoForm("  Fora da área de atendimento  ", 0));
+
+        assertEquals(SituacaoSolicitacao.RECUSADA, resposta.situacao());
+        assertNull(resposta.agendadaPara());
+        ArgumentCaptor<Historico> historico = ArgumentCaptor.forClass(Historico.class);
+        verify(historicoRepository).save(historico.capture());
+        assertEquals(SituacaoSolicitacao.SOLICITADA, historico.getValue().getSituacaoAnterior());
+        assertEquals(SituacaoSolicitacao.RECUSADA, historico.getValue().getSituacaoNova());
+        assertEquals("Fora da área de atendimento", historico.getValue().getMotivo());
+        assertEquals(operador, historico.getValue().getOperador());
+        assertNull(historico.getValue().getMorador());
+        assertNull(historico.getValue().getAgendamento());
+        assertEquals(AGORA, historico.getValue().getData().toInstant());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = SituacaoSolicitacao.class, names = "SOLICITADA", mode = EnumSource.Mode.EXCLUDE)
+    void rf11_soSolicitadaPodeSerRecusada(SituacaoSolicitacao situacao) {
+        solicitacao.setSituacao(situacao);
+        operadorEncontraASolicitacao();
+
+        ConflitoRegraException erro = assertThrows(ConflitoRegraException.class,
+                () -> service.recusar(OPERADOR, 9, new MotivoForm("Sem condições", 0)));
+
+        assertEquals("erro.solicitacao.transicao-invalida", erro.getChave());
+        verify(historicoRepository, never()).save(any());
+        assertEquals(situacao, solicitacao.getSituacao());
+    }
+
+    @Test
+    void rf11_versaoDiferenteDaAtualEhConflitoDeVersaoENadaMuda() {
+        operadorEncontraASolicitacao();
+
+        assertThrows(ConflitoVersaoException.class, () -> service.recusar(OPERADOR, 9, new MotivoForm("Sem condições", 4)));
+
+        verify(historicoRepository, never()).save(any());
+        assertEquals(SituacaoSolicitacao.SOLICITADA, solicitacao.getSituacao());
+    }
+
+    @Test
+    void rf11_solicitacaoDeOutroPontoEhTratadaComoInexistente() {
+        Operador outro = Operador.builder().id(6).ponto(PontoColeta.builder().id(2).build()).build();
+        when(operadorService.autorizarOperador(OPERADOR)).thenReturn(outro);
+        when(repository.findComItensById(9)).thenReturn(Optional.of(solicitacao));
+
+        assertThrows(NaoEncontradoException.class, () -> service.recusar(OPERADOR, 9, new MotivoForm("Sem condições", 0)));
+
+        verify(historicoRepository, never()).save(any());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = Perfil.class, names = "OPERADOR", mode = EnumSource.Mode.EXCLUDE)
+    void rf11_soOOperadorRecusaOutrosPerfisSaoNegadosSemConsultarNada(Perfil perfil) {
+        assertThrows(AcessoNegadoException.class,
+                () -> service.recusar(new Ator(perfil, 1), 9, new MotivoForm("Sem condições", 0)));
 
         verifyNoInteractions(repository, historicoRepository, operadorService);
     }
