@@ -27,6 +27,10 @@ Também entram aqui os defeitos confirmados, as melhorias opcionais e as hipóte
 
 - [ ] **Pesquisa de pontos sem distinção de acentos.** Hoje "joao" não encontra "João" e "lagarto" encontra "Lagarto", mas "araçá" não encontra "Araca". Ignorar acentos exigiria a extensão `unaccent` do PostgreSQL e uma migração (junto da V2 da Issue #33). O contrato fala apenas de maiúsculas e minúsculas. Origem: RF06, 2026-11-07.
 
+## Organização do código
+
+- [ ] **`TransicaoSolicitacaoService` concentra todas as ações de situação.** Tipo: melhoria opcional (nenhum defeito). Com o RF14 o serviço passou a ter sete ações públicas (agendar, recusar, cancelar, iniciar, concluir, reagendar e registrar falha) em cerca de 370 linhas, tamanho próximo ao do `SolicitacaoService`. Impacto: baixo; a leitura ainda é simples porque as ações compartilham o mesmo apoio (contexto, versão, transição e histórico). Localização: `TransicaoSolicitacaoService.java`. A regra dos itens da conclusão (`registrarQuantidadesEfetivas`) é o trecho mais independente e o candidato natural a extração. Prioridade sugerida: baixa. Momento recomendado: só se o RF15 ou a RN05 acrescentarem lógica ao serviço, ou na revisão final antes da entrega; extrair apenas com aprovação, sem mudar o comportamento. Origem: RF14, 2026-11-08.
+
 ## Testes e ambiente
 
 - [ ] **Dois contêineres no `./mvnw test`.** `ColetaSeletivaApplicationTests` e os testes de integração têm configurações diferentes e sobem contêineres PostgreSQL separados, o que acrescenta cerca de 10 s. Unificar a configuração quando houver mais classes de integração.
