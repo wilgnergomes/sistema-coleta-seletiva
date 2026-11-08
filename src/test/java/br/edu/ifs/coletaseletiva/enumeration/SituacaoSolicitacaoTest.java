@@ -62,4 +62,12 @@ class SituacaoSolicitacaoTest {
     void rf10_aTabelaCobreTodasAsSituacoes() {
         assertEquals(EnumSet.allOf(SituacaoSolicitacao.class), PERMITIDAS.keySet());
     }
+
+    @Test
+    void rn05_abertasSaoExatamenteSolicitadaAgendadaEEmRecolhimentoOComplementoDasFinais() {
+        assertEquals(EnumSet.of(SOLICITADA, AGENDADA, EM_RECOLHIMENTO), SituacaoSolicitacao.abertas());
+        for (SituacaoSolicitacao situacao : SituacaoSolicitacao.values()) {
+            assertEquals(!situacao.ehFinal(), SituacaoSolicitacao.abertas().contains(situacao), situacao.name());
+        }
+    }
 }
