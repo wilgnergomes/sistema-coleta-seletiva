@@ -11,6 +11,7 @@ O RNF04 pede que a pesquisa de pontos (RF06), a listagem de solicitações (RF09
 | [`resultados-iniciais.md`](resultados-iniciais.md) | Medição oficial **antes** da V3 (dataset corrigido) |
 | [`relatorio-rnf04.md`](relatorio-rnf04.md) | **Relatório final**: comparação antes/depois da V3, todas as tentativas e o experimento de escalabilidade |
 | [`evidencias-pos-v3/`](evidencias-pos-v3) | Saídas brutas da medição oficial **depois** da V3 (k6, tentativas da fase complementar e `EXPLAIN`) |
+| [`evidencias-estabilidade/`](evidencias-estabilidade) | Diagnóstico da instabilidade da fase `complementar` (Issue #58): reprodução, testes isolados, log do Docker Desktop e a validação do contorno em 15 rodadas |
 | [`evidencias/`](evidencias) | Saídas brutas da medição **antes** da V3: planos, resumos do k6 (inclusive todas as tentativas da fase complementar), SQL capturado e a avaliação dos índices |
 | [`carga-volume-ampliado.sql`](carga-volume-ampliado.sql) | Volume ampliado **isolado** (100.000 solicitações), só para avaliar planos; fora da medição oficial |
 | [`explain-indices-v3.sql`](explain-indices-v3.sql) | Compara os planos sem e com os índices candidatos, em transação que termina em `ROLLBACK` |
@@ -41,8 +42,11 @@ docker exec coleta-seletiva-db psql -U coleta -d postgres -c "CREATE DATABASE co
 
 # 2. Empacota e sobe o JAR apontando para o banco dedicado (sem DevTools, sem log SQL, sem perfil demo).
 #    DB_NAME no ambiente tem precedência sobre o .env, que continua intacto.
+#    SERVER_TOMCAT_MAX_KEEP_ALIVE_REQUESTS=-1 tira o limite de 100 requisições por conexão do Tomcat, só neste
+#    processo: sem ele, o k6 em container precisa abrir ~20 conexões novas por segundo através do Docker Desktop e
+#    isso causa travamentos de ~30 s (`dial: i/o timeout`). Não altera application.properties nem o código.
 ./mvnw -DskipTests package
-DB_NAME=coleta_desempenho java -jar target/coleta-seletiva-0.0.1-SNAPSHOT.jar
+DB_NAME=coleta_desempenho SERVER_TOMCAT_MAX_KEEP_ALIVE_REQUESTS=-1 java -jar target/coleta-seletiva-0.0.1-SNAPSHOT.jar
 
 # 3. Confira que o JAR está no banco certo (deve listar coleta_desempenho com o driver JDBC)
 docker exec coleta-seletiva-db psql -U coleta -d postgres -c \
@@ -59,7 +63,7 @@ for FASE in aquecimento principal complementar; do
 done
 ```
 
-No Git Bash do Windows, prefixe o `docker run` com `MSYS_NO_PATHCONV=1` e use `$(pwd -W)` no volume. O k6 acessa a aplicação em `http://host.docker.internal:8080` (altere com `-e BASE_URL=...`).
+No Git Bash do Windows, prefixe o `docker run` com `MSYS_NO_PATHCONV=1` e use `$(pwd -W)` no volume. O k6 acessa a aplicação em `http://host.docker.internal:8080` (altere com `-e BASE_URL=...`). Para repetir só a fase `complementar` (por exemplo, 15 vezes), rode apenas o `docker run` dela, sempre com a aplicação subida com a variável do passo 2, e **registre todas as tentativas**.
 
 ### O que o script faz
 
@@ -78,7 +82,7 @@ No Git Bash do Windows, prefixe o `docker run` com `MSYS_NO_PATHCONV=1` e use `$
 - O `setup()` **se recusa a medir** se o banco não tiver exatamente 1.000 solicitações, 20 pontos, 200 moradores e 20 operadores `PERF` (protege contra medir o banco errado).
 - Cada requisição verifica o **status 200 e o conteúdo** (lista não vazia quando o filtro garante resultado; o ponto esperado no filtro combinado; 5 itens e total 20 na paginação; o morador sem filtro vê exatamente as suas 5 e o operador as 50 do seu ponto). Uma resposta de erro rápida reprova a medição: o limiar de `checks` exige 100% e o de falhas HTTP exige 0%.
 - Limiares: p95 < 2.000 ms no geral (`etapa:medicao`), em cada tipo de consulta e em **cada variante** (o limiar por variante faz o k6 exportar o p95 de cada uma). Se algum falhar, o k6 termina com código 99.
-- **Instabilidade observada na fase `complementar`:** em 5 de 10 execuções (3 de 6 na base original e 2 de 4 na corrigida) houve `dial: i/o timeout` entre o container do k6 e o host, sem erro registrado na aplicação. A causa é hipótese não comprovada (veja `resultados-iniciais.md`). Se ocorrer, repita a fase e **registre todas as tentativas**.
+- **Instabilidade da fase `complementar` (Issue #58):** nas medições oficiais anteriores, feitas com o Tomcat no padrão (`max-keep-alive-requests=100`), 12 de 22 execuções reprovaram por `dial: i/o timeout` entre o container do k6 e o host (6 de 14 nas medições oficiais e 6 de 8 na reprodução do diagnóstico), sem erro na aplicação. O diagnóstico mostrou que a aplicação, o Tomcat e o Windows aceitam as conexões normalmente (o mesmo tráfego direto do host passou 8 de 8) e que o travamento ocorre no caminho container → Docker Desktop → host, disparado pelo ritmo de conexões novas que o limite de 100 requisições por conexão provoca. **Contorno:** subir o JAR com `SERVER_TOMCAT_MAX_KEEP_ALIVE_REQUESTS=-1` (passo 2). O **mecanismo interno do Docker Desktop continua não comprovado**. Detalhes, números e limites em [`relatorio-rnf04.md`](relatorio-rnf04.md) e [`evidencias-estabilidade/`](evidencias-estabilidade). Se mesmo assim ocorrer um timeout, **não descarte a tentativa**: registre-a e investigue antes de repetir.
 
 ### EXPLAIN
 
@@ -111,4 +115,4 @@ docker exec coleta-seletiva-db psql -U coleta -d postgres -c "DROP DATABASE cole
 
 ## Comparação antes/depois da V3 (feita)
 
-A medição depois da V3 repetiu **exatamente** estes passos (mesmo banco e dataset de 1.000 solicitações, roteiro `k6-consultas.js` sem alterações, mesma tag do k6, fases e máquina; a única diferença é a migração V3). A comparação e todas as tentativas estão em [`relatorio-rnf04.md`](relatorio-rnf04.md). Para repetir a medição no futuro, siga os passos acima e compare com o relatório.
+A medição depois da V3 repetiu **exatamente** estes passos (mesmo banco e dataset de 1.000 solicitações, roteiro `k6-consultas.js` sem alterações, mesma tag do k6, fases e máquina; a única diferença é a migração V3). **As duas medições oficiais foram feitas com o Tomcat no padrão, antes do contorno do passo 2**; elas permanecem como foram registradas, com todas as tentativas. A comparação e todas as tentativas estão em [`relatorio-rnf04.md`](relatorio-rnf04.md). Para repetir a medição no futuro, siga os passos acima e compare com o relatório.

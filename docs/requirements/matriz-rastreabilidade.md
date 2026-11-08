@@ -123,7 +123,7 @@ Estes critérios pertencem a um RF, mas dependem de outro estar pronto ou de uma
 
 | RNF | Evidência a registrar | Quando |
 |-----|----------------------|--------|
-| RNF04 | Relatório de desempenho com máquina, ferramenta e resultados, medido sobre o dataset de desempenho. **Atendido** (2026-11-08, Issues #58 e #33): p95 geral de 7,05 ms (1 VU) e 10,44 ms (10 VUs) antes da V3, e de 7,17 ms e 7,23 ms depois, contra a meta de 2.000 ms, em 17 variantes de consulta; V3 com 7 índices ([relatório final](../desempenho/relatorio-rnf04.md)). A investigação da instabilidade da fase complementar segue na #58 | Ciclo 6 |
+| RNF04 | Relatório de desempenho com máquina, ferramenta e resultados, medido sobre o dataset de desempenho. **Atendido** (2026-11-08, Issues #58 e #33): p95 geral de 7,05 ms (1 VU) e 10,44 ms (10 VUs) antes da V3, e de 7,17 ms e 7,23 ms depois, contra a meta de 2.000 ms, em 17 variantes de consulta; V3 com 7 índices ([relatório final](../desempenho/relatorio-rnf04.md)). A instabilidade da fase complementar foi diagnosticada e contornada na #58 (seção 3.1 do relatório; 15 rodadas aprovadas) | Ciclo 6 |
 | RNF06 | Dados de demonstração fictícios; nenhuma senha, token ou credencial de banco versionados (variáveis de ambiente); consultas públicas sem informações pessoais | Ao longo dos ciclos; conferir na entrega |
 | RNF07 | Documentação OpenAPI (ou coleção Postman) com exemplos e respostas; README com requisitos, configuração e comandos; migrações e dados de demonstração reproduzíveis | Atualizar a cada ciclo |
 | RNF08 | Resultado da execução dos testes automatizados, incluindo o teste de integração com rollback | Ao fechar cada ciclo |

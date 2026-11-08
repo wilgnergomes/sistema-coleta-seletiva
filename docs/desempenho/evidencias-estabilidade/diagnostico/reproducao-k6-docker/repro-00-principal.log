@@ -1,0 +1,153 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: -
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 10m30s max duration (incl. graceful stop):
+              * principal: 200 iterations for each of 1 VUs (maxDuration: 10m0s, gracefulStop: 30s)
+
+
+running (00m01.0s), 1/1 VUs, 51 complete and 0 interrupted iterations
+principal   [  26% ] 1 VUs  00m01.0s/10m0s  051/200 iters, 200 per VU
+
+running (00m02.0s), 1/1 VUs, 113 complete and 0 interrupted iterations
+principal   [  56% ] 1 VUs  00m02.0s/10m0s  113/200 iters, 200 per VU
+
+running (00m03.0s), 1/1 VUs, 187 complete and 0 interrupted iterations
+principal   [  94% ] 1 VUs  00m03.0s/10m0s  187/200 iters, 200 per VU
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate==1' rate=100.00%
+
+    http_req_duration{consulta:RF06,variante:bairro}
+    ✓ 'p(95)<2000' p(95)=6.44ms
+
+    http_req_duration{consulta:RF06,variante:combinado}
+    ✓ 'p(95)<2000' p(95)=6.4ms
+
+    http_req_duration{consulta:RF06,variante:material}
+    ✓ 'p(95)<2000' p(95)=8.17ms
+
+    http_req_duration{consulta:RF06,variante:municipio}
+    ✓ 'p(95)<2000' p(95)=6.13ms
+
+    http_req_duration{consulta:RF06,variante:paginacao}
+    ✓ 'p(95)<2000' p(95)=7.07ms
+
+    http_req_duration{consulta:RF06}
+    ✓ 'p(95)<2000' p(95)=7.03ms
+
+    http_req_duration{consulta:RF09,variante:geral,perfil:MORADOR}
+    ✓ 'p(95)<2000' p(95)=5.1ms
+
+    http_req_duration{consulta:RF09,variante:geral,perfil:OPERADOR}
+    ✓ 'p(95)<2000' p(95)=7.67ms
+
+    http_req_duration{consulta:RF09,variante:pagina,perfil:ADMINISTRADOR}
+    ✓ 'p(95)<2000' p(95)=8.58ms
+
+    http_req_duration{consulta:RF09,variante:periodo,perfil:ADMINISTRADOR}
+    ✓ 'p(95)<2000' p(95)=8.43ms
+
+    http_req_duration{consulta:RF09,variante:periodo,perfil:MORADOR}
+    ✓ 'p(95)<2000' p(95)=4.97ms
+
+    http_req_duration{consulta:RF09,variante:periodo,perfil:OPERADOR}
+    ✓ 'p(95)<2000' p(95)=5.32ms
+
+    http_req_duration{consulta:RF09,variante:ponto,perfil:ADMINISTRADOR}
+    ✓ 'p(95)<2000' p(95)=7.71ms
+
+    http_req_duration{consulta:RF09,variante:situacao,perfil:ADMINISTRADOR}
+    ✓ 'p(95)<2000' p(95)=7.12ms
+
+    http_req_duration{consulta:RF09,variante:situacao,perfil:MORADOR}
+    ✓ 'p(95)<2000' p(95)=4.65ms
+
+    http_req_duration{consulta:RF09,variante:situacao,perfil:OPERADOR}
+    ✓ 'p(95)<2000' p(95)=5.68ms
+
+    http_req_duration{consulta:RF09}
+    ✓ 'p(95)<2000' p(95)=7.88ms
+
+    http_req_duration{consulta:RF15,variante:geral}
+    ✓ 'p(95)<2000' p(95)=5.73ms
+
+    http_req_duration{consulta:RF15,variante:periodo}
+    ✓ 'p(95)<2000' p(95)=5.49ms
+
+    http_req_duration{consulta:RF15}
+    ✓ 'p(95)<2000' p(95)=5.68ms
+
+    http_req_duration{etapa:medicao}
+    ✓ 'p(95)<2000' p(95)=7.46ms
+
+    http_req_failed
+    ✓ 'rate==0' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 1200    379.289347/s
+    checks_succeeded...: 100.00% 1200 out of 1200
+    checks_failed......: 0.00%   0 out of 1200
+
+    ✓ RF06: status 200
+    ✓ RF06: conteúdo esperado
+    ✓ RF09: status 200
+    ✓ RF09: conteúdo esperado
+    ✓ RF15: status 200
+    ✓ RF15: conteúdo esperado
+
+    HTTP
+    http_req_duration............................................: min=3.02ms  avg=4.99ms  med=4.71ms  p(90)=6.73ms  p(95)=7.5ms   max=9.54ms 
+      { consulta:RF06,variante:bairro }..........................: min=3.67ms  avg=4.93ms  med=4.78ms  p(90)=6.01ms  p(95)=6.44ms  max=6.96ms 
+      { consulta:RF06,variante:combinado }.......................: min=3.65ms  avg=4.91ms  med=4.78ms  p(90)=6.05ms  p(95)=6.4ms   max=6.85ms 
+      { consulta:RF06,variante:material }........................: min=4.53ms  avg=6.16ms  med=5.87ms  p(90)=7.61ms  p(95)=8.17ms  max=9.07ms 
+      { consulta:RF06,variante:municipio }.......................: min=3.44ms  avg=4.72ms  med=4.42ms  p(90)=5.95ms  p(95)=6.13ms  max=6.6ms  
+      { consulta:RF06,variante:paginacao }.......................: min=4.44ms  avg=5.78ms  med=5.62ms  p(90)=7.02ms  p(95)=7.07ms  max=8.54ms 
+      { consulta:RF06 }..........................................: min=3.44ms  avg=5.3ms   med=5.19ms  p(90)=6.82ms  p(95)=7.03ms  max=9.07ms 
+      { consulta:RF09,variante:geral,perfil:MORADOR }............: min=3.14ms  avg=4.02ms  med=3.83ms  p(90)=4.86ms  p(95)=5.1ms   max=5.17ms 
+      { consulta:RF09,variante:geral,perfil:OPERADOR }...........: min=4.65ms  avg=6.3ms   med=6.29ms  p(90)=7.56ms  p(95)=7.67ms  max=8.95ms 
+      { consulta:RF09,variante:pagina,perfil:ADMINISTRADOR }.....: min=5.24ms  avg=7.08ms  med=7.23ms  p(90)=8.53ms  p(95)=8.58ms  max=9.26ms 
+      { consulta:RF09,variante:periodo,perfil:ADMINISTRADOR }....: min=3.73ms  avg=6.22ms  med=6.36ms  p(90)=7.98ms  p(95)=8.43ms  max=8.6ms  
+      { consulta:RF09,variante:periodo,perfil:MORADOR }..........: min=3.02ms  avg=4.14ms  med=4.08ms  p(90)=4.88ms  p(95)=4.97ms  max=5.44ms 
+      { consulta:RF09,variante:periodo,perfil:OPERADOR }.........: min=3.2ms   avg=4.09ms  med=3.94ms  p(90)=4.85ms  p(95)=5.32ms  max=5.47ms 
+      { consulta:RF09,variante:ponto,perfil:ADMINISTRADOR }......: min=3.94ms  avg=5.51ms  med=5.2ms   p(90)=7.45ms  p(95)=7.71ms  max=8.92ms 
+      { consulta:RF09,variante:situacao,perfil:ADMINISTRADOR }...: min=3.91ms  avg=5.26ms  med=4.82ms  p(90)=6.72ms  p(95)=7.12ms  max=7.2ms  
+      { consulta:RF09,variante:situacao,perfil:MORADOR }.........: min=3.05ms  avg=3.81ms  med=3.78ms  p(90)=4.61ms  p(95)=4.65ms  max=5.37ms 
+      { consulta:RF09,variante:situacao,perfil:OPERADOR }........: min=3.11ms  avg=4.06ms  med=3.73ms  p(90)=5.07ms  p(95)=5.68ms  max=5.79ms 
+      { consulta:RF09 }..........................................: min=3.02ms  avg=5.05ms  med=4.65ms  p(90)=7.48ms  p(95)=7.88ms  max=9.26ms 
+      { consulta:RF15,variante:geral }...........................: min=3.72ms  avg=4.61ms  med=4.41ms  p(90)=5.56ms  p(95)=5.73ms  max=9.54ms 
+      { consulta:RF15,variante:periodo }.........................: min=3.5ms   avg=4.5ms   med=4.35ms  p(90)=5.24ms  p(95)=5.49ms  max=6.45ms 
+      { consulta:RF15 }..........................................: min=3.5ms   avg=4.56ms  med=4.39ms  p(90)=5.42ms  p(95)=5.68ms  max=9.54ms 
+      { etapa:medicao }..........................................: min=3.02ms  avg=4.97ms  med=4.7ms   p(90)=6.65ms  p(95)=7.46ms  max=9.54ms 
+      { expected_response:true }.................................: min=3.02ms  avg=4.99ms  med=4.71ms  p(90)=6.73ms  p(95)=7.5ms   max=9.54ms 
+    http_req_failed..............................................: 0.00%  0 out of 605
+    http_reqs....................................................: 605    191.225046/s
+
+    EXECUTION
+    iteration_duration...........................................: min=10.89ms avg=15.59ms med=15.01ms p(90)=19.66ms p(95)=21.12ms max=24.11ms
+    iterations...................................................: 200    63.214891/s
+    vus..........................................................: 1      min=1        max=1
+    vus_max......................................................: 1      min=1        max=1
+
+    NETWORK
+    data_received................................................: 3.4 MB 1.1 MB/s
+    data_sent....................................................: 90 kB  28 kB/s
+
+
+
+
+running (00m03.2s), 0/1 VUs, 200 complete and 0 interrupted iterations
+principal ✓ [ 100% ] 1 VUs  00m03.1s/10m0s  200/200 iters, 200 per VU

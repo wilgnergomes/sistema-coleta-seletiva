@@ -84,7 +84,7 @@ Dados brutos: [`k6-principal-inicial.json`](evidencias/k6-principal-inicial.json
 | 3 | reprovada | 37.322 (685) | 20 | 6,38 ms | `dial: i/o timeout` |
 | 4 | aprovada | 57.632 (1.919) | 0 | 7,36 ms | |
 
-Arquivos em [`evidencias/tentativas-complementar/`](evidencias/tentativas-complementar). As duas reprovações foram **apenas timeouts na abertura de conexão** entre o container do k6 e o host (10 requisições perdidas em cada); a aplicação não registrou erro, as respostas recebidas foram rápidas e a fase principal nunca falhou. **A causa é hipótese não comprovada** (rede do Docker Desktop, configuração do servidor ou o roteiro), acompanhada na Issue #58 e em `docs/melhorias-pendentes.md`. Esta é a mesma instabilidade já vista na medição original, de modo que ela não está ligada ao dataset.
+Arquivos em [`evidencias/tentativas-complementar/`](evidencias/tentativas-complementar). As duas reprovações foram **apenas timeouts na abertura de conexão** entre o container do k6 e o host (10 requisições perdidas em cada); a aplicação não registrou erro, as respostas recebidas foram rápidas e a fase principal nunca falhou. **A causa é hipótese não comprovada** (rede do Docker Desktop, configuração do servidor ou o roteiro), acompanhada na Issue #58 e em `docs/melhorias-pendentes.md`. Esta é a mesma instabilidade já vista na medição original, de modo que ela não está ligada ao dataset. **Atualização (Issue #58, 2026-11-08):** a instabilidade foi diagnosticada e contornada; veja a seção 3.1 do [`relatorio-rnf04.md`](relatorio-rnf04.md). Os números e as tentativas desta página não foram alterados.
 
 ## EXPLAIN (ANALYZE, BUFFERS)
 
@@ -110,4 +110,4 @@ Arquivos em [`evidencias/tentativas-complementar/`](evidencias/tentativas-comple
 - Uma máquina e uma sequência de execuções; os números variam entre execuções (a primeira medição, com o dataset original, já mostrou isso). O que importa é a ordem de grandeza e o plano.
 - Aplicação e banco no mesmo computador, via rede local do Docker; um ambiente de produção terá latência de rede adicional.
 - O dataset é sintético. A distribuição de situações e datas é plausível, não derivada de dados reais.
-- A fase complementar sofre de instabilidade intermitente do ambiente, de causa ainda não comprovada.
+- A fase complementar sofria de instabilidade intermitente do ambiente. Diagnosticada e contornada na Issue #58 (veja a seção 3.1 do [`relatorio-rnf04.md`](relatorio-rnf04.md)); esta medição foi feita antes do contorno.

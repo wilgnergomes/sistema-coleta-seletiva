@@ -1,0 +1,5 @@
+testeB-k6-01 k6=0 18:25:19-18:25:50 tcp_antes=[      1 LISTENING    2810 TIME_WAIT ] tcp_depois=[      1 LISTENING    2639 TIME_WAIT ]
+testeB-k6-02 k6=0 18:26:34-18:27:05 tcp_antes=[      2 ESTABLISHED       1 LISTENING    1581 TIME_WAIT ] tcp_depois=[      1 LISTENING    1601 TIME_WAIT ]
+testeB-k6-03 k6=0 18:27:49-18:28:21 tcp_antes=[      2 ESTABLISHED       1 LISTENING    1075 TIME_WAIT ] tcp_depois=[      1 LISTENING    1659 TIME_WAIT ]
+testeB-k6-04 k6=99 18:29:05-18:30:05 tcp_antes=[      1 LISTENING    1081 TIME_WAIT ] tcp_depois=[      1 LISTENING    1358 TIME_WAIT ]
+testeB-k6-05 k6=0 18:30:20-18:30:51 tcp_antes=[      1 LISTENING    1067 TIME_WAIT ] tcp_depois=[      2 ESTABLISHED       1 LISTENING    1658 TIME_WAIT ]
