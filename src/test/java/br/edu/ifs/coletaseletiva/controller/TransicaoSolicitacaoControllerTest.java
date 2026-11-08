@@ -194,6 +194,75 @@ class TransicaoSolicitacaoControllerTest {
         recusar(corpo).andExpect(status().isConflict()).andExpect(jsonPath("$.codigo").value("CONFLITO_VERSAO"));
     }
 
+    // ---------- RF12: cancelamento ----------
+
+    private ResultActions cancelar(String perfil, String usuarioId, String corpo, String... idioma) throws Exception {
+        var requisicao = post("/solicitacoes/9/cancelamento").header("X-Perfil", perfil)
+                .contentType(MediaType.APPLICATION_JSON).content(corpo);
+        if (usuarioId != null) {
+            requisicao.header("X-Usuario-Id", usuarioId);
+        }
+        if (idioma.length > 0) {
+            requisicao.header("Accept-Language", idioma[0]);
+        }
+        return mockMvc.perform(requisicao);
+    }
+
+    @Test
+    void rf12_moradorEOperadorCancelamComMotivoSemEspacosNasPontas() throws Exception {
+        when(service.cancelar(any(Ator.class), eq(9), any(MotivoForm.class))).thenReturn(
+                new SolicitacaoDetalheDTO(9, "SOL-20261107-ABC234", 1, 1, "Rua A, 1", SituacaoSolicitacao.CANCELADA,
+                        OffsetDateTime.now(), null, null, null, 2, List.of(), List.of()));
+        String corpo = "{\"motivo\": \"  Não estarei em casa  \", \"versao\": 1}";
+
+        cancelar("MORADOR", "3", corpo).andExpect(status().isOk())
+                .andExpect(jsonPath("$.situacao").value("CANCELADA")).andExpect(jsonPath("$.versao").value(2));
+        cancelar("OPERADOR", "5", corpo).andExpect(status().isOk());
+
+        ArgumentCaptor<MotivoForm> form = ArgumentCaptor.forClass(MotivoForm.class);
+        ArgumentCaptor<Ator> ator = ArgumentCaptor.forClass(Ator.class);
+        verify(service, org.mockito.Mockito.times(2)).cancelar(ator.capture(), eq(9), form.capture());
+        assertEquals("Não estarei em casa", form.getValue().motivo());
+        assertEquals(List.of(3, 5), ator.getAllValues().stream().map(Ator::usuarioId).toList());
+    }
+
+    @Test
+    void rf12_motivoOuVersaoInvalidosRetornam400SemChamarOService() throws Exception {
+        cancelar("MORADOR", "3", "{\"versao\": 0}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='motivo')].mensagem").value("o motivo é obrigatório"));
+        cancelar("MORADOR", "3", "{\"motivo\": \"     \", \"versao\": 0}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='motivo')]").exists());
+        cancelar("OPERADOR", "5", "{\"motivo\": \"" + "a".repeat(501) + "\", \"versao\": 0}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='motivo')].mensagem").value("deve ter no máximo 500 caracteres"));
+        cancelar("MORADOR", "3", "{\"motivo\": \"Mudança\"}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='versao')]").exists());
+        cancelar("MORADOR", "3", "{\"versao\": 0}", "en").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='motivo')].mensagem").value("the reason is required"));
+
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void rf12_violacoesRetornam403404E409() throws Exception {
+        when(service.cancelar(any(Ator.class), eq(9), any(MotivoForm.class)))
+                .thenThrow(new AcessoNegadoException("erro.solicitacao.cancelamento-sem-permissao"))
+                .thenThrow(new NaoEncontradoException("erro.solicitacao.nao-encontrada"))
+                .thenThrow(new ConflitoRegraException("erro.solicitacao.transicao-invalida",
+                        SituacaoSolicitacao.EM_RECOLHIMENTO, SituacaoSolicitacao.CANCELADA))
+                .thenThrow(new ConflitoVersaoException("erro.solicitacao.versao-desatualizada"));
+        String corpo = "{\"motivo\": \"Mudança\", \"versao\": 0}";
+
+        cancelar("ADMINISTRADOR", null, corpo).andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.codigo").value("ACESSO_NEGADO"))
+                .andExpect(jsonPath("$.mensagem").value("Apenas o morador da solicitação ou o operador do ponto pode cancelá-la."));
+        cancelar("MORADOR", "3", corpo).andExpect(status().isNotFound());
+        cancelar("MORADOR", "3", corpo).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.mensagem").value("A solicitação está EM_RECOLHIMENTO e não pode passar para CANCELADA."));
+        cancelar("OPERADOR", "5", corpo).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("CONFLITO_VERSAO"));
+    }
+
     @Test
     void rf10_semCabecalhosDoAtorRetorna403() throws Exception {
         mockMvc.perform(post("/solicitacoes/9/agendamento").contentType(MediaType.APPLICATION_JSON).content(VALIDO))

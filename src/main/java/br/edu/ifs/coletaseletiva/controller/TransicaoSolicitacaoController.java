@@ -37,4 +37,12 @@ public class TransicaoSolicitacaoController {
                                          @Valid @RequestBody MotivoForm formulario) {
         return service.recusar(ator, id, formulario);
     }
+
+    /** RF12: o morador dono ou o operador do ponto cancela a solicitação, com justificativa. */
+    @PostMapping("/cancelamento")
+    public SolicitacaoDetalheDTO cancelar(@Parameter(hidden = true) Ator ator,
+                                          @PathVariable Integer id,
+                                          @Valid @RequestBody MotivoForm formulario) {
+        return service.cancelar(ator, id, formulario);
+    }
 }

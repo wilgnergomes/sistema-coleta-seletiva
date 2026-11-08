@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -60,6 +61,8 @@ class TransicaoSolicitacaoServiceTest {
     private HistoricoRepository historicoRepository;
     @Mock
     private OperadorService operadorService;
+    @Mock
+    private MoradorService moradorService;
 
     private TransicaoSolicitacaoService service;
     private Operador operador;
@@ -67,7 +70,7 @@ class TransicaoSolicitacaoServiceTest {
 
     @BeforeEach
     void preparar() {
-        service = new TransicaoSolicitacaoService(repository, historicoRepository, operadorService,
+        service = new TransicaoSolicitacaoService(repository, historicoRepository, operadorService, moradorService,
                 new SolicitacaoMapper(), Clock.fixed(AGORA, ZoneOffset.UTC));
         PontoColeta ponto = PontoColeta.builder().id(1).build();
         operador = Operador.builder().id(5).ponto(ponto).build();
@@ -238,5 +241,106 @@ class TransicaoSolicitacaoServiceTest {
                 () -> service.recusar(new Ator(perfil, 1), 9, new MotivoForm("Sem condições", 0)));
 
         verifyNoInteractions(repository, historicoRepository, operadorService);
+    }
+
+    // ---------- RF12: cancelamento ----------
+
+    private static final Ator MORADOR = new Ator(Perfil.MORADOR, 3);
+
+    @ParameterizedTest
+    @EnumSource(value = SituacaoSolicitacao.class, names = {"SOLICITADA", "AGENDADA"})
+    void rf12_operadorCancelaSolicitadaEAgendadaComResponsavelOperadorEPreservaAData(SituacaoSolicitacao situacao) {
+        OffsetDateTime marcada = OffsetDateTime.parse("2026-11-20T09:00:00Z");
+        solicitacao.setSituacao(situacao);
+        if (situacao == SituacaoSolicitacao.AGENDADA) {
+            solicitacao.setAgendadaPara(marcada);
+        }
+        operadorEncontraASolicitacao();
+        when(historicoRepository.findBySolicitacaoIdOrderById(9)).thenReturn(List.of());
+
+        SolicitacaoDetalheDTO resposta = service.cancelar(OPERADOR, 9, new MotivoForm("  Não estarei em casa  ", 0));
+
+        assertEquals(SituacaoSolicitacao.CANCELADA, resposta.situacao());
+        assertEquals(situacao == SituacaoSolicitacao.AGENDADA ? marcada : null, resposta.agendadaPara());
+        ArgumentCaptor<Historico> historico = ArgumentCaptor.forClass(Historico.class);
+        verify(historicoRepository).save(historico.capture());
+        assertEquals(situacao, historico.getValue().getSituacaoAnterior());
+        assertEquals(SituacaoSolicitacao.CANCELADA, historico.getValue().getSituacaoNova());
+        assertEquals("Não estarei em casa", historico.getValue().getMotivo());
+        assertEquals(operador, historico.getValue().getOperador());
+        assertNull(historico.getValue().getMorador());
+        assertNull(historico.getValue().getAgendamento());
+    }
+
+    @Test
+    void rf12_moradorDonoCancelaComResponsavelMoradorENaoOperador() {
+        when(repository.findComItensById(9)).thenReturn(Optional.of(solicitacao));
+        when(historicoRepository.findBySolicitacaoIdOrderById(9)).thenReturn(List.of());
+
+        SolicitacaoDetalheDTO resposta = service.cancelar(MORADOR, 9, new MotivoForm("Mudança de planos", 0));
+
+        assertEquals(SituacaoSolicitacao.CANCELADA, resposta.situacao());
+        verify(moradorService).autorizarAcesso(MORADOR, 3);
+        ArgumentCaptor<Historico> historico = ArgumentCaptor.forClass(Historico.class);
+        verify(historicoRepository).save(historico.capture());
+        assertEquals(solicitacao.getMorador(), historico.getValue().getMorador());
+        assertNull(historico.getValue().getOperador());
+        assertEquals("Mudança de planos", historico.getValue().getMotivo());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = SituacaoSolicitacao.class, names = {"EM_RECOLHIMENTO", "CONCLUIDA", "RECUSADA", "CANCELADA"})
+    void rf12_recolhimentoIniciadoConcluidoOuJaEncerradoNaoPodeSerCancelado(SituacaoSolicitacao situacao) {
+        solicitacao.setSituacao(situacao);
+        operadorEncontraASolicitacao();
+
+        ConflitoRegraException erro = assertThrows(ConflitoRegraException.class,
+                () -> service.cancelar(OPERADOR, 9, new MotivoForm("Sem condições", 0)));
+
+        assertEquals("erro.solicitacao.transicao-invalida", erro.getChave());
+        verify(historicoRepository, never()).save(any());
+        assertEquals(situacao, solicitacao.getSituacao());
+    }
+
+    @Test
+    void rf12_versaoDiferenteDaAtualEhConflitoDeVersaoENadaMuda() {
+        operadorEncontraASolicitacao();
+
+        assertThrows(ConflitoVersaoException.class, () -> service.cancelar(OPERADOR, 9, new MotivoForm("Sem condições", 2)));
+
+        verify(historicoRepository, never()).save(any());
+        assertEquals(SituacaoSolicitacao.SOLICITADA, solicitacao.getSituacao());
+    }
+
+    @Test
+    void rf12_administradorNaoCancelaESemConsultarNada() {
+        assertThrows(AcessoNegadoException.class,
+                () -> service.cancelar(new Ator(Perfil.ADMINISTRADOR, null), 9, new MotivoForm("Sem condições", 0)));
+
+        verifyNoInteractions(repository, historicoRepository, operadorService, moradorService);
+    }
+
+    @Test
+    void rf12_moradorQueNaoEODonoOuOperadorDeOutroPontoRecebemNaoEncontrado() {
+        when(repository.findComItensById(9)).thenReturn(Optional.of(solicitacao));
+
+        assertThrows(NaoEncontradoException.class,
+                () -> service.cancelar(new Ator(Perfil.MORADOR, 4), 9, new MotivoForm("Sem condições", 0)));
+
+        Operador outro = Operador.builder().id(6).ponto(PontoColeta.builder().id(2).build()).build();
+        when(operadorService.autorizarOperador(OPERADOR)).thenReturn(outro);
+        assertThrows(NaoEncontradoException.class, () -> service.cancelar(OPERADOR, 9, new MotivoForm("Sem condições", 0)));
+
+        verify(historicoRepository, never()).save(any());
+    }
+
+    @Test
+    void rf12_moradorInativoOuInexistenteEhNegadoSemConsultarASolicitacao() {
+        doThrow(new AcessoNegadoException("erro.morador.usuario-inexistente-ou-inativo"))
+                .when(moradorService).autorizarAcesso(MORADOR, 3);
+
+        assertThrows(AcessoNegadoException.class, () -> service.cancelar(MORADOR, 9, new MotivoForm("Sem condições", 0)));
+
+        verifyNoInteractions(repository, historicoRepository);
     }
 }

@@ -87,4 +87,13 @@ class TransicaoRollbackIntegracaoTest extends IntegracaoBase {
 
         nadaFoiGravado();
     }
+
+    @Test
+    void rf12_falhaNaGravacaoDoHistoricoDesfazOCancelamento() throws Exception {
+        acao("cancelamento", "{\"motivo\": \"Não estarei em casa\", \"versao\": 0}")
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.codigo").value("ERRO_INTERNO"));
+
+        nadaFoiGravado();
+    }
 }

@@ -3,6 +3,7 @@ package br.edu.ifs.coletaseletiva.service;
 import br.edu.ifs.coletaseletiva.config.Ator;
 import br.edu.ifs.coletaseletiva.dto.SolicitacaoDetalheDTO;
 import br.edu.ifs.coletaseletiva.entity.Historico;
+import br.edu.ifs.coletaseletiva.entity.Morador;
 import br.edu.ifs.coletaseletiva.entity.Operador;
 import br.edu.ifs.coletaseletiva.entity.Solicitacao;
 import br.edu.ifs.coletaseletiva.enumeration.Perfil;
@@ -38,6 +39,7 @@ public class TransicaoSolicitacaoService {
     private final SolicitacaoRepository repository;
     private final HistoricoRepository historicoRepository;
     private final OperadorService operadorService;
+    private final MoradorService moradorService;
     private final SolicitacaoMapper mapper;
     private final Clock relogio;
 
@@ -58,7 +60,8 @@ public class TransicaoSolicitacaoService {
         exigirVersao(solicitacao, formulario.versao());
 
         solicitacao.setAgendadaPara(formulario.dataHora());
-        return aplicar(solicitacao, SituacaoSolicitacao.AGENDADA, operador, agora, null, formulario.dataHora());
+        return aplicar(solicitacao, SituacaoSolicitacao.AGENDADA, Responsavel.de(operador), agora, null,
+                formulario.dataHora());
     }
 
     /**
@@ -73,8 +76,29 @@ public class TransicaoSolicitacaoService {
         exigirSituacao(solicitacao, SituacaoSolicitacao.SOLICITADA, SituacaoSolicitacao.RECUSADA);
         exigirVersao(solicitacao, formulario.versao());
 
-        return aplicar(solicitacao, SituacaoSolicitacao.RECUSADA, operador, OffsetDateTime.now(relogio),
+        return aplicar(solicitacao, SituacaoSolicitacao.RECUSADA, Responsavel.de(operador), OffsetDateTime.now(relogio),
                 formulario.motivo(), null);
+    }
+
+    /**
+     * RF12: o morador dono (ativo) ou o operador ativo do ponto cancela a solicitação, com justificativa. Só
+     * SOLICITADA -> CANCELADA e AGENDADA -> CANCELADA; recolhimento iniciado ou concluído, e as situações finais,
+     * são rejeitados (409). Se estava AGENDADA, {@code agendadaPara} é preservado como registro da data marcada.
+     * O responsável do histórico é o ator que cancelou (ADR 0011).
+     */
+    @Transactional
+    public SolicitacaoDetalheDTO cancelar(Ator ator, Integer id, MotivoForm formulario) {
+        Contexto contexto = contextoDoCancelamento(ator, id);
+        Solicitacao solicitacao = contexto.solicitacao();
+
+        if (solicitacao.getSituacao() != SituacaoSolicitacao.SOLICITADA
+                && solicitacao.getSituacao() != SituacaoSolicitacao.AGENDADA) {
+            throw transicaoInvalida(solicitacao.getSituacao(), SituacaoSolicitacao.CANCELADA);
+        }
+        exigirVersao(solicitacao, formulario.versao());
+
+        return aplicar(solicitacao, SituacaoSolicitacao.CANCELADA, contexto.responsavel(),
+                OffsetDateTime.now(relogio), formulario.motivo(), null);
     }
 
     // =====================================================================
@@ -94,6 +118,27 @@ public class TransicaoSolicitacaoService {
         return repository.findComItensById(id)
                 .filter(s -> s.getPonto().getId().equals(operador.getPonto().getId()))
                 .orElseThrow(() -> new NaoEncontradoException("erro.solicitacao.nao-encontrada"));
+    }
+
+    /**
+     * Quem pode cancelar e o que enxerga: o operador, as solicitações do seu ponto; o morador, as suas. Fora do
+     * contexto a solicitação "não existe" (404); o administrador não participa (403, ADR 0011).
+     */
+    private Contexto contextoDoCancelamento(Ator ator, Integer id) {
+        return switch (ator.perfil()) {
+            case OPERADOR -> {
+                Operador operador = operadorService.autorizarOperador(ator);
+                yield new Contexto(solicitacaoDoPonto(operador, id), Responsavel.de(operador));
+            }
+            case MORADOR -> {
+                moradorService.autorizarAcesso(ator, ator.usuarioId());
+                Solicitacao solicitacao = repository.findComItensById(id)
+                        .filter(s -> s.getMorador().getId().equals(ator.usuarioId()))
+                        .orElseThrow(() -> new NaoEncontradoException("erro.solicitacao.nao-encontrada"));
+                yield new Contexto(solicitacao, Responsavel.de(solicitacao.getMorador()));
+            }
+            case ADMINISTRADOR -> throw new AcessoNegadoException("erro.solicitacao.cancelamento-sem-permissao");
+        };
     }
 
     /**
@@ -120,7 +165,7 @@ public class TransicaoSolicitacaoService {
      * Muda a situação e grava o histórico na mesma transação. A situação mudou, então o {@code @Version} sobe
      * sozinho no UPDATE; se outra transação gravou antes, o Hibernate lança o bloqueio otimista (409).
      */
-    private SolicitacaoDetalheDTO aplicar(Solicitacao solicitacao, SituacaoSolicitacao destino, Operador operador,
+    private SolicitacaoDetalheDTO aplicar(Solicitacao solicitacao, SituacaoSolicitacao destino, Responsavel responsavel,
                                           OffsetDateTime agora, String motivo, OffsetDateTime agendamento) {
         SituacaoSolicitacao anterior = solicitacao.getSituacao();
         if (!anterior.podeIrPara(destino)) {
@@ -133,10 +178,36 @@ public class TransicaoSolicitacaoService {
                 .situacaoAnterior(anterior)
                 .situacaoNova(destino)
                 .data(agora)
-                .operador(operador)
+                .operador(responsavel.operador())
+                .morador(responsavel.morador())
                 .motivo(motivo)
                 .agendamento(agendamento)
                 .build());
         return mapper.paraDetalhe(solicitacao, historicoRepository.findBySolicitacaoIdOrderById(solicitacao.getId()));
+    }
+
+    /** Solicitação já dentro do contexto do ator e o responsável que o histórico vai registrar. */
+    private record Contexto(Solicitacao solicitacao, Responsavel responsavel) {
+    }
+
+    /**
+     * Quem agiu: exatamente um entre operador e morador, como o {@code CHECK} do banco exige (ADR 0011). Evita passar
+     * dois parâmetros opcionais onde um deve ser nulo.
+     */
+    private record Responsavel(Operador operador, Morador morador) {
+
+        Responsavel {
+            if ((operador == null) == (morador == null)) {
+                throw new IllegalArgumentException("o responsável é exatamente um: operador ou morador");
+            }
+        }
+
+        static Responsavel de(Operador operador) {
+            return new Responsavel(operador, null);
+        }
+
+        static Responsavel de(Morador morador) {
+            return new Responsavel(null, morador);
+        }
     }
 }
