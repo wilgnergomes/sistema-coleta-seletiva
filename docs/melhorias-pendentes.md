@@ -6,6 +6,12 @@ Itens que já têm Issue própria no GitHub (por exemplo, #30 e #31) não são r
 
 Legenda: `[ ]` pendente · `[x]` resolvida (o item é mantido para preservar o histórico, com a data e a referência da resolução).
 
+Também entram aqui os defeitos confirmados, as melhorias opcionais e as hipóteses que decidimos não corrigir de imediato e que não impedem um requisito. Cada entrada diz o **tipo** (defeito confirmado, melhoria opcional ou hipótese), a descrição, o impacto, a localização no código, a prioridade sugerida e o momento recomendado. Nada daqui é corrigido automaticamente: a correção depende de aprovação (regra permanente do `CLAUDE.md`).
+
+## Defeitos confirmados
+
+- [ ] **Id do material formatado com separador de milhar em mensagem de erro.** Tipo: defeito confirmado (reproduzido por teste no RF13). O `MessageFormat` formata argumentos numéricos conforme o idioma, e um `Integer` vira "1.000" em português ou "1,000" em inglês. Em `SolicitacaoService.validarEMontarItens` a mensagem `erro.solicitacao.material-repetido` recebe `item.materialId()` como `Integer`. Impacto: baixo e cosmético; para ids a partir de 1000 o 409 de material repetido mostra o id com ponto ("O material 1.000 aparece mais de uma vez na solicitação."); nenhuma regra nem dado é afetado. Localização: `SolicitacaoService.java:244` (no RF13 o caso equivalente, `conclusao-item-desconhecido` em `TransicaoSolicitacaoService`, já passa o id como texto). Os argumentos de quantidade, como o limite em `erro.solicitacao.limite-excedido`, são formatados pelo idioma e isso é adequado a quantidades. Prioridade sugerida: baixa. Momento recomendado: junto de qualquer próxima alteração em `SolicitacaoService` ou na revisão final antes da entrega; a correção é de uma linha (passar `String.valueOf(item.materialId())` ou citar o nome do material, como no RF13), com um teste usando um id a partir de 1000. Origem: RF13, 2026-11-08.
+
 ## Documentação da API (Swagger)
 
 - [ ] **Swagger gerado mostra só a resposta de sucesso.** A interface gerada pelo springdoc lista apenas `200` (inclusive no `POST /moradores`, que na prática devolve `201`), sem os erros `400`, `403`, `404`, `409` e `500` do contrato e com o tipo de conteúdo `*/*`. O contrato `docs/api/openapi.yaml` está completo e é a fonte da verdade (ADR 0017). Avaliar anotações `@Operation`/`@ApiResponse` nos controllers ou publicar o próprio `openapi.yaml` na interface. Origem: RF01, conferência de 2026-11-07.

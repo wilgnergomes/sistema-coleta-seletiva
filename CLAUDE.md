@@ -102,6 +102,22 @@ Regras:
 - Não incluir configurações locais (`.claude/settings.local.json`), credenciais ou arquivos sensíveis nos commits.
 - Internacionalização (ADR 0023, infraestrutura da Issue #35): mensagens ao cliente não ficam fixas no código. Formulários usam chaves (`message = "{morador.nome.obrigatorio}"`) e as exceções de negócio (`NegocioException`) carregam chave e argumentos; o texto fica em `messages.properties` (pt-BR) e `messages_en.properties`, com as mesmas chaves nos dois (um teste confere). Cada nova funcionalidade acrescenta suas chaves nos dois idiomas na própria branch, sem reabrir a Issue #35, salvo defeito ou requisito pendente da infraestrutura.
 
+## Registro de pendências não corrigidas
+
+Sempre que identificar um defeito, melhoria, dívida técnica, inconsistência ou limitação que decidirmos
+**não corrigir imediatamente**, registre-o em `docs/melhorias-pendentes.md`:
+
+- Antes de registrar, verifique se já consta. Se constar, atualize a entrada quando necessário, sem duplicar.
+- Se não constar, escreva uma entrada objetiva com: descrição, impacto, localização no código, prioridade
+  sugerida e momento recomendado para a correção.
+- Diferencie **defeito confirmado** (comprovado por teste ou pela leitura do código), **melhoria opcional** e
+  **hipótese** ainda não verificada.
+- Não implemente a correção automaticamente. Ela só entra com a aprovação do estudante, em issue ou PR próprio.
+- Item que já tem Issue própria no GitHub é apenas referenciado, e não repetido.
+- Inclua a atualização do documento no PR do requisito em andamento, quando fizer sentido (por exemplo, uma
+  pendência descoberta durante o requisito). Caso contrário, registre na próxima alteração documental apropriada.
+- Isso não é motivo para uma auditoria geral nem para abrir uma tarefa de correção.
+
 ## Gestão contínua de decisões arquiteturais (ADRs)
 
 Os ADRs são documentos evolutivos e devem acompanhar
