@@ -24,7 +24,7 @@ info:
     **Idioma (ADR 0023).** As mensagens de erro e de validação saem em português do Brasil
     (padrão) ou em inglês, conforme o cabeçalho `Accept-Language`. Os endpoints passam a
     documentar o cabeçalho conforme cada funcionalidade recebe suas mensagens nos dois idiomas
-    (hoje, RF01 a RF11).
+    (hoje, RF01 a RF12).
 
     **Períodos (ADR 0014).** Os filtros `de` e `ate` são datas no fuso de
     negócio (America/Sao_Paulo). O intervalo é semiaberto: do início do dia `de`
@@ -756,12 +756,20 @@ paths:
   /solicitacoes/{id}/cancelamento:
     parameters:
       - { $ref: '#/components/parameters/Id' }
+      - { $ref: '#/components/parameters/AcceptLanguage' }
     post:
       tags: [Situação da solicitação]
       summary: Cancela a solicitação (RF12)
       description: |
-        Morador dono da solicitação ou operador do ponto. Só em SOLICITADA ou AGENDADA.
-        O motivo é obrigatório. Cancelar recolhimento iniciado ou concluído é rejeitado com 409.
+        O morador ativo dono da solicitação ou o operador ativo do ponto (o administrador não cancela: 403).
+        O responsável do histórico é o ator que cancelou, nunca informado no corpo. Só em SOLICITADA ou
+        AGENDADA; recolhimento iniciado (EM_RECOLHIMENTO), concluído ou já encerrado é rejeitado com 409.
+        O `motivo` é obrigatório (ausente, vazio, só com espaços ou acima de 500 caracteres é 400 no campo
+        `motivo`) e é guardado sem os espaços das pontas. Muda a situação para CANCELADA e grava o histórico
+        (situação anterior, motivo e responsável) na mesma transação, somando 1 à versão. Se estava AGENDADA,
+        `agendadaPara` é preservado como registro da data marcada. O operador cancela mesmo com o ponto
+        inativo. Solicitação inexistente ou fora do contexto do ator (de outro morador, ou de outro ponto):
+        404. Usuário inexistente ou inativo: 403. Versão diferente da atual: 409.
       operationId: cancelarSolicitacao
       requestBody:
         required: true
