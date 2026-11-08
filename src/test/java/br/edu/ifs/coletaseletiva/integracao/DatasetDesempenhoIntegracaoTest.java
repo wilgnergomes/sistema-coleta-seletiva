@@ -299,4 +299,57 @@ class DatasetDesempenhoIntegracaoTest extends IntegracaoBase {
         mockMvc.perform(get("/solicitacoes").header("X-Perfil", "MORADOR").header("X-Usuario-Id", String.valueOf(morador)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.totalElementos").value(5));
     }
+
+    // ---------- distribuição: ponto, morador e situação são independentes (seletividade realista) ----------
+
+    @Test
+    void rnf04_pontoMoradorESituacaoSaoIndependentesEOsFiltrosTemSeletividadeRealista() throws Exception {
+        executar(CARGA);
+
+        // Cada ponto recebe as 6 situações, nenhuma delas dominando o ponto (antes, cada ponto tinha uma só)
+        assertEquals(6, contar("""
+                SELECT MIN(n) FROM (SELECT COUNT(DISTINCT sol_tx_situacao) AS n FROM coleta.sol_solicitacao
+                                    GROUP BY poc_nr_id) t"""));
+        assertTrue(contar("""
+                SELECT MAX(qtd) FROM (SELECT COUNT(*) AS qtd FROM coleta.sol_solicitacao
+                                      GROUP BY poc_nr_id, sol_tx_situacao) t""") <= 30,
+                "nenhuma situação deve passar de 60% das 50 solicitações de um ponto");
+
+        // Cada morador distribui suas 5 solicitações por 5 pontos diferentes e por mais de uma situação
+        assertEquals(5, contar("""
+                SELECT MIN(n) FROM (SELECT COUNT(DISTINCT poc_nr_id) AS n FROM coleta.sol_solicitacao
+                                    GROUP BY mor_nr_id) t"""));
+        assertTrue(contar("""
+                SELECT MIN(n) FROM (SELECT COUNT(DISTINCT sol_tx_situacao) AS n FROM coleta.sol_solicitacao
+                                    GROUP BY mor_nr_id) t""") >= 2);
+
+        // A distribuição global e os totais por ponto e por morador não mudam
+        assertEquals(50, contar("SELECT MAX(n) FROM (SELECT COUNT(*) AS n FROM coleta.sol_solicitacao GROUP BY poc_nr_id) t"));
+        assertEquals(50, contar("SELECT MIN(n) FROM (SELECT COUNT(*) AS n FROM coleta.sol_solicitacao GROUP BY poc_nr_id) t"));
+        assertEquals(5, contar("SELECT MAX(n) FROM (SELECT COUNT(*) AS n FROM coleta.sol_solicitacao GROUP BY mor_nr_id) t"));
+        assertEquals(5, contar("SELECT MIN(n) FROM (SELECT COUNT(*) AS n FROM coleta.sol_solicitacao GROUP BY mor_nr_id) t"));
+    }
+
+    @Test
+    void rnf04_osFiltrosCombinadosDaApiNaoSaoEquivalentesEntreSi() throws Exception {
+        executar(CARGA);
+        int ponto = jdbc.queryForObject("SELECT MIN(poc_nr_id) FROM coleta.poc_ponto_coleta", Integer.class);
+        int operador = jdbc.queryForObject("SELECT MIN(ope_nr_id) FROM coleta.ope_operador", Integer.class);
+
+        // Ponto + situação devolve só parte das 50 do ponto, e não zero nem todas
+        mockMvc.perform(get("/solicitacoes").header("X-Perfil", "ADMINISTRADOR")
+                        .param("pontoId", String.valueOf(ponto)).param("situacao", "CONCLUIDA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElementos").value(org.hamcrest.Matchers.allOf(
+                        org.hamcrest.Matchers.greaterThan(0), org.hamcrest.Matchers.lessThan(50))));
+        // O operador filtrando por situação enxerga uma parte das 50 do seu ponto
+        mockMvc.perform(get("/solicitacoes").header("X-Perfil", "OPERADOR").header("X-Usuario-Id", String.valueOf(operador))
+                        .param("situacao", "CONCLUIDA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElementos").value(org.hamcrest.Matchers.allOf(
+                        org.hamcrest.Matchers.greaterThan(0), org.hamcrest.Matchers.lessThan(50))));
+        // O morador enxerga as suas 5 em mais de um ponto
+        int morador = jdbc.queryForObject("SELECT MIN(mor_nr_id) FROM coleta.mor_morador", Integer.class);
+        assertEquals(5, contar("SELECT COUNT(DISTINCT poc_nr_id) FROM coleta.sol_solicitacao WHERE mor_nr_id = " + morador));
+    }
 }

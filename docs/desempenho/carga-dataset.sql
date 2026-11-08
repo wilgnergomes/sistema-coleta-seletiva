@@ -17,7 +17,11 @@
 -- limites do vínculo; unidade e endereço copiados; histórico completo até a situação atual, com exatamente um responsável
 -- por linha e operador do ponto; quantidade efetiva e data de conclusão só nas CONCLUIDA, com ao menos uma positiva.
 --
--- Distribuição por situação (a cada 20 solicitações): CONCLUIDA 9 (45%), SOLICITADA 3 (15%), AGENDADA 3 (15%),
+-- Ponto, morador e situação são independentes entre si: cada ponto tem as 6 situações e cada morador distribui as 5
+-- solicitações por 5 pontos e mais de uma situação (corrige o dataset original, em que cada ponto e cada morador tinham
+-- uma única situação; veja resultados-iniciais.md).
+--
+-- Distribuição global por situação (a cada 20 solicitações): CONCLUIDA 9 (45%), SOLICITADA 3 (15%), AGENDADA 3 (15%),
 -- RECUSADA 2 (10%), CANCELADA 2 (10%) e EM_RECOLHIMENTO 1 (5%). Criadas ao longo de 12 meses (nov/2025 a out/2026).
 --
 -- Transação única: se qualquer etapa falhar, nada é gravado. Para repetir a carga, execute antes limpar-dataset.sql.
@@ -127,7 +131,9 @@ ORDER BY p.rn;
 CREATE TEMP TABLE perf_base ON COMMIT DROP AS
 SELECT x.i,
        ((x.i - 1) % 200) + 1 AS rn_mor,
-       ((x.i * 7) % 20) + 1 AS rn_poc,
+       -- Ponto: com i - 1 = 200q + 20a + b (q de 0 a 4, a de 0 a 9, b de 0 a 19), o ponto é (b + a + q) mod 20.
+       -- Cada ponto recebe 50 solicitações, e as 5 de um morador (q = 0 a 4) caem em 5 pontos diferentes
+       ((((x.i - 1) % 20) + (((x.i - 1) % 200) / 20) + ((x.i - 1) / 200)) % 20) + 1 AS rn_poc,
        x.situacao,
        x.criada,
        x.criada + (1 + x.i % 5) * INTERVAL '1 day' + INTERVAL '1 hour' AS agendada,
@@ -135,16 +141,18 @@ SELECT x.i,
        x.criada + (1 + x.i % 5) * INTERVAL '1 day' + INTERVAL '3 hours' + (x.i % 60) * INTERVAL '1 minute' AS concluida,
        'SOL-' || to_char(x.criada AT TIME ZONE 'America/Sao_Paulo', 'YYYYMMDD') || '-P' || lpad(x.i::text, 5, '0') AS protocolo
 FROM (
+    -- Situação: depende de j = (i + 7q) mod 20, que muda de uma volta (q) para outra. Assim a situação não
+    -- acompanha o morador nem o ponto, e a proporção global continua exata (cada resíduo de j ocorre 50 vezes)
     SELECT i,
-           CASE WHEN i % 20 <= 8 THEN 'CONCLUIDA'
-                WHEN i % 20 <= 11 THEN 'SOLICITADA'
-                WHEN i % 20 <= 14 THEN 'AGENDADA'
-                WHEN i % 20 <= 16 THEN 'RECUSADA'
-                WHEN i % 20 <= 18 THEN 'CANCELADA'
+           CASE WHEN j <= 8 THEN 'CONCLUIDA'
+                WHEN j <= 11 THEN 'SOLICITADA'
+                WHEN j <= 14 THEN 'AGENDADA'
+                WHEN j <= 16 THEN 'RECUSADA'
+                WHEN j <= 18 THEN 'CANCELADA'
                 ELSE 'EM_RECOLHIMENTO' END AS situacao,
            TIMESTAMPTZ '2025-11-01 08:00:00-03' + ((i * 53) % 365) * INTERVAL '1 day'
                + ((i * 17) % 600) * INTERVAL '1 minute' AS criada
-    FROM generate_series(1, 1000) AS i
+    FROM (SELECT i, (i + 7 * ((i - 1) / 200)) % 20 AS j FROM generate_series(1, 1000) AS i) AS g
 ) AS x;
 
 -- 7. Solicitações. A versão é o número de transições já feitas; a cópia do endereço segue o texto da aplicação (ADR 0008)

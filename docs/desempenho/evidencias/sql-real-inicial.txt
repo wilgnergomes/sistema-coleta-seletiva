@@ -1,3 +1,5 @@
+-- Mesmas instruções SQL do historico-dataset-original (o código da aplicação não mudou; só os dados). Veja aquele arquivo para os parâmetros capturados.
+
 -- Instruções SQL reais enviadas pelo Hibernate (log_statement=all no banco coleta_desempenho), com parâmetros.
 
 select pc1_0.poc_nr_id,pc1_0.poc_tx_contato,pc1_0.poc_tx_bairro,pc1_0.poc_tx_cep,pc1_0.poc_tx_complemento,pc1_0.poc_tx_logradouro,pc1_0.poc_tx_municipio,pc1_0.poc_tx_numero,pc1_0.poc_tx_uf,pc1_0.poc_tx_horarios,pc1_0.poc_tx_nome,pc1_0.poc_bl_rec_domiciliar,pc1_0.poc_tx_situacao from coleta.poc_ponto_coleta pc1_0 where 1=1 and lower(pc1_0.poc_tx_municipio)=$1 and pc1_0.poc_tx_situacao=$2 order by pc1_0.poc_nr_id offset $3 rows fetch first $4 rows only;

@@ -48,5 +48,5 @@ Também entram aqui os defeitos confirmados, as melhorias opcionais e as hipóte
 
 ## Desempenho (RNF04)
 
-- [ ] **Dataset de desempenho com ponto, morador e situação correlacionados.** Tipo: defeito confirmado. Diagnóstico e evidência em `docs/desempenho/resultados-iniciais.md` (seção "Limitações"); a correção, a validação da seletividade e a nova medição inicial são tarefa da Issue #33, antes de qualquer índice da V3.
+- [x] **Dataset de desempenho com ponto, morador e situação correlacionados.** Resolvida em 2026-11-08 (Issue #33): distribuição corrigida e medição inicial repetida. Diagnóstico em `docs/desempenho/historico-dataset-original/resultados-dataset-original.md`; resultado vigente em `docs/desempenho/resultados-iniciais.md`.
 - [ ] **Fase complementar do k6 instável (timeouts de conexão).** Tipo: hipótese (causa não comprovada). Fatos, as seis tentativas e as suspeitas em `docs/desempenho/resultados-iniciais.md` (seção "Instabilidade do ambiente"). Verificar durante a medição final da Issue #58, que acompanha a investigação.
