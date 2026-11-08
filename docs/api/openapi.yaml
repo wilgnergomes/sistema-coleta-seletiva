@@ -24,7 +24,7 @@ info:
     **Idioma (ADR 0023).** As mensagens de erro e de validação saem em português do Brasil
     (padrão) ou em inglês, conforme o cabeçalho `Accept-Language`. Os endpoints passam a
     documentar o cabeçalho conforme cada funcionalidade recebe suas mensagens nos dois idiomas
-    (hoje, RF01 a RF14).
+    (hoje, RF01 a RF15).
 
     **Períodos (ADR 0014).** Os filtros `de` e `ate` são datas no fuso de
     negócio (America/Sao_Paulo). O intervalo é semiaberto: do início do dia `de`
@@ -937,14 +937,22 @@ paths:
       tags: [Resumo gerencial]
       summary: Exibe o resumo gerencial (RF15)
       description: |
-        Dois blocos. (1) Número de solicitações por situação, com filtro de período pela data de
-        criação. (2) Quantidades efetivamente recolhidas por material e unidade, somando só
-        solicitações CONCLUIDA, com filtro de período pela data de conclusão. Unidades diferentes
-        nunca são somadas. Datas de referência definidas no ADR 0014.
+        Só o administrador (morador, operador e requisição sem ator recebem 403). Dois blocos, com datas de
+        referência diferentes (ADR 0014). (1) Número de solicitações por situação, com filtro de período pela
+        data de criação: sempre as seis situações, na ordem do enum, com total zero quando não há ocorrência.
+        (2) Quantidades efetivamente recolhidas por material e unidade, somando só a quantidade **efetiva** de
+        solicitações CONCLUIDA, com filtro de período pela data de conclusão: item com efetiva zero soma zero,
+        item sem efetiva não entra e a quantidade estimada nunca é usada. A unidade é a copiada no item
+        (ADR 0008), então kg, litros e unidades jamais são somados entre si, e não há total geral.
+
+        `de` e `ate` são opcionais e inclusivos: o intervalo é semiaberto, do início do dia `de` até o início do
+        dia seguinte a `ate`, no fuso de negócio. Data malformada ou `ate` anterior a `de` é 400 no campo
+        correspondente. As agregações (`COUNT`, `SUM`, `GROUP BY`) são feitas no banco.
       operationId: resumoGerencial
       parameters:
         - { $ref: '#/components/parameters/De' }
         - { $ref: '#/components/parameters/Ate' }
+        - { $ref: '#/components/parameters/AcceptLanguage' }
       responses:
         '200':
           description: Resumo gerencial
@@ -1425,6 +1433,7 @@ components:
       properties:
         solicitacoesPorSituacao:
           type: array
+          description: Sempre as seis situações, na ordem do enum, com total zero quando não há ocorrência.
           items:
             type: object
             required: [situacao, total]
