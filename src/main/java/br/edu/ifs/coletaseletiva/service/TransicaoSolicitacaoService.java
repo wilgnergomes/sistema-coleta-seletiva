@@ -17,8 +17,10 @@ import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
 import br.edu.ifs.coletaseletiva.exception.ParametroInvalidoException;
 import br.edu.ifs.coletaseletiva.form.AgendamentoForm;
 import br.edu.ifs.coletaseletiva.form.ConclusaoForm;
+import br.edu.ifs.coletaseletiva.form.FalhaForm;
 import br.edu.ifs.coletaseletiva.form.ItemConclusaoForm;
 import br.edu.ifs.coletaseletiva.form.MotivoForm;
+import br.edu.ifs.coletaseletiva.form.ReagendamentoForm;
 import br.edu.ifs.coletaseletiva.form.VersaoForm;
 import br.edu.ifs.coletaseletiva.mapper.SolicitacaoMapper;
 import br.edu.ifs.coletaseletiva.repository.HistoricoRepository;
@@ -65,9 +67,7 @@ public class TransicaoSolicitacaoService {
         Solicitacao solicitacao = solicitacaoDoPonto(operador, id);
 
         OffsetDateTime agora = OffsetDateTime.now(relogio);
-        if (!formulario.dataHora().isAfter(agora)) {
-            throw new ParametroInvalidoException("dataHora", "erro.solicitacao.agendamento-passado");
-        }
+        exigirDataFutura(formulario.dataHora(), agora);
         exigirSituacao(solicitacao, SituacaoSolicitacao.SOLICITADA, SituacaoSolicitacao.AGENDADA);
         exigirVersao(solicitacao, formulario.versao());
 
@@ -150,6 +150,51 @@ public class TransicaoSolicitacaoService {
         OffsetDateTime agora = OffsetDateTime.now(relogio);
         solicitacao.setConcluidaEm(agora);
         return aplicar(solicitacao, SituacaoSolicitacao.CONCLUIDA, Responsavel.de(operador), agora, null, null);
+    }
+
+    /**
+     * RF14: o operador ativo do ponto reagenda uma solicitação AGENDADA (AGENDADA -> AGENDADA), com justificativa e nova
+     * data futura. A situação não muda, então a versão só sobe porque {@code agendadaPara} muda: por isso a mesma data
+     * é rejeitada (409), em vez de gravar um histórico sem alteração e sem proteção de versão. Cada reagendamento
+     * acrescenta uma linha ao histórico; os agendamentos anteriores permanecem nas linhas antigas.
+     */
+    @Transactional
+    public SolicitacaoDetalheDTO reagendar(Ator ator, Integer id, ReagendamentoForm formulario) {
+        Operador operador = operadorDoAtor(ator);
+        Solicitacao solicitacao = solicitacaoDoPonto(operador, id);
+
+        OffsetDateTime agora = OffsetDateTime.now(relogio);
+        exigirDataFutura(formulario.dataHora(), agora);
+        exigirSituacao(solicitacao, SituacaoSolicitacao.AGENDADA, "erro.solicitacao.reagendamento-somente-agendada");
+        exigirVersao(solicitacao, formulario.versao());
+        if (solicitacao.getAgendadaPara() != null
+                && solicitacao.getAgendadaPara().toInstant().equals(formulario.dataHora().toInstant())) {
+            throw new ConflitoRegraException("erro.solicitacao.reagendamento-mesma-data");
+        }
+
+        solicitacao.setAgendadaPara(formulario.dataHora());
+        return aplicar(solicitacao, SituacaoSolicitacao.AGENDADA, Responsavel.de(operador), agora,
+                formulario.motivo(), formulario.dataHora(), null);
+    }
+
+    /**
+     * RF14: o operador ativo do ponto registra uma tentativa sem sucesso (EM_RECOLHIMENTO -> AGENDADA), com justificativa,
+     * informações da tentativa e nova data futura. A situação muda, então a versão sobe sozinha e a nova data pode
+     * coincidir com a anterior. A linha do histórico guarda a tentativa; as anteriores permanecem.
+     */
+    @Transactional
+    public SolicitacaoDetalheDTO registrarFalha(Ator ator, Integer id, FalhaForm formulario) {
+        Operador operador = operadorDoAtor(ator);
+        Solicitacao solicitacao = solicitacaoDoPonto(operador, id);
+
+        OffsetDateTime agora = OffsetDateTime.now(relogio);
+        exigirDataFutura(formulario.dataHora(), agora);
+        exigirSituacao(solicitacao, SituacaoSolicitacao.EM_RECOLHIMENTO, "erro.solicitacao.falha-somente-em-recolhimento");
+        exigirVersao(solicitacao, formulario.versao());
+
+        solicitacao.setAgendadaPara(formulario.dataHora());
+        return aplicar(solicitacao, SituacaoSolicitacao.AGENDADA, Responsavel.de(operador), agora,
+                formulario.motivo(), formulario.dataHora(), formulario.informacoesTentativa());
     }
 
     // =====================================================================
@@ -240,6 +285,23 @@ public class TransicaoSolicitacaoService {
         enviados.forEach(e -> itens.get(e.materialId()).setQuantidadeEfetiva(e.quantidadeEfetiva()));
     }
 
+    /**
+     * Variante com mensagem própria, para as ações cuja origem não cabe no texto genérico "não pode passar para X"
+     * (o reagendamento e a falha terminam em AGENDADA, que também é a origem de um deles).
+     */
+    private void exigirSituacao(Solicitacao solicitacao, SituacaoSolicitacao origem, String chaveDaMensagem) {
+        if (solicitacao.getSituacao() != origem) {
+            throw new ConflitoRegraException(chaveDaMensagem, solicitacao.getSituacao());
+        }
+    }
+
+    /** A data marcada precisa ser posterior ao instante atual do relógio: 400 no campo {@code dataHora}. */
+    private void exigirDataFutura(OffsetDateTime dataHora, OffsetDateTime agora) {
+        if (!dataHora.isAfter(agora)) {
+            throw new ParametroInvalidoException("dataHora", "erro.solicitacao.agendamento-passado");
+        }
+    }
+
     private void exigirVersao(Solicitacao solicitacao, Integer versaoDoCliente) {
         if (!versaoDoCliente.equals(solicitacao.getVersao())) {
             throw new ConflitoVersaoException("erro.solicitacao.versao-desatualizada");
@@ -256,6 +318,13 @@ public class TransicaoSolicitacaoService {
      */
     private SolicitacaoDetalheDTO aplicar(Solicitacao solicitacao, SituacaoSolicitacao destino, Responsavel responsavel,
                                           OffsetDateTime agora, String motivo, OffsetDateTime agendamento) {
+        return aplicar(solicitacao, destino, responsavel, agora, motivo, agendamento, null);
+    }
+
+    /** Versão completa: acrescenta as informações da tentativa sem sucesso (RF14), que as demais ações não têm. */
+    private SolicitacaoDetalheDTO aplicar(Solicitacao solicitacao, SituacaoSolicitacao destino, Responsavel responsavel,
+                                          OffsetDateTime agora, String motivo, OffsetDateTime agendamento,
+                                          String informacoesTentativa) {
         SituacaoSolicitacao anterior = solicitacao.getSituacao();
         if (!anterior.podeIrPara(destino)) {
             throw transicaoInvalida(anterior, destino);
@@ -271,6 +340,7 @@ public class TransicaoSolicitacaoService {
                 .morador(responsavel.morador())
                 .motivo(motivo)
                 .agendamento(agendamento)
+                .informacoesTentativa(informacoesTentativa)
                 .build());
         return mapper.paraDetalhe(solicitacao, historicoRepository.findBySolicitacaoIdOrderById(solicitacao.getId()));
     }

@@ -24,7 +24,7 @@ info:
     **Idioma (ADR 0023).** As mensagens de erro e de validação saem em português do Brasil
     (padrão) ou em inglês, conforme o cabeçalho `Accept-Language`. Os endpoints passam a
     documentar o cabeçalho conforme cada funcionalidade recebe suas mensagens nos dois idiomas
-    (hoje, RF01 a RF13).
+    (hoje, RF01 a RF14).
 
     **Períodos (ADR 0014).** Os filtros `de` e `ate` são datas no fuso de
     negócio (America/Sao_Paulo). O intervalo é semiaberto: do início do dia `de`
@@ -859,12 +859,22 @@ paths:
   /solicitacoes/{id}/reagendamento:
     parameters:
       - { $ref: '#/components/parameters/Id' }
+      - { $ref: '#/components/parameters/AcceptLanguage' }
     post:
       tags: [Situação da solicitação]
       summary: Reagenda uma solicitação AGENDADA (RF14)
       description: |
-        Operador do ponto. A situação continua AGENDADA. Exige justificativa e nova data futura.
-        O agendamento anterior permanece no histórico.
+        Só o operador ativo do ponto da solicitação (o responsável do histórico vem do ator). Só a partir de
+        AGENDADA (AGENDADA -> AGENDADA): a situação continua AGENDADA, `agendadaPara` passa a ser a nova data e
+        a versão soma 1. Exige justificativa (`motivo`, sem espaços só, até 500 caracteres) e nova data futura.
+        Cada reagendamento acrescenta uma linha ao histórico, com o motivo e a nova data em `agendamento`;
+        o agendamento anterior permanece nas linhas antigas.
+
+        Respostas: 400 para campo ausente, em branco ou acima do limite, e 400 no campo `dataHora` quando a
+        data não é posterior ao instante atual. 409 `CONFLITO_REGRA` quando a nova data é o mesmo instante já
+        marcado (mesmo escrita em outro offset) e quando a solicitação não está AGENDADA. Versão diferente da
+        atual: 409 `CONFLITO_VERSAO`. Perfil sem permissão ou operador inexistente ou inativo: 403.
+        Solicitação inexistente ou de outro ponto: 404. O operador age mesmo com o ponto inativo.
       operationId: reagendarSolicitacao
       requestBody:
         required: true
@@ -886,12 +896,22 @@ paths:
   /solicitacoes/{id}/falha:
     parameters:
       - { $ref: '#/components/parameters/Id' }
+      - { $ref: '#/components/parameters/AcceptLanguage' }
     post:
       tags: [Situação da solicitação]
       summary: Registra tentativa sem sucesso e reagenda (RF14)
       description: |
-        Operador do ponto. Só a partir de EM_RECOLHIMENTO. Volta para AGENDADA, com justificativa,
-        informações da tentativa e nova data futura. A tentativa anterior permanece no histórico.
+        Só o operador ativo do ponto da solicitação (o responsável do histórico vem do ator). Só a partir de
+        EM_RECOLHIMENTO. Volta para AGENDADA, com `agendadaPara` na nova data e a versão somando 1.
+        `motivo` e `informacoesTentativa` são obrigatórios (sem espaços só, até 500 caracteres cada, guardados
+        sem os espaços das pontas), e a nova data deve ser futura. Como a situação muda, a nova data pode ser
+        igual à anterior. A linha do histórico guarda o motivo, as informações da tentativa e a nova data; a
+        tentativa anterior (o início em EM_RECOLHIMENTO) permanece no histórico.
+
+        Respostas: 400 para campo ausente, em branco ou acima do limite, e 400 no campo `dataHora` quando a
+        data não é futura. 409 `CONFLITO_REGRA` fora de EM_RECOLHIMENTO; 409 `CONFLITO_VERSAO` para versão
+        diferente da atual. Perfil sem permissão ou operador inexistente ou inativo: 403. Solicitação
+        inexistente ou de outro ponto: 404.
       operationId: registrarFalha
       requestBody:
         required: true

@@ -9,6 +9,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.ResultActions;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 
 import static br.edu.ifs.coletaseletiva.integracao.CenarioSolicitacao.corpo;
@@ -131,6 +132,43 @@ class TransicaoRollbackIntegracaoTest extends IntegracaoBase {
                 "SELECT iso_nr_quantidade_efetiva FROM coleta.iso_item_solicitacao WHERE sol_nr_id = ?", Object.class, solicitacao));
         assertEquals(0, jdbc.queryForObject(
                 "SELECT sol_nr_versao FROM coleta.sol_solicitacao WHERE sol_nr_id = ?", Integer.class, solicitacao));
+        assertEquals(1, c.contar("his_historico"));
+    }
+
+    /** O reagendamento muda só a data: se o histórico falhar, a data marcada anterior continua valendo. */
+    @Test
+    void rf14_falhaNaGravacaoDoHistoricoDesfazOReagendamentoEMantemADataAnterior() throws Exception {
+        OffsetDateTime marcada = OffsetDateTime.now(ZoneOffset.UTC).plusDays(1).truncatedTo(ChronoUnit.SECONDS);
+        jdbc.update("UPDATE coleta.sol_solicitacao SET sol_tx_situacao = 'AGENDADA', sol_dt_agendamento = ? WHERE sol_nr_id = ?",
+                marcada, solicitacao);
+        String nova = OffsetDateTime.now(ZoneOffset.UTC).plusDays(5).truncatedTo(ChronoUnit.SECONDS).toString();
+
+        acao("reagendamento", "{\"dataHora\": \"" + nova + "\", \"motivo\": \"Veículo em manutenção\", \"versao\": 0}")
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.codigo").value("ERRO_INTERNO"));
+
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT COUNT(*) FROM coleta.sol_solicitacao WHERE sol_nr_id = ? AND sol_dt_agendamento = ? AND sol_nr_versao = 0",
+                Integer.class, solicitacao, marcada));
+        assertEquals(1, c.contar("his_historico"));
+    }
+
+    /** A falha muda situação e data: se o histórico falhar, a solicitação continua EM_RECOLHIMENTO com a data anterior. */
+    @Test
+    void rf14_falhaNaGravacaoDoHistoricoDesfazORegistroDaTentativaSemSucesso() throws Exception {
+        OffsetDateTime marcada = OffsetDateTime.now(ZoneOffset.UTC).plusDays(1).truncatedTo(ChronoUnit.SECONDS);
+        jdbc.update("UPDATE coleta.sol_solicitacao SET sol_tx_situacao = 'EM_RECOLHIMENTO', sol_dt_agendamento = ? WHERE sol_nr_id = ?",
+                marcada, solicitacao);
+        String nova = OffsetDateTime.now(ZoneOffset.UTC).plusDays(5).truncatedTo(ChronoUnit.SECONDS).toString();
+
+        acao("falha", "{\"motivo\": \"Morador ausente\", \"informacoesTentativa\": \"Portão fechado\", \"dataHora\": \""
+                + nova + "\", \"versao\": 0}")
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.codigo").value("ERRO_INTERNO"));
+
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT COUNT(*) FROM coleta.sol_solicitacao WHERE sol_nr_id = ? AND sol_tx_situacao = 'EM_RECOLHIMENTO'"
+                        + " AND sol_dt_agendamento = ? AND sol_nr_versao = 0", Integer.class, solicitacao, marcada));
         assertEquals(1, c.contar("his_historico"));
     }
 }

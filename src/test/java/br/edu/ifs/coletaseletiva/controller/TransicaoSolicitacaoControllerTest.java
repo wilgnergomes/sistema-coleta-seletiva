@@ -14,6 +14,8 @@ import br.edu.ifs.coletaseletiva.form.AgendamentoForm;
 import br.edu.ifs.coletaseletiva.form.ConclusaoForm;
 import br.edu.ifs.coletaseletiva.form.VersaoForm;
 import br.edu.ifs.coletaseletiva.form.MotivoForm;
+import br.edu.ifs.coletaseletiva.form.ReagendamentoForm;
+import br.edu.ifs.coletaseletiva.form.FalhaForm;
 import br.edu.ifs.coletaseletiva.service.TransicaoSolicitacaoService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -374,6 +376,117 @@ class TransicaoSolicitacaoControllerTest {
                 .andExpect(jsonPath("$.mensagem").value("Informe a quantidade efetiva de todos os itens. Faltam: Vidro."));
         acaoDoOperador("conclusao", corpo).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.codigo").value("CONFLITO_VERSAO"));
+    }
+
+    // ---------- RF14: reagendamento e tentativa sem sucesso ----------
+
+    private static final String DATA = "2026-11-20T09:00:00-03:00";
+
+    @Test
+    void rf14_reagendamentoValidoRetorna200ERepassaMotivoSemEspacosEDataComOffset() throws Exception {
+        when(service.reagendar(any(Ator.class), eq(9), any(ReagendamentoForm.class)))
+                .thenReturn(detalheEm(SituacaoSolicitacao.AGENDADA, 2));
+
+        acaoDoOperador("reagendamento", "{\"dataHora\": \"" + DATA + "\", \"motivo\": \"  Veículo em manutenção  \", \"versao\": 1}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.situacao").value("AGENDADA"))
+                .andExpect(jsonPath("$.versao").value(2));
+
+        ArgumentCaptor<ReagendamentoForm> form = ArgumentCaptor.forClass(ReagendamentoForm.class);
+        verify(service).reagendar(any(Ator.class), eq(9), form.capture());
+        assertEquals("Veículo em manutenção", form.getValue().motivo());
+        assertEquals(OffsetDateTime.parse(DATA).toInstant(), form.getValue().dataHora().toInstant());
+        assertEquals(1, form.getValue().versao());
+    }
+
+    @Test
+    void rf14_reagendamentoComCamposInvalidosRetorna400SemChamarOService() throws Exception {
+        acaoDoOperador("reagendamento", "{\"motivo\": \"Motivo\", \"versao\": 1}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='dataHora')].mensagem")
+                        .value("a data e a hora do agendamento são obrigatórias"));
+        acaoDoOperador("reagendamento", "{\"dataHora\": \"" + DATA + "\", \"versao\": 1}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='motivo')].mensagem").value("o motivo é obrigatório"));
+        acaoDoOperador("reagendamento", "{\"dataHora\": \"" + DATA + "\", \"motivo\": \"     \", \"versao\": 1}")
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.erros[?(@.campo=='motivo')]").exists());
+        acaoDoOperador("reagendamento", "{\"dataHora\": \"" + DATA + "\", \"motivo\": \"" + "a".repeat(501) + "\", \"versao\": 1}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='motivo')].mensagem").value("deve ter no máximo 500 caracteres"));
+        acaoDoOperador("reagendamento", "{\"dataHora\": \"" + DATA + "\", \"motivo\": \"Motivo\"}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='versao')]").exists());
+        acaoDoOperador("reagendamento", "{\"dataHora\": \"amanhã\", \"motivo\": \"Motivo\", \"versao\": 1}")
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.codigo").value("VALIDACAO"));
+        acaoDoOperador("reagendamento", "{\"dataHora\": \"" + DATA + "\", \"versao\": 1}", "en").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='motivo')].mensagem").value("the reason is required"));
+
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void rf14_falhaValidaRetorna200ERepassaOsTextosSemEspacos() throws Exception {
+        when(service.registrarFalha(any(Ator.class), eq(9), any(FalhaForm.class)))
+                .thenReturn(detalheEm(SituacaoSolicitacao.AGENDADA, 3));
+
+        acaoDoOperador("falha", "{\"motivo\": \"  Morador ausente  \", \"informacoesTentativa\": \"  Portão fechado  \", "
+                + "\"dataHora\": \"" + DATA + "\", \"versao\": 2}")
+                .andExpect(status().isOk()).andExpect(jsonPath("$.situacao").value("AGENDADA"));
+
+        ArgumentCaptor<FalhaForm> form = ArgumentCaptor.forClass(FalhaForm.class);
+        verify(service).registrarFalha(any(Ator.class), eq(9), form.capture());
+        assertEquals("Morador ausente", form.getValue().motivo());
+        assertEquals("Portão fechado", form.getValue().informacoesTentativa());
+        assertEquals(2, form.getValue().versao());
+    }
+
+    @Test
+    void rf14_falhaSemInformacoesDaTentativaOuComCamposInvalidosRetorna400SemChamarOService() throws Exception {
+        String base = "\"motivo\": \"Morador ausente\", \"dataHora\": \"" + DATA + "\", \"versao\": 2";
+        acaoDoOperador("falha", "{" + base + "}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='informacoesTentativa')].mensagem")
+                        .value("as informações da tentativa são obrigatórias"));
+        acaoDoOperador("falha", "{\"informacoesTentativa\": \"\", " + base + "}").andExpect(status().isBadRequest());
+        acaoDoOperador("falha", "{\"informacoesTentativa\": \"     \", " + base + "}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='informacoesTentativa')]").exists());
+        acaoDoOperador("falha", "{\"informacoesTentativa\": \"" + "a".repeat(501) + "\", " + base + "}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='informacoesTentativa')].mensagem").value("deve ter no máximo 500 caracteres"));
+        acaoDoOperador("falha", "{\"informacoesTentativa\": \"Portão fechado\", \"dataHora\": \"" + DATA + "\", \"versao\": 2}")
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.erros[?(@.campo=='motivo')]").exists());
+        acaoDoOperador("falha", "{\"informacoesTentativa\": \"Portão fechado\", \"motivo\": \"Morador ausente\", \"versao\": 2}")
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.erros[?(@.campo=='dataHora')]").exists());
+        acaoDoOperador("falha", "{" + base + "}", "en").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='informacoesTentativa')].mensagem").value("the attempt information is required"));
+
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void rf14_regrasDoReagendamentoERetornam400403404E409() throws Exception {
+        String reagendar = "{\"dataHora\": \"" + DATA + "\", \"motivo\": \"Motivo\", \"versao\": 1}";
+        String falha = "{\"motivo\": \"Motivo\", \"informacoesTentativa\": \"Informações\", \"dataHora\": \"" + DATA + "\", \"versao\": 1}";
+        when(service.reagendar(any(Ator.class), eq(9), any(ReagendamentoForm.class)))
+                .thenThrow(new ParametroInvalidoException("dataHora", "erro.solicitacao.agendamento-passado"))
+                .thenThrow(new AcessoNegadoException("erro.solicitacao.somente-operador"))
+                .thenThrow(new NaoEncontradoException("erro.solicitacao.nao-encontrada"))
+                .thenThrow(new ConflitoRegraException("erro.solicitacao.reagendamento-mesma-data"))
+                .thenThrow(new ConflitoRegraException("erro.solicitacao.reagendamento-somente-agendada", SituacaoSolicitacao.SOLICITADA))
+                .thenThrow(new ConflitoVersaoException("erro.solicitacao.versao-desatualizada"));
+        when(service.registrarFalha(any(Ator.class), eq(9), any(FalhaForm.class)))
+                .thenThrow(new ConflitoRegraException("erro.solicitacao.falha-somente-em-recolhimento", SituacaoSolicitacao.AGENDADA));
+
+        acaoDoOperador("reagendamento", reagendar).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[0].campo").value("dataHora"));
+        acaoDoOperador("reagendamento", reagendar).andExpect(status().isForbidden());
+        acaoDoOperador("reagendamento", reagendar).andExpect(status().isNotFound());
+        acaoDoOperador("reagendamento", reagendar).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("CONFLITO_REGRA"))
+                .andExpect(jsonPath("$.mensagem").value("A nova data deve ser diferente da data já marcada."));
+        acaoDoOperador("reagendamento", reagendar).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.mensagem").value("Apenas uma solicitação AGENDADA pode ser reagendada. Situação atual: SOLICITADA."));
+        acaoDoOperador("reagendamento", reagendar).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("CONFLITO_VERSAO"));
+        acaoDoOperador("falha", falha).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.mensagem").value(
+                        "A tentativa sem sucesso só pode ser registrada em uma solicitação EM_RECOLHIMENTO. Situação atual: AGENDADA."));
     }
 
     @Test
