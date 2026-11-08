@@ -15,6 +15,10 @@ Legenda: `[ ]` pendente · `[x]` resolvida (o item é mantido para preservar o h
 
 - [ ] **ADR 0021, trecho "Cuidados" desatualizado.** O texto diz que a identificação do ator (ADR 0019) está "ainda por implementar" e que o `PUT` aceita `situacao` sem checar o perfil. Isso já foi implementado e testado no RF01. Atualizar o trecho, com aprovação, por ser um ADR aceito.
 
+## Funcionalidades
+
+- [ ] **Pesquisa de pontos sem distinção de acentos.** Hoje "joao" não encontra "João" e "lagarto" encontra "Lagarto", mas "araçá" não encontra "Araca". Ignorar acentos exigiria a extensão `unaccent` do PostgreSQL e uma migração (junto da V2 da Issue #33). O contrato fala apenas de maiúsculas e minúsculas. Origem: RF06, 2026-11-07.
+
 ## Testes e ambiente
 
 - [ ] **Dois contêineres no `./mvnw test`.** `ColetaSeletivaApplicationTests` e os testes de integração têm configurações diferentes e sobem contêineres PostgreSQL separados, o que acrescenta cerca de 10 s. Unificar a configuração quando houver mais classes de integração.

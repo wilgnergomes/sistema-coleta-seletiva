@@ -369,7 +369,10 @@ paths:
       description: |
         Consulta pública: devolve só pontos ATIVOS, sem dados pessoais. Como administrador,
         aceita o filtro `situacao` e enxerga também os inativos (ADR 0019).
-        Os filtros de texto não diferenciam maiúsculas de minúsculas.
+        Os filtros de texto não diferenciam maiúsculas de minúsculas nem consideram espaços nas pontas
+        (acentos são considerados). `nome` procura por trecho; `municipio` e `bairro` exigem o valor
+        igual. Os filtros informados se combinam (E); filtro em branco é ignorado. `materialId`
+        inexistente devolve lista vazia.
       operationId: pesquisarPontosColeta
       security:
         - {}

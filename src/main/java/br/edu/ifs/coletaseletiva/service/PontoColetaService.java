@@ -9,7 +9,9 @@ import br.edu.ifs.coletaseletiva.enumeration.Perfil;
 import br.edu.ifs.coletaseletiva.enumeration.SituacaoCadastro;
 import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
+import br.edu.ifs.coletaseletiva.form.FiltroPontoColeta;
 import br.edu.ifs.coletaseletiva.form.PontoColetaForm;
+import br.edu.ifs.coletaseletiva.repository.PontoColetaSpecifications;
 import br.edu.ifs.coletaseletiva.mapper.MaterialAceitoMapper;
 import br.edu.ifs.coletaseletiva.mapper.PontoColetaMapper;
 import br.edu.ifs.coletaseletiva.repository.MaterialAceitoRepository;
@@ -43,15 +45,18 @@ public class PontoColetaService {
         return mapper.paraDTO(salvo, materiaisDo(salvo.getId()));
     }
 
-    /** Público, morador e operador: só pontos ATIVOS. Administrador: todos, com filtro por situação. */
+    /**
+     * Pesquisa (RF06 e listagem administrativa do RF04). Público, morador e operador: só pontos ATIVOS.
+     * Administrador: todos, com filtro opcional por situação. Os demais filtros valem para todos.
+     */
     @Transactional(readOnly = true)
-    public Pagina<PontoColetaDTO> listar(Optional<Ator> ator, SituacaoCadastro situacao, int page, int size) {
+    public Pagina<PontoColetaDTO> listar(Optional<Ator> ator, FiltroPontoColeta filtro, int page, int size) {
         Pageable paginacao = PageRequest.of(page, size, Sort.by("id"));
-        SituacaoCadastro filtro = ehAdministrador(ator) ? situacao : SituacaoCadastro.ATIVO;
+        SituacaoCadastro situacao = ehAdministrador(ator) ? filtro.situacao() : SituacaoCadastro.ATIVO;
+        FiltroPontoColeta efetivo = new FiltroPontoColeta(
+                filtro.nome(), filtro.municipio(), filtro.bairro(), filtro.materialId(), situacao);
 
-        Page<PontoColeta> pontos = (filtro == null)
-                ? repository.findAll(paginacao)
-                : repository.findBySituacao(filtro, paginacao);
+        Page<PontoColeta> pontos = repository.findAll(PontoColetaSpecifications.de(efetivo), paginacao);
 
         // Uma única consulta traz os materiais de todos os pontos da página (evita o "N+1").
         Map<Integer, List<MaterialAceitoDTO>> materiaisPorPonto = materiaisDosPontos(pontos.getContent());

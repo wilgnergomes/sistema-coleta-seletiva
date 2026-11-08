@@ -20,7 +20,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import br.edu.ifs.coletaseletiva.dto.Pagina;
+import br.edu.ifs.coletaseletiva.form.FiltroPontoColeta;
 
 import java.util.List;
 import java.util.Optional;
@@ -97,19 +101,17 @@ class PontoColetaServiceTest {
     }
 
     @Test
-    void rf04_consultaPublicaListaSomenteAtivosEAdministradorFiltra() {
-        when(repository.findBySituacao(any(SituacaoCadastro.class), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(ponto(SituacaoCadastro.ATIVO))));
-        when(repository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+    @SuppressWarnings("unchecked")
+    void rf04_listarPaginaOrdenadaPorIdEMontaOEnvelopeComOsMateriaisDoPonto() {
+        when(repository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(ponto(SituacaoCadastro.ATIVO)), PageRequest.of(0, 20), 1));
 
-        service.listar(Optional.empty(), SituacaoCadastro.INATIVO, 0, 20);
-        verify(repository).findBySituacao(eq(SituacaoCadastro.ATIVO), any(Pageable.class));
+        Pagina<PontoColetaDTO> pagina = service.listar(Optional.empty(),
+                new FiltroPontoColeta("verde", null, null, null, null), 0, 20);
 
-        service.listar(Optional.of(ADMINISTRADOR), null, 0, 20);
-        verify(repository).findAll(any(Pageable.class));
-
-        service.listar(Optional.of(ADMINISTRADOR), SituacaoCadastro.INATIVO, 0, 20);
-        verify(repository).findBySituacao(eq(SituacaoCadastro.INATIVO), any(Pageable.class));
+        assertEquals(1, pagina.totalElementos());
+        assertEquals(1, pagina.conteudo().get(0).id());
+        verify(vinculoRepository).findByPontoIdInOrderByMaterialId(List.of(1));
     }
 
     @Test

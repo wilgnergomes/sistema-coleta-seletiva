@@ -4,12 +4,14 @@ import br.edu.ifs.coletaseletiva.config.Ator;
 import br.edu.ifs.coletaseletiva.dto.Pagina;
 import br.edu.ifs.coletaseletiva.dto.PontoColetaDTO;
 import br.edu.ifs.coletaseletiva.enumeration.SituacaoCadastro;
+import br.edu.ifs.coletaseletiva.form.FiltroPontoColeta;
 import br.edu.ifs.coletaseletiva.form.PontoColetaForm;
 import br.edu.ifs.coletaseletiva.service.PontoColetaService;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,10 +47,17 @@ public class PontoColetaController {
         return ResponseEntity.created(local).body(criado);
     }
 
-    /** Por enquanto só situação e paginação; nome, município, bairro e material entram no RF06. */
+    /** Pesquisa pública (RF06) e listagem administrativa (RF04): filtros opcionais e paginação. */
     @GetMapping
     public Pagina<PontoColetaDTO> listar(
             @Parameter(hidden = true) Optional<Ator> ator,
+            @RequestParam(required = false)
+            @Size(max = 120, message = "{pesquisa.nome.tamanho-maximo}") String nome,
+            @RequestParam(required = false)
+            @Size(max = 100, message = "{pesquisa.municipio.tamanho-maximo}") String municipio,
+            @RequestParam(required = false)
+            @Size(max = 100, message = "{pesquisa.bairro.tamanho-maximo}") String bairro,
+            @RequestParam(required = false) Integer materialId,
             @RequestParam(required = false) SituacaoCadastro situacao,
             @RequestParam(defaultValue = "0")
             @Min(value = 0, message = "{paginacao.page.minimo}") int page,
@@ -56,7 +65,8 @@ public class PontoColetaController {
             @Min(value = 1, message = "{paginacao.size.minimo}")
             @Max(value = 100, message = "{paginacao.size.maximo}") int size) {
 
-        return service.listar(ator, situacao, page, size);
+        FiltroPontoColeta filtro = new FiltroPontoColeta(nome, municipio, bairro, materialId, situacao);
+        return service.listar(ator, filtro, page, size);
     }
 
     /** Entrega mínima antecipada do RF06, para o Location do POST apontar para um recurso consultável. */
