@@ -19,8 +19,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EnderecoService {
 
-    private static final String SEM_NUMERO = "S/N";
-
     private final EnderecoRepository repository;
     private final MoradorRepository moradorRepository;
     private final MoradorService moradorService;
@@ -29,7 +27,7 @@ public class EnderecoService {
     @Transactional
     public EnderecoDTO criar(Ator ator, Integer moradorId, EnderecoForm formulario) {
         Morador morador = moradorAutorizado(ator, moradorId);
-        Endereco salvo = repository.save(mapper.paraEntidade(normalizar(formulario), morador));
+        Endereco salvo = repository.save(mapper.paraEntidade(NormalizacaoEndereco.normalizar(formulario), morador));
         return mapper.paraDTO(salvo);
     }
 
@@ -47,7 +45,7 @@ public class EnderecoService {
         // Busca pelo par (id, moradorId): endereço de outro morador é tratado como inexistente (404).
         Endereco endereco = repository.findByIdAndMoradorId(id, moradorId)
                 .orElseThrow(() -> new NaoEncontradoException("erro.endereco.nao-encontrado"));
-        mapper.atualizar(endereco, normalizar(formulario));
+        mapper.atualizar(endereco, NormalizacaoEndereco.normalizar(formulario));
         return mapper.paraDTO(repository.save(endereco));
     }
 
@@ -58,12 +56,5 @@ public class EnderecoService {
         moradorService.autorizarAcesso(ator, moradorId);
         return moradorRepository.findById(moradorId)
                 .orElseThrow(() -> new NaoEncontradoException("erro.morador.nao-encontrado"));
-    }
-
-    /** Os espaços já foram removidos pelo form; aqui ficam "s/n" -> "S/N" e complemento vazio -> nulo. */
-    private EnderecoForm normalizar(EnderecoForm f) {
-        String numero = SEM_NUMERO.equalsIgnoreCase(f.numero()) ? SEM_NUMERO : f.numero();
-        String complemento = (f.complemento() == null || f.complemento().isBlank()) ? null : f.complemento();
-        return new EnderecoForm(f.logradouro(), numero, f.bairro(), f.municipio(), f.uf(), f.cep(), complemento);
     }
 }

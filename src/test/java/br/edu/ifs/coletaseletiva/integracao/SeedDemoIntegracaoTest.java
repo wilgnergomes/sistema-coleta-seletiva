@@ -109,6 +109,22 @@ class SeedDemoIntegracaoTest {
     }
 
     @Test
+    void rf04_seedTemPontosDeMunicipiosDiferentesComInativoESemContato() {
+        assertEquals(5, contar("SELECT COUNT(*) FROM coleta.poc_ponto_coleta"));
+        assertTrue(contar("SELECT COUNT(DISTINCT poc_tx_municipio) FROM coleta.poc_ponto_coleta") >= 4);
+        assertTrue(contar("SELECT COUNT(*) FROM coleta.poc_ponto_coleta WHERE poc_bl_rec_domiciliar") > 0);
+        assertTrue(contar("SELECT COUNT(*) FROM coleta.poc_ponto_coleta WHERE NOT poc_bl_rec_domiciliar") > 0);
+        assertEquals(1, contar("SELECT COUNT(*) FROM coleta.poc_ponto_coleta WHERE poc_tx_situacao = 'INATIVO'"));
+        assertEquals(1, contar("""
+                SELECT COUNT(*) FROM coleta.poc_ponto_coleta
+                WHERE poc_tx_contato IS NULL AND poc_tx_horarios IS NULL"""));
+
+        flyway.migrate();
+
+        assertEquals(5, contar("SELECT COUNT(*) FROM coleta.poc_ponto_coleta"));
+    }
+
+    @Test
     void rf01_oSeedNaoApareceNoHistoricoDoFlyway() {
         assertEquals(0, contar("SELECT COUNT(*) FROM coleta.flyway_schema_history WHERE description ILIKE '%morador%'"));
         assertEquals(0, contar("SELECT COUNT(*) FROM coleta.flyway_schema_history WHERE description ILIKE '%endere%'"));
