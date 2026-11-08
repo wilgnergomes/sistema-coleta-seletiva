@@ -41,7 +41,7 @@ Table sol_solicitacao [headercolor: #c0392b] {
   sol_tx_protocolo      varchar(30)  [not null, note: 'Único']
   mor_nr_id             integer      [not null]
   poc_nr_id             integer      [not null]
-  sol_tx_endereco_copia varchar(400) [not null, note: 'Cópia do endereço no momento da solicitação (RN04)']
+  sol_tx_endereco_copia varchar(500) [not null, note: 'Cópia do endereço no momento da solicitação (RN04)']
   sol_tx_situacao       varchar(20)  [not null, default: 'SOLICITADA', note: 'SOLICITADA | AGENDADA | EM_RECOLHIMENTO | CONCLUIDA | RECUSADA | CANCELADA']
   sol_dt_criacao        timestamptz  [not null, default: `now()`]
   sol_dt_agendamento    timestamptz  [note: 'Agendamento vigente']

@@ -1363,7 +1363,7 @@ components:
         protocolo: { type: string, maxLength: 30 }
         moradorId: { type: integer, format: int32 }
         pontoId: { type: integer, format: int32 }
-        enderecoCopia: { type: string, maxLength: 400, description: 'Texto do endereço copiado na criação (ADR 0008).' }
+        enderecoCopia: { type: string, maxLength: 500, description: 'Texto do endereço copiado na criação (ADR 0008).' }
         situacao: { $ref: '#/components/schemas/SituacaoSolicitacao' }
         criadaEm: { type: string, format: date-time }
         agendadaPara: { type: string, format: date-time, nullable: true }
