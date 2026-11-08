@@ -22,3 +22,4 @@ Data: 2026-11-08 · Banco: `coleta_desempenho` (V1, V2 e V3 aplicadas do zero pe
 - O Docker Desktop rotaciona o `monitor.log` a cada ~1 MB e apaga os antigos. Por isso o trecho cru foi copiado para cá e a análise por rodada foi guardada em texto.
 - Os arquivos `repro-00-aquecimento.*` não têm resumo de p95 porque a fase de aquecimento não é medida.
 - O `monitor.log` do Docker é um log interno do produto: o formato pode mudar entre versões. O que ele mostra aqui é só o comportamento do `gvisor/forwarder` desta instalação, e o **mecanismo interno do Docker Desktop continua não comprovado**.
+- Se o Git converter os scripts `.sh` para CRLF ao baixar o repositório no Windows, o Bash os recusa (`\r: command not found`); remova o retorno de carro com `sed -i 's/\r$//' arquivo.sh`.

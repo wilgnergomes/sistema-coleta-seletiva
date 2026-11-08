@@ -1,0 +1,234 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: -
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 10 max VUs, 1m0s max duration (incl. graceful stop):
+              * complementar: 10 looping VUs for 30s (gracefulStop: 30s)
+
+
+running (0m01.0s), 10/10 VUs, 583 complete and 0 interrupted iterations
+complementar   [   3% ] 10 VUs  01.0s/30s
+
+running (0m02.0s), 10/10 VUs, 1205 complete and 0 interrupted iterations
+complementar   [   7% ] 10 VUs  02.0s/30s
+
+running (0m03.0s), 10/10 VUs, 1802 complete and 0 interrupted iterations
+complementar   [  10% ] 10 VUs  03.0s/30s
+
+running (0m04.0s), 10/10 VUs, 2433 complete and 0 interrupted iterations
+complementar   [  13% ] 10 VUs  04.0s/30s
+
+running (0m05.0s), 10/10 VUs, 3051 complete and 0 interrupted iterations
+complementar   [  17% ] 10 VUs  05.0s/30s
+
+running (0m06.0s), 10/10 VUs, 3636 complete and 0 interrupted iterations
+complementar   [  20% ] 10 VUs  06.0s/30s
+
+running (0m07.0s), 10/10 VUs, 4280 complete and 0 interrupted iterations
+complementar   [  23% ] 10 VUs  07.0s/30s
+
+running (0m08.0s), 10/10 VUs, 4914 complete and 0 interrupted iterations
+complementar   [  27% ] 10 VUs  08.0s/30s
+
+running (0m09.0s), 10/10 VUs, 5561 complete and 0 interrupted iterations
+complementar   [  30% ] 10 VUs  09.0s/30s
+
+running (0m10.0s), 10/10 VUs, 6194 complete and 0 interrupted iterations
+complementar   [  33% ] 10 VUs  10.0s/30s
+
+running (0m11.0s), 10/10 VUs, 6819 complete and 0 interrupted iterations
+complementar   [  37% ] 10 VUs  11.0s/30s
+
+running (0m12.0s), 10/10 VUs, 7452 complete and 0 interrupted iterations
+complementar   [  40% ] 10 VUs  12.0s/30s
+
+running (0m13.0s), 10/10 VUs, 7979 complete and 0 interrupted iterations
+complementar   [  43% ] 10 VUs  13.0s/30s
+
+running (0m14.0s), 10/10 VUs, 8602 complete and 0 interrupted iterations
+complementar   [  47% ] 10 VUs  14.0s/30s
+
+running (0m15.0s), 10/10 VUs, 9217 complete and 0 interrupted iterations
+complementar   [  50% ] 10 VUs  15.0s/30s
+
+running (0m16.0s), 10/10 VUs, 9831 complete and 0 interrupted iterations
+complementar   [  53% ] 10 VUs  16.0s/30s
+
+running (0m17.0s), 10/10 VUs, 10474 complete and 0 interrupted iterations
+complementar   [  57% ] 10 VUs  17.0s/30s
+
+running (0m18.0s), 10/10 VUs, 11096 complete and 0 interrupted iterations
+complementar   [  60% ] 10 VUs  18.0s/30s
+
+running (0m19.0s), 10/10 VUs, 11720 complete and 0 interrupted iterations
+complementar   [  63% ] 10 VUs  19.0s/30s
+
+running (0m20.0s), 10/10 VUs, 12363 complete and 0 interrupted iterations
+complementar   [  67% ] 10 VUs  20.0s/30s
+
+running (0m21.0s), 10/10 VUs, 12952 complete and 0 interrupted iterations
+complementar   [  70% ] 10 VUs  21.0s/30s
+
+running (0m22.0s), 10/10 VUs, 13577 complete and 0 interrupted iterations
+complementar   [  73% ] 10 VUs  22.0s/30s
+
+running (0m23.0s), 10/10 VUs, 14214 complete and 0 interrupted iterations
+complementar   [  77% ] 10 VUs  23.0s/30s
+
+running (0m24.0s), 10/10 VUs, 14830 complete and 0 interrupted iterations
+complementar   [  80% ] 10 VUs  24.0s/30s
+
+running (0m25.0s), 10/10 VUs, 15454 complete and 0 interrupted iterations
+complementar   [  83% ] 10 VUs  25.0s/30s
+
+running (0m26.0s), 10/10 VUs, 16099 complete and 0 interrupted iterations
+complementar   [  87% ] 10 VUs  26.0s/30s
+
+running (0m27.0s), 10/10 VUs, 16731 complete and 0 interrupted iterations
+complementar   [  90% ] 10 VUs  27.0s/30s
+
+running (0m28.0s), 10/10 VUs, 17343 complete and 0 interrupted iterations
+complementar   [  93% ] 10 VUs  28.0s/30s
+
+running (0m29.0s), 10/10 VUs, 17987 complete and 0 interrupted iterations
+complementar   [  97% ] 10 VUs  29.0s/30s
+
+running (0m30.0s), 10/10 VUs, 18620 complete and 0 interrupted iterations
+complementar   [ 100% ] 10 VUs  30.0s/30s
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate==1' rate=100.00%
+
+    http_req_duration{consulta:RF06,variante:bairro}
+    ✓ 'p(95)<2000' p(95)=5.56ms
+
+    http_req_duration{consulta:RF06,variante:combinado}
+    ✓ 'p(95)<2000' p(95)=5.22ms
+
+    http_req_duration{consulta:RF06,variante:material}
+    ✓ 'p(95)<2000' p(95)=7.5ms
+
+    http_req_duration{consulta:RF06,variante:municipio}
+    ✓ 'p(95)<2000' p(95)=5.22ms
+
+    http_req_duration{consulta:RF06,variante:paginacao}
+    ✓ 'p(95)<2000' p(95)=6.57ms
+
+    http_req_duration{consulta:RF06}
+    ✓ 'p(95)<2000' p(95)=6.55ms
+
+    http_req_duration{consulta:RF09,variante:geral,perfil:MORADOR}
+    ✓ 'p(95)<2000' p(95)=4.82ms
+
+    http_req_duration{consulta:RF09,variante:geral,perfil:OPERADOR}
+    ✓ 'p(95)<2000' p(95)=8.94ms
+
+    http_req_duration{consulta:RF09,variante:pagina,perfil:ADMINISTRADOR}
+    ✓ 'p(95)<2000' p(95)=11.02ms
+
+    http_req_duration{consulta:RF09,variante:periodo,perfil:ADMINISTRADOR}
+    ✓ 'p(95)<2000' p(95)=8.17ms
+
+    http_req_duration{consulta:RF09,variante:periodo,perfil:MORADOR}
+    ✓ 'p(95)<2000' p(95)=4.98ms
+
+    http_req_duration{consulta:RF09,variante:periodo,perfil:OPERADOR}
+    ✓ 'p(95)<2000' p(95)=5.05ms
+
+    http_req_duration{consulta:RF09,variante:ponto,perfil:ADMINISTRADOR}
+    ✓ 'p(95)<2000' p(95)=7.78ms
+
+    http_req_duration{consulta:RF09,variante:situacao,perfil:ADMINISTRADOR}
+    ✓ 'p(95)<2000' p(95)=7.66ms
+
+    http_req_duration{consulta:RF09,variante:situacao,perfil:MORADOR}
+    ✓ 'p(95)<2000' p(95)=4.72ms
+
+    http_req_duration{consulta:RF09,variante:situacao,perfil:OPERADOR}
+    ✓ 'p(95)<2000' p(95)=5.29ms
+
+    http_req_duration{consulta:RF09}
+    ✓ 'p(95)<2000' p(95)=8.58ms
+
+    http_req_duration{consulta:RF15,variante:geral}
+    ✓ 'p(95)<2000' p(95)=7.22ms
+
+    http_req_duration{consulta:RF15,variante:periodo}
+    ✓ 'p(95)<2000' p(95)=6.35ms
+
+    http_req_duration{consulta:RF15}
+    ✓ 'p(95)<2000' p(95)=6.89ms
+
+    http_req_duration{etapa:medicao}
+    ✓ 'p(95)<2000' p(95)=7.54ms
+
+    http_req_failed
+    ✓ 'rate==0' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 111894  3725.607353/s
+    checks_succeeded...: 100.00% 111894 out of 111894
+    checks_failed......: 0.00%   0 out of 111894
+
+    ✓ RF06: status 200
+    ✓ RF06: conteúdo esperado
+    ✓ RF09: status 200
+    ✓ RF09: conteúdo esperado
+    ✓ RF15: status 200
+    ✓ RF15: conteúdo esperado
+
+    HTTP
+    http_req_duration............................................: min=2.09ms  avg=5.03ms  med=4.8ms   p(90)=6.67ms  p(95)=7.54ms  max=22.08ms
+      { consulta:RF06,variante:bairro }..........................: min=3.14ms  avg=4.36ms  med=4.21ms  p(90)=5.12ms  p(95)=5.56ms  max=14.4ms 
+      { consulta:RF06,variante:combinado }.......................: min=2.94ms  avg=4.08ms  med=3.95ms  p(90)=4.81ms  p(95)=5.22ms  max=10.73ms
+      { consulta:RF06,variante:material }........................: min=3.96ms  avg=5.69ms  med=5.49ms  p(90)=6.92ms  p(95)=7.5ms   max=14.17ms
+      { consulta:RF06,variante:municipio }.......................: min=2.76ms  avg=4.14ms  med=4.02ms  p(90)=4.86ms  p(95)=5.22ms  max=13.94ms
+      { consulta:RF06,variante:paginacao }.......................: min=3.78ms  avg=5.25ms  med=5.09ms  p(90)=6.12ms  p(95)=6.57ms  max=19.2ms 
+      { consulta:RF06 }..........................................: min=2.76ms  avg=4.7ms   med=4.51ms  p(90)=5.97ms  p(95)=6.55ms  max=19.2ms 
+      { consulta:RF09,variante:geral,perfil:MORADOR }............: min=2.73ms  avg=3.78ms  med=3.67ms  p(90)=4.43ms  p(95)=4.82ms  max=9.4ms  
+      { consulta:RF09,variante:geral,perfil:OPERADOR }...........: min=4.57ms  avg=6.77ms  med=6.55ms  p(90)=8.12ms  p(95)=8.94ms  max=16.83ms
+      { consulta:RF09,variante:pagina,perfil:ADMINISTRADOR }.....: min=5.04ms  avg=8.2ms   med=7.98ms  p(90)=10.16ms p(95)=11.02ms max=22.08ms
+      { consulta:RF09,variante:periodo,perfil:ADMINISTRADOR }....: min=4.02ms  avg=6.14ms  med=5.95ms  p(90)=7.49ms  p(95)=8.17ms  max=16.4ms 
+      { consulta:RF09,variante:periodo,perfil:MORADOR }..........: min=2.33ms  avg=3.86ms  med=3.73ms  p(90)=4.59ms  p(95)=4.98ms  max=10.31ms
+      { consulta:RF09,variante:periodo,perfil:OPERADOR }.........: min=2.83ms  avg=3.96ms  med=3.8ms   p(90)=4.66ms  p(95)=5.05ms  max=13.75ms
+      { consulta:RF09,variante:ponto,perfil:ADMINISTRADOR }......: min=3.46ms  avg=5.9ms   med=5.73ms  p(90)=7.22ms  p(95)=7.78ms  max=16.03ms
+      { consulta:RF09,variante:situacao,perfil:ADMINISTRADOR }...: min=3.83ms  avg=5.78ms  med=5.57ms  p(90)=6.98ms  p(95)=7.66ms  max=18.26ms
+      { consulta:RF09,variante:situacao,perfil:MORADOR }.........: min=2.09ms  avg=3.69ms  med=3.55ms  p(90)=4.38ms  p(95)=4.72ms  max=12.51ms
+      { consulta:RF09,variante:situacao,perfil:OPERADOR }........: min=2.65ms  avg=3.95ms  med=3.8ms   p(90)=4.8ms   p(95)=5.29ms  max=13.29ms
+      { consulta:RF09 }..........................................: min=2.09ms  avg=5.2ms   med=4.82ms  p(90)=7.64ms  p(95)=8.58ms  max=22.08ms
+      { consulta:RF15,variante:geral }...........................: min=3.37ms  avg=5.51ms  med=5.29ms  p(90)=6.63ms  p(95)=7.22ms  max=18.15ms
+      { consulta:RF15,variante:periodo }.........................: min=3.01ms  avg=4.84ms  med=4.66ms  p(90)=5.78ms  p(95)=6.35ms  max=16.55ms
+      { consulta:RF15 }..........................................: min=3.01ms  avg=5.18ms  med=4.99ms  p(90)=6.3ms   p(95)=6.89ms  max=18.15ms
+      { etapa:medicao }..........................................: min=2.09ms  avg=5.03ms  med=4.8ms   p(90)=6.67ms  p(95)=7.54ms  max=22.08ms
+      { expected_response:true }.................................: min=2.09ms  avg=5.03ms  med=4.8ms   p(90)=6.67ms  p(95)=7.54ms  max=22.08ms
+    http_req_failed..............................................: 0.00%  0 out of 55952
+    http_reqs....................................................: 55952  1862.970156/s
+
+    EXECUTION
+    iteration_duration...........................................: min=10.14ms avg=16.07ms med=15.63ms p(90)=19.54ms p(95)=20.82ms max=42.58ms
+    iterations...................................................: 18649  620.934559/s
+    vus..........................................................: 10     min=10         max=10
+    vus_max......................................................: 10     min=10         max=10
+
+    NETWORK
+    data_received................................................: 308 MB 10 MB/s
+    data_sent....................................................: 8.3 MB 276 kB/s
+
+
+
+
+running (0m30.0s), 00/10 VUs, 18649 complete and 0 interrupted iterations
+complementar ✓ [ 100% ] 10 VUs  30s
