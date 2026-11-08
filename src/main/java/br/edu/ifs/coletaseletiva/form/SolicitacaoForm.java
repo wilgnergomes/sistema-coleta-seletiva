@@ -19,7 +19,7 @@ public record SolicitacaoForm(
         String observacoes,
 
         @NotEmpty(message = "{solicitacao.itens.obrigatorio}")
-        List<@Valid ItemForm> itens
+        List<@NotNull(message = "{solicitacao.item.nulo}") @Valid ItemForm> itens
 ) {
 
     public SolicitacaoForm {
