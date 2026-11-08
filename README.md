@@ -167,7 +167,7 @@ Executar a aplicação:
 
 ### Dados de demonstração (perfil `demo`)
 
-Para carregar os dados fictícios de demonstração (hoje, 5 moradores do RF01 e 7 endereços do RF02), ative o perfil `demo`:
+Para carregar os dados fictícios de demonstração (hoje, 5 moradores do RF01, 7 endereços do RF02 e 7 materiais do RF03), ative o perfil `demo`:
 
 ```bash
 # Windows (PowerShell/CMD)
@@ -295,7 +295,8 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 - [x] Fundação da API (springdoc, tratamento de erros, paginação, identificação do ator)
 - [x] Cadastro de moradores (RF01)
 - [x] Cadastro de endereços dos moradores (RF02)
-- [ ] Cadastros: materiais, pontos, vínculos e operadores
+- [x] Cadastro de materiais recicláveis (RF03)
+- [ ] Cadastros: pontos, vínculos e operadores
 - [ ] Consultas com filtros e paginação
 - [ ] Solicitação de recolhimento (compatibilidade, itens e protocolo)
 - [ ] Transições de situação e histórico

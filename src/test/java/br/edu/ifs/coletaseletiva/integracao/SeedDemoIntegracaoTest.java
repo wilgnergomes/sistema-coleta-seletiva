@@ -93,6 +93,22 @@ class SeedDemoIntegracaoTest {
     }
 
     @Test
+    void rf03_seedTemMateriaisEmKgLEUnComUmInativoEReexecucaoNaoDuplica() {
+        assertEquals(7, contar("SELECT COUNT(*) FROM coleta.mat_material"));
+        assertEquals(5, contar("SELECT COUNT(*) FROM coleta.mat_material WHERE mat_tx_unidade = 'KG'"));
+        assertEquals(1, contar("SELECT COUNT(*) FROM coleta.mat_material WHERE mat_tx_unidade = 'L'"));
+        assertEquals(1, contar("SELECT COUNT(*) FROM coleta.mat_material WHERE mat_tx_unidade = 'UN'"));
+        assertEquals(1, contar("SELECT COUNT(*) FROM coleta.mat_material WHERE mat_tx_situacao = 'INATIVO'"));
+        assertEquals(4, contar("""
+                SELECT COUNT(*) FROM coleta.mat_material
+                WHERE LOWER(mat_tx_nome) IN ('papel', 'plástico', 'vidro', 'metal') AND mat_tx_unidade = 'KG'"""));
+
+        flyway.migrate();
+
+        assertEquals(7, contar("SELECT COUNT(*) FROM coleta.mat_material"));
+    }
+
+    @Test
     void rf01_oSeedNaoApareceNoHistoricoDoFlyway() {
         assertEquals(0, contar("SELECT COUNT(*) FROM coleta.flyway_schema_history WHERE description ILIKE '%morador%'"));
         assertEquals(0, contar("SELECT COUNT(*) FROM coleta.flyway_schema_history WHERE description ILIKE '%endere%'"));
