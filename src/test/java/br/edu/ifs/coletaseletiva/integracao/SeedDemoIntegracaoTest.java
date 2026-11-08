@@ -179,6 +179,61 @@ class SeedDemoIntegracaoTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void rf09_seedTemUmaSolicitacaoEmCadaSituacaoComItensEHistoricoCoerentes() {
+        assertEquals(8, contar("SELECT COUNT(*) FROM coleta.sol_solicitacao"));
+        assertEquals(6, contar("SELECT COUNT(DISTINCT sol_tx_situacao) FROM coleta.sol_solicitacao"));
+        assertEquals(13, contar("SELECT COUNT(*) FROM coleta.iso_item_solicitacao"));
+        // A última linha do histórico de cada solicitação é a sua situação atual.
+        assertEquals(0, contar("""
+                SELECT COUNT(*) FROM coleta.sol_solicitacao s
+                WHERE s.sol_tx_situacao <> (SELECT h.his_tx_situacao_nova FROM coleta.his_historico h
+                                            WHERE h.sol_nr_id = s.sol_nr_id ORDER BY h.his_nr_id DESC LIMIT 1)"""));
+        // Quem opera pertence ao ponto da solicitação (ADR 0010).
+        assertEquals(0, contar("""
+                SELECT COUNT(*) FROM coleta.his_historico h
+                JOIN coleta.sol_solicitacao s ON s.sol_nr_id = h.sol_nr_id
+                JOIN coleta.ope_operador o ON o.ope_nr_id = h.ope_nr_id
+                WHERE o.poc_nr_id <> s.poc_nr_id"""));
+        // Só a solicitação concluída tem quantidade efetiva.
+        assertEquals(2, contar("SELECT COUNT(*) FROM coleta.iso_item_solicitacao WHERE iso_nr_quantidade_efetiva IS NOT NULL"));
+    }
+
+    @Test
+    void rf09_executarOSeedDeNovoNaoDuplicaSolicitacoesItensNemHistorico() {
+        int historico = contar("SELECT COUNT(*) FROM coleta.his_historico");
+
+        flyway.migrate();
+
+        assertEquals(8, contar("SELECT COUNT(*) FROM coleta.sol_solicitacao"));
+        assertEquals(13, contar("SELECT COUNT(*) FROM coleta.iso_item_solicitacao"));
+        assertEquals(historico, contar("SELECT COUNT(*) FROM coleta.his_historico"));
+    }
+
+    @Test
+    void rf09_atoresDoSeedConsultamSomenteOQueOContextoPermite() throws Exception {
+        int maria = idPorEmail("maria.silva@exemplo.com");
+        int carla = jdbc.queryForObject(
+                "SELECT ope_nr_id FROM coleta.ope_operador WHERE ope_tx_email = 'carla.nunes@exemplo.com'", Integer.class);
+        int rita = jdbc.queryForObject(
+                "SELECT ope_nr_id FROM coleta.ope_operador WHERE ope_tx_email = 'rita.alves@exemplo.com'", Integer.class);
+
+        mockMvc.perform(get("/solicitacoes").header("X-Perfil", "ADMINISTRADOR"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElementos").value(8));
+        mockMvc.perform(get("/solicitacoes").header("X-Perfil", "MORADOR").header("X-Usuario-Id", String.valueOf(maria)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElementos").value(3));
+        mockMvc.perform(get("/solicitacoes").header("X-Perfil", "OPERADOR").header("X-Usuario-Id", String.valueOf(carla)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElementos").value(6));
+        // O operador do Ecoponto Centro (sem recolhimento domiciliar) não tem solicitações.
+        mockMvc.perform(get("/solicitacoes").header("X-Perfil", "OPERADOR").header("X-Usuario-Id", String.valueOf(rita)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElementos").value(0));
+        mockMvc.perform(get("/solicitacoes").header("X-Perfil", "ADMINISTRADOR").param("situacao", "CONCLUIDA"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElementos").value(1));
+        mockMvc.perform(get("/solicitacoes").header("X-Perfil", "ADMINISTRADOR")
+                        .param("de", "2026-11-01").param("ate", "2026-11-30"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElementos").value(2));
+    }
+
     private int contar(String sql) {
         return jdbc.queryForObject(sql, Integer.class);
     }
