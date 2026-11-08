@@ -45,3 +45,8 @@ Também entram aqui os defeitos confirmados, as melhorias opcionais e as hipóte
 - [ ] **Corrida de e-mail pelo `UNIQUE` do banco.** O teste de 8 cadastros simultâneos passa, mas o 409 vem da checagem do service; o caminho em que o banco barra o duplicado e o tratador devolve a mensagem genérica de integridade só é coberto no controller, com o service simulado (relacionado à Issue #30).
 - [ ] **README sobre os testes.** O README diz que os testes com contexto precisam do banco de desenvolvimento e do `.env`, mas esses testes usam Testcontainers. Conferir e ajustar o texto.
 - [ ] **Consulta nativa do ADR 0013.** Com a entidade `MaterialAceito` (RF05), `MaterialRepository.contarVinculosComPontos` pode deixar de usar SQL nativo e passar a usar uma consulta derivada ou JPQL. Falta a entidade do item de solicitação (RF08) para fazer o mesmo com `contarItensDeSolicitacao`.
+
+## Desempenho (RNF04)
+
+- [ ] **Dataset de desempenho com ponto, morador e situação correlacionados.** Tipo: defeito confirmado. Diagnóstico e evidência em `docs/desempenho/resultados-iniciais.md` (seção "Limitações"); a correção, a validação da seletividade e a nova medição inicial são tarefa da Issue #33, antes de qualquer índice da V3.
+- [ ] **Fase complementar do k6 instável (timeouts de conexão).** Tipo: hipótese (causa não comprovada). Fatos, as seis tentativas e as suspeitas em `docs/desempenho/resultados-iniciais.md` (seção "Instabilidade do ambiente"). Verificar durante a medição final da Issue #58, que acompanha a investigação.
