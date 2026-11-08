@@ -125,6 +125,24 @@ class SeedDemoIntegracaoTest {
     }
 
     @Test
+    void rf05_seedTemVinculosComESemLimiteEPontosQueNaoAceitamVidro() {
+        assertEquals(13, contar("SELECT COUNT(*) FROM coleta.mac_material_aceito"));
+        assertTrue(contar("SELECT COUNT(*) FROM coleta.mac_material_aceito WHERE mac_nr_limite IS NULL") > 0);
+        assertTrue(contar("SELECT COUNT(*) FROM coleta.mac_material_aceito WHERE mac_nr_limite IS NOT NULL") > 0);
+        assertTrue(contar("SELECT COUNT(*) FROM coleta.mac_material_aceito WHERE mac_tx_observacoes IS NOT NULL") > 0);
+        // Pontos ativos que NÃO aceitam vidro (cenário de material incompatível)
+        assertEquals(2, contar("""
+                SELECT COUNT(*) FROM coleta.poc_ponto_coleta p
+                WHERE p.poc_tx_situacao = 'ATIVO' AND NOT EXISTS (
+                    SELECT 1 FROM coleta.mac_material_aceito a JOIN coleta.mat_material m ON m.mat_nr_id = a.mat_nr_id
+                    WHERE a.poc_nr_id = p.poc_nr_id AND m.mat_tx_nome = 'Vidro')"""));
+
+        flyway.migrate();
+
+        assertEquals(13, contar("SELECT COUNT(*) FROM coleta.mac_material_aceito"));
+    }
+
+    @Test
     void rf01_oSeedNaoApareceNoHistoricoDoFlyway() {
         assertEquals(0, contar("SELECT COUNT(*) FROM coleta.flyway_schema_history WHERE description ILIKE '%morador%'"));
         assertEquals(0, contar("SELECT COUNT(*) FROM coleta.flyway_schema_history WHERE description ILIKE '%endere%'"));
