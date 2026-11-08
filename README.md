@@ -95,7 +95,7 @@ Objetivos específicos:
 | Flyway | Migrações do esquema do banco |
 | Spring Boot Actuator | Monitoramento (endpoint de saúde) |
 | Testcontainers | Testes de integração com PostgreSQL real |
-| Docker | Execução dos containers (testes de integração e, futuramente, banco de desenvolvimento) |
+| Docker | Execução dos containers (testes de integração e banco de desenvolvimento) |
 | Spring Boot DevTools | Reinício automático durante o desenvolvimento |
 | Lombok | Redução de código repetitivo (getters, construtores etc.) |
 | Maven (wrapper) | Build e gerenciamento de dependências |
@@ -151,7 +151,7 @@ Compilar e executar os testes:
 ./mvnw clean verify
 ```
 
-> Os testes que carregam o contexto da aplicação precisam do banco no ar e do `.env` criado.
+> Os testes de integração sobem o próprio PostgreSQL com Testcontainers, então exigem o Docker em execução e não usam o banco de desenvolvimento.
 
 Executar a aplicação:
 
@@ -167,7 +167,7 @@ Executar a aplicação:
 
 ### Dados de demonstração (perfil `demo`)
 
-Para carregar os dados fictícios de demonstração (hoje, 5 moradores do RF01, 7 endereços do RF02, 7 materiais do RF03, 5 pontos de coleta do RF04, 13 vínculos de materiais do RF05 e 3 operadores do RF07), ative o perfil `demo`:
+Para carregar os dados fictícios de demonstração (hoje, 5 moradores do RF01, 7 endereços do RF02, 7 materiais do RF03, 5 pontos de coleta do RF04, 13 vínculos de materiais do RF05, 3 operadores do RF07 e 8 solicitações do RF09, uma em cada situação), ative o perfil `demo`:
 
 ```bash
 # Windows (PowerShell/CMD)
@@ -282,7 +282,7 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 └── README.md
 ```
 
-> A pasta `docs/` será criada conforme os documentos forem produzidos.
+> A pasta `docs/` reúne os ADRs, o contrato OpenAPI, os diagramas, a matriz de rastreabilidade, as referências e os relatórios de auditoria.
 
 ## Roadmap
 
