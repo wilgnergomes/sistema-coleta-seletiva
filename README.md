@@ -247,21 +247,11 @@ Convenções da API (ADR 0018):
 
 ## Modelo de Banco de Dados
 
-O banco de dados foi modelado em múltiplas visões para facilitar o entendimento dos domínios.
+O modelo físico do banco está documentado em **um único DER**, com as 9 tabelas, seus campos, tipos, chaves e as 11 chaves estrangeiras (ADR 0025). A fonte da verdade do banco são as migrações Flyway; o diagrama é mantido em sincronia com elas.
 
-### 1. Visão Estrutural (Cadastros)
-Esta visão apresenta as entidades base do sistema.
+![DER físico do Sistema Coleta Seletiva](docs/diagramas/entidade-relacionamento-fisico/der-unificado.svg)
 
-![Visão Estrutural](docs/diagramas/entidade-relacionamento-fisico/der-estrutural.svg)
-
-> 📝 [Ver código fonte do diagrama (DBML)](docs/diagramas/entidade-relacionamento-fisico/der-estrutural.dbml)
-
-### 2. Visão Transacional (Fluxo de Recolhimento)
-Esta visão detalha o fluxo principal e o histórico de ações.
-
-![Visão Transacional](docs/diagramas/entidade-relacionamento-fisico/der-transacional.svg)
-
-> 📝 [Ver código fonte do diagrama (DBML)](docs/diagramas/entidade-relacionamento-fisico/der-transacional.dbml)
+> 📝 [Ver código fonte do diagrama (DBML)](docs/diagramas/entidade-relacionamento-fisico/der-unificado.dbml)
 
 ## Estrutura do repositório
 
