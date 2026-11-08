@@ -13,6 +13,7 @@ import br.edu.ifs.coletaseletiva.exception.ConflitoVersaoException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
 import br.edu.ifs.coletaseletiva.exception.ParametroInvalidoException;
 import br.edu.ifs.coletaseletiva.form.AgendamentoForm;
+import br.edu.ifs.coletaseletiva.form.MotivoForm;
 import br.edu.ifs.coletaseletiva.mapper.SolicitacaoMapper;
 import br.edu.ifs.coletaseletiva.repository.HistoricoRepository;
 import br.edu.ifs.coletaseletiva.repository.SolicitacaoRepository;
@@ -53,13 +54,27 @@ public class TransicaoSolicitacaoService {
         if (!formulario.dataHora().isAfter(agora)) {
             throw new ParametroInvalidoException("dataHora", "erro.solicitacao.agendamento-passado");
         }
-        if (solicitacao.getSituacao() != SituacaoSolicitacao.SOLICITADA) {
-            throw transicaoInvalida(solicitacao.getSituacao(), SituacaoSolicitacao.AGENDADA);
-        }
+        exigirSituacao(solicitacao, SituacaoSolicitacao.SOLICITADA, SituacaoSolicitacao.AGENDADA);
         exigirVersao(solicitacao, formulario.versao());
 
         solicitacao.setAgendadaPara(formulario.dataHora());
         return aplicar(solicitacao, SituacaoSolicitacao.AGENDADA, operador, agora, null, formulario.dataHora());
+    }
+
+    /**
+     * RF11: o operador ativo do ponto recusa a solicitação, com justificativa. Só SOLICITADA -> RECUSADA; depois disso
+     * a solicitação é final (RN06). O motivo chega validado e sem espaços nas pontas (MotivoForm).
+     */
+    @Transactional
+    public SolicitacaoDetalheDTO recusar(Ator ator, Integer id, MotivoForm formulario) {
+        Operador operador = operadorDoAtor(ator);
+        Solicitacao solicitacao = solicitacaoDoPonto(operador, id);
+
+        exigirSituacao(solicitacao, SituacaoSolicitacao.SOLICITADA, SituacaoSolicitacao.RECUSADA);
+        exigirVersao(solicitacao, formulario.versao());
+
+        return aplicar(solicitacao, SituacaoSolicitacao.RECUSADA, operador, OffsetDateTime.now(relogio),
+                formulario.motivo(), null);
     }
 
     // =====================================================================
@@ -79,6 +94,16 @@ public class TransicaoSolicitacaoService {
         return repository.findComItensById(id)
                 .filter(s -> s.getPonto().getId().equals(operador.getPonto().getId()))
                 .orElseThrow(() -> new NaoEncontradoException("erro.solicitacao.nao-encontrada"));
+    }
+
+    /**
+     * A ação só vale a partir de uma situação de origem. A tabela da RN06 (no enum) diz o que o domínio permite; aqui
+     * cada ação escolhe a transição que expõe (por exemplo, o agendamento do RF10 não aceita AGENDADA -> AGENDADA).
+     */
+    private void exigirSituacao(Solicitacao solicitacao, SituacaoSolicitacao origem, SituacaoSolicitacao destino) {
+        if (solicitacao.getSituacao() != origem) {
+            throw transicaoInvalida(solicitacao.getSituacao(), destino);
+        }
     }
 
     private void exigirVersao(Solicitacao solicitacao, Integer versaoDoCliente) {
