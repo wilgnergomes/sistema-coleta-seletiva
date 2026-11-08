@@ -4,7 +4,9 @@ import br.edu.ifs.coletaseletiva.config.Ator;
 import br.edu.ifs.coletaseletiva.dto.SolicitacaoDetalheDTO;
 import br.edu.ifs.coletaseletiva.form.AgendamentoForm;
 import br.edu.ifs.coletaseletiva.form.ConclusaoForm;
+import br.edu.ifs.coletaseletiva.form.FalhaForm;
 import br.edu.ifs.coletaseletiva.form.MotivoForm;
+import br.edu.ifs.coletaseletiva.form.ReagendamentoForm;
 import br.edu.ifs.coletaseletiva.form.VersaoForm;
 import br.edu.ifs.coletaseletiva.service.TransicaoSolicitacaoService;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -62,5 +64,21 @@ public class TransicaoSolicitacaoController {
                                           @PathVariable Integer id,
                                           @Valid @RequestBody ConclusaoForm formulario) {
         return service.concluir(ator, id, formulario);
+    }
+
+    /** RF14: o operador do ponto reagenda uma solicitação AGENDADA, com justificativa e nova data futura. */
+    @PostMapping("/reagendamento")
+    public SolicitacaoDetalheDTO reagendar(@Parameter(hidden = true) Ator ator,
+                                           @PathVariable Integer id,
+                                           @Valid @RequestBody ReagendamentoForm formulario) {
+        return service.reagendar(ator, id, formulario);
+    }
+
+    /** RF14: o operador do ponto registra a tentativa sem sucesso e reagenda (EM_RECOLHIMENTO volta a AGENDADA). */
+    @PostMapping("/falha")
+    public SolicitacaoDetalheDTO registrarFalha(@Parameter(hidden = true) Ator ator,
+                                                @PathVariable Integer id,
+                                                @Valid @RequestBody FalhaForm formulario) {
+        return service.registrarFalha(ator, id, formulario);
     }
 }
