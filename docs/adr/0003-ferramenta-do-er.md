@@ -23,3 +23,7 @@ As atualizações do modelo e da imagem deverão ser enviadas ao repositório po
 - **Positivas:** geração automática do diagrama a partir do código; facilidade para editar tabelas e relacionamentos; versionamento do modelo pelo Git; possibilidade de revisar alterações por Pull Requests; exportação do diagrama para formatos como PNG e PDF.
 - **Negativas:** dependência de uma ferramenta online para a edição visual; necessidade de aprender a sintaxe DBML; limite de 10 diagramas no plano gratuito, o que exige gerenciar os diagramas mantidos na plataforma.
 - **Cuidados:** como a sincronização com o repositório não é automática, será necessário atualizar o arquivo `er.dbml` e a imagem `er.png` sempre que o modelo for alterado. O diagrama documenta a estrutura planejada, mas não substitui os scripts SQL ou as migrações responsáveis por implementar as alterações no banco de dados.
+
+## Atualização (2026-11-08)
+
+A decisão deste ADR continua válida: o dbdiagram.io e a linguagem DBML seguem como ferramenta do DER. Os nomes de arquivo citados acima (`er.dbml` e `er.png`) eram previstos e nunca foram os reais. Os arquivos vigentes são `der-unificado.dbml` (fonte) e `der-unificado.svg` (imagem), em `docs/diagramas/entidade-relacionamento-fisico/`, conforme o [ADR 0025](0025-der-fisico-unico-e-completo.md).
