@@ -19,8 +19,10 @@ import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
 import br.edu.ifs.coletaseletiva.exception.ParametroInvalidoException;
 import br.edu.ifs.coletaseletiva.form.AgendamentoForm;
 import br.edu.ifs.coletaseletiva.form.ConclusaoForm;
+import br.edu.ifs.coletaseletiva.form.FalhaForm;
 import br.edu.ifs.coletaseletiva.form.ItemConclusaoForm;
 import br.edu.ifs.coletaseletiva.form.MotivoForm;
+import br.edu.ifs.coletaseletiva.form.ReagendamentoForm;
 import br.edu.ifs.coletaseletiva.form.VersaoForm;
 import br.edu.ifs.coletaseletiva.mapper.SolicitacaoMapper;
 import br.edu.ifs.coletaseletiva.repository.HistoricoRepository;
@@ -541,5 +543,176 @@ class TransicaoSolicitacaoServiceTest {
                 () -> service.concluir(new Ator(Perfil.ADMINISTRADOR, null), 9, conclusao(0, efetiva(1, "1"))));
 
         verify(historicoRepository, never()).save(any());
+    }
+
+    // ---------- RF14: reagendamento e tentativa sem sucesso ----------
+
+    private static OffsetDateTime emSegundos(long segundos) {
+        return OffsetDateTime.ofInstant(AGORA.plusSeconds(segundos), ZoneOffset.UTC);
+    }
+
+    @Test
+    void rf14_reagendamentoMantemAgendadaGravaANovaDataEUmaLinhaDeHistoricoComOMotivo() {
+        solicitacao.setSituacao(SituacaoSolicitacao.AGENDADA);
+        solicitacao.setAgendadaPara(emSegundos(3600));
+        operadorEncontraASolicitacao();
+        when(historicoRepository.findBySolicitacaoIdOrderById(9)).thenReturn(List.of());
+        OffsetDateTime nova = emSegundos(7200);
+
+        SolicitacaoDetalheDTO resposta = service.reagendar(OPERADOR, 9, new ReagendamentoForm(nova, "  Veículo em manutenção  ", 0));
+
+        assertEquals(SituacaoSolicitacao.AGENDADA, resposta.situacao());
+        assertEquals(nova, resposta.agendadaPara());
+        ArgumentCaptor<Historico> historico = ArgumentCaptor.forClass(Historico.class);
+        verify(historicoRepository).save(historico.capture());
+        assertEquals(SituacaoSolicitacao.AGENDADA, historico.getValue().getSituacaoAnterior());
+        assertEquals(SituacaoSolicitacao.AGENDADA, historico.getValue().getSituacaoNova());
+        assertEquals("Veículo em manutenção", historico.getValue().getMotivo());
+        assertEquals(nova, historico.getValue().getAgendamento());
+        assertNull(historico.getValue().getInformacoesTentativa());
+        assertEquals(operador, historico.getValue().getOperador());
+        assertNull(historico.getValue().getMorador());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = SituacaoSolicitacao.class, names = "AGENDADA", mode = EnumSource.Mode.EXCLUDE)
+    void rf14_soAgendadaPodeSerReagendada(SituacaoSolicitacao situacao) {
+        solicitacao.setSituacao(situacao);
+        operadorEncontraASolicitacao();
+
+        ConflitoRegraException erro = assertThrows(ConflitoRegraException.class,
+                () -> service.reagendar(OPERADOR, 9, new ReagendamentoForm(emSegundos(60), "Motivo", 0)));
+
+        assertEquals("erro.solicitacao.reagendamento-somente-agendada", erro.getChave());
+        assertEquals(situacao, erro.getArgumentos()[0]);
+        verify(historicoRepository, never()).save(any());
+    }
+
+    @Test
+    void rf14_reagendarParaOMesmoInstanteEhConflitoMesmoEmOutroFusoEnadaMuda() {
+        OffsetDateTime marcada = emSegundos(3600);
+        solicitacao.setSituacao(SituacaoSolicitacao.AGENDADA);
+        solicitacao.setAgendadaPara(marcada);
+        operadorEncontraASolicitacao();
+        // O mesmo instante escrito com outro offset continua sendo a mesma data marcada.
+        OffsetDateTime mesmoInstante = marcada.withOffsetSameInstant(ZoneOffset.ofHours(-3));
+
+        ConflitoRegraException erro = assertThrows(ConflitoRegraException.class,
+                () -> service.reagendar(OPERADOR, 9, new ReagendamentoForm(mesmoInstante, "Motivo", 0)));
+
+        assertEquals("erro.solicitacao.reagendamento-mesma-data", erro.getChave());
+        verify(repository, never()).saveAndFlush(any());
+        verify(historicoRepository, never()).save(any());
+        assertEquals(marcada, solicitacao.getAgendadaPara());
+    }
+
+    @Test
+    void rf14_dataNoInstanteAtualOuNoPassadoEh400MesmoComASituacaoErradaEAntesDaVersao() {
+        solicitacao.setSituacao(SituacaoSolicitacao.CANCELADA);
+        operadorEncontraASolicitacao();
+
+        ParametroInvalidoException igual = assertThrows(ParametroInvalidoException.class,
+                () -> service.reagendar(OPERADOR, 9, new ReagendamentoForm(emSegundos(0), "Motivo", 9)));
+        assertEquals("dataHora", igual.getCampo());
+        assertThrows(ParametroInvalidoException.class,
+                () -> service.registrarFalha(OPERADOR, 9, new FalhaForm("Motivo", "Informações", emSegundos(-1), 9)));
+
+        verify(historicoRepository, never()).save(any());
+    }
+
+    @Test
+    void rf14_reagendamentoComVersaoDiferenteOuOutroPontoOuOutroPerfil() {
+        solicitacao.setSituacao(SituacaoSolicitacao.AGENDADA);
+        solicitacao.setAgendadaPara(emSegundos(3600));
+        operadorEncontraASolicitacao();
+        assertThrows(ConflitoVersaoException.class,
+                () -> service.reagendar(OPERADOR, 9, new ReagendamentoForm(emSegundos(7200), "Motivo", 4)));
+
+        Operador outro = Operador.builder().id(6).ponto(PontoColeta.builder().id(2).build()).build();
+        when(operadorService.autorizarOperador(OPERADOR)).thenReturn(outro);
+        assertThrows(NaoEncontradoException.class,
+                () -> service.reagendar(OPERADOR, 9, new ReagendamentoForm(emSegundos(7200), "Motivo", 0)));
+        assertThrows(AcessoNegadoException.class,
+                () -> service.reagendar(MORADOR, 9, new ReagendamentoForm(emSegundos(7200), "Motivo", 0)));
+
+        verify(historicoRepository, never()).save(any());
+    }
+
+    @Test
+    void rf14_falhaVoltaParaAgendadaGravaAInformacaoDaTentativaENovaDataNoHistorico() {
+        solicitacao.setSituacao(SituacaoSolicitacao.EM_RECOLHIMENTO);
+        solicitacao.setAgendadaPara(emSegundos(-3600));
+        operadorEncontraASolicitacao();
+        when(historicoRepository.findBySolicitacaoIdOrderById(9)).thenReturn(List.of());
+        OffsetDateTime nova = emSegundos(86400);
+
+        SolicitacaoDetalheDTO resposta = service.registrarFalha(OPERADOR, 9,
+                new FalhaForm("  Morador ausente  ", "  Portão fechado, ninguém atendeu  ", nova, 0));
+
+        assertEquals(SituacaoSolicitacao.AGENDADA, resposta.situacao());
+        assertEquals(nova, resposta.agendadaPara());
+        ArgumentCaptor<Historico> historico = ArgumentCaptor.forClass(Historico.class);
+        verify(historicoRepository).save(historico.capture());
+        assertEquals(SituacaoSolicitacao.EM_RECOLHIMENTO, historico.getValue().getSituacaoAnterior());
+        assertEquals(SituacaoSolicitacao.AGENDADA, historico.getValue().getSituacaoNova());
+        assertEquals("Morador ausente", historico.getValue().getMotivo());
+        assertEquals("Portão fechado, ninguém atendeu", historico.getValue().getInformacoesTentativa());
+        assertEquals(nova, historico.getValue().getAgendamento());
+        assertEquals(operador, historico.getValue().getOperador());
+    }
+
+    @Test
+    void rf14_naFalhaANovaDataPodeCoincidirComAAnteriorPorqueASituacaoMuda() {
+        OffsetDateTime marcada = emSegundos(3600);
+        solicitacao.setSituacao(SituacaoSolicitacao.EM_RECOLHIMENTO);
+        solicitacao.setAgendadaPara(marcada);
+        operadorEncontraASolicitacao();
+        when(historicoRepository.findBySolicitacaoIdOrderById(9)).thenReturn(List.of());
+
+        SolicitacaoDetalheDTO resposta = service.registrarFalha(OPERADOR, 9, new FalhaForm("Motivo", "Informações", marcada, 0));
+
+        assertEquals(SituacaoSolicitacao.AGENDADA, resposta.situacao());
+        verify(historicoRepository).save(any(Historico.class));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = SituacaoSolicitacao.class, names = "EM_RECOLHIMENTO", mode = EnumSource.Mode.EXCLUDE)
+    void rf14_soEmRecolhimentoRegistraFalha(SituacaoSolicitacao situacao) {
+        solicitacao.setSituacao(situacao);
+        operadorEncontraASolicitacao();
+
+        ConflitoRegraException erro = assertThrows(ConflitoRegraException.class,
+                () -> service.registrarFalha(OPERADOR, 9, new FalhaForm("Motivo", "Informações", emSegundos(60), 0)));
+
+        assertEquals("erro.solicitacao.falha-somente-em-recolhimento", erro.getChave());
+        verify(historicoRepository, never()).save(any());
+        assertEquals(situacao, solicitacao.getSituacao());
+    }
+
+    @Test
+    void rf14_falhaComVersaoDiferenteOuOutroPontoOuOutroPerfil() {
+        solicitacao.setSituacao(SituacaoSolicitacao.EM_RECOLHIMENTO);
+        operadorEncontraASolicitacao();
+        assertThrows(ConflitoVersaoException.class,
+                () -> service.registrarFalha(OPERADOR, 9, new FalhaForm("Motivo", "Informações", emSegundos(60), 3)));
+
+        Operador outro = Operador.builder().id(6).ponto(PontoColeta.builder().id(2).build()).build();
+        when(operadorService.autorizarOperador(OPERADOR)).thenReturn(outro);
+        assertThrows(NaoEncontradoException.class,
+                () -> service.registrarFalha(OPERADOR, 9, new FalhaForm("Motivo", "Informações", emSegundos(60), 0)));
+        assertThrows(AcessoNegadoException.class,
+                () -> service.registrarFalha(new Ator(Perfil.ADMINISTRADOR, null), 9,
+                        new FalhaForm("Motivo", "Informações", emSegundos(60), 0)));
+
+        verify(historicoRepository, never()).save(any());
+    }
+
+    @Test
+    void rf14_osFormulariosGuardamOsTextosSemEspacosNasPontas() {
+        assertEquals("a", new ReagendamentoForm(emSegundos(1), "  a  ", 0).motivo());
+        FalhaForm falha = new FalhaForm("  m  ", "  i  ", emSegundos(1), 0);
+        assertEquals("m", falha.motivo());
+        assertEquals("i", falha.informacoesTentativa());
+        assertNull(new FalhaForm(null, null, null, null).informacoesTentativa());
     }
 }
