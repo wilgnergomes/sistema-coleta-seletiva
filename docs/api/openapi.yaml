@@ -24,7 +24,7 @@ info:
     **Idioma (ADR 0023).** As mensagens de erro e de validação saem em português do Brasil
     (padrão) ou em inglês, conforme o cabeçalho `Accept-Language`. Os endpoints passam a
     documentar o cabeçalho conforme cada funcionalidade recebe suas mensagens nos dois idiomas
-    (hoje, RF01 a RF12).
+    (hoje, RF01 a RF13).
 
     **Períodos (ADR 0014).** Os filtros `de` e `ate` são datas no fuso de
     negócio (America/Sao_Paulo). O intervalo é semiaberto: do início do dia `de`
@@ -790,10 +790,16 @@ paths:
   /solicitacoes/{id}/inicio:
     parameters:
       - { $ref: '#/components/parameters/Id' }
+      - { $ref: '#/components/parameters/AcceptLanguage' }
     post:
       tags: [Situação da solicitação]
       summary: Inicia o recolhimento (RF13)
-      description: Operador do ponto. Só a partir de AGENDADA. Muda para EM_RECOLHIMENTO.
+      description: |
+        Só o operador ativo do ponto da solicitação (o responsável do histórico vem do ator). Só a partir
+        de AGENDADA, e pode ser antes da data marcada: o enunciado não exige que o horário tenha chegado.
+        Muda para EM_RECOLHIMENTO, grava o histórico na mesma transação e soma 1 à versão. Perfil sem
+        permissão ou operador inexistente ou inativo: 403. Solicitação inexistente ou de outro ponto: 404.
+        Fora de AGENDADA ou versão diferente da atual: 409.
       operationId: iniciarRecolhimento
       requestBody:
         required: true
@@ -813,14 +819,24 @@ paths:
   /solicitacoes/{id}/conclusao:
     parameters:
       - { $ref: '#/components/parameters/Id' }
+      - { $ref: '#/components/parameters/AcceptLanguage' }
     post:
       tags: [Situação da solicitação]
       summary: Conclui o recolhimento com as quantidades efetivas (RF13)
       description: |
-        Operador do ponto. Só a partir de EM_RECOLHIMENTO. Informa a quantidade efetiva de cada
-        item, aceitando zero para item não recolhido. Concluir sem nenhuma quantidade positiva é
-        rejeitado. A data da conclusão é registrada pelo servidor e o responsável vem do ator
-        (ADR 0018).
+        Só o operador ativo do ponto da solicitação. Só a partir de EM_RECOLHIMENTO. Informa a
+        quantidade efetiva de **cada item** da solicitação, exatamente uma vez, aceitando zero para item
+        não recolhido, desde que ao menos uma quantidade seja positiva. A data da conclusão é registrada
+        pelo servidor e o responsável vem do ator (ADR 0011). Situação, quantidades, data e histórico
+        mudam na mesma transação, e a versão soma 1.
+
+        Respostas: 400 para formato (lista ausente, vazia ou com `null`; valor ausente, negativo, com
+        mais de 3 casas ou de 9 dígitos inteiros) e 400 no campo `itens` quando todas as quantidades são
+        zero. 409 `CONFLITO_REGRA`, com causa específica, quando depende da solicitação gravada: material
+        repetido, material que não é item da solicitação, item sem quantidade, ou fração para item cuja
+        unidade copiada é UN (vale a `unidadeCopia` do item, ADR 0008, e não a do cadastro atual).
+        Fora de EM_RECOLHIMENTO: 409. Versão diferente da atual: 409 `CONFLITO_VERSAO`. Perfil sem
+        permissão ou operador inexistente ou inativo: 403. Solicitação inexistente ou de outro ponto: 404.
       operationId: concluirRecolhimento
       requestBody:
         required: true
