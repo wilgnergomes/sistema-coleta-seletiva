@@ -8,8 +8,10 @@ O RNF04 pede que a pesquisa de pontos (RF06), a listagem de solicitações (RF09
 | [`limpar-dataset.sql`](limpar-dataset.sql) | Remove somente os registros `PERF` |
 | [`k6-consultas.js`](k6-consultas.js) | Script do k6: fases `aquecimento`, `principal` e `complementar` |
 | [`explain-consultas.sql`](explain-consultas.sql) | `EXPLAIN (ANALYZE, BUFFERS)` das consultas reais |
-| [`resultados-iniciais.md`](resultados-iniciais.md) | Resultados da medição inicial (sem os índices da V3) |
-| [`evidencias/`](evidencias) | Saídas brutas da medição vigente: planos, resumos do k6 (inclusive todas as tentativas da fase complementar), SQL capturado e a avaliação dos índices |
+| [`resultados-iniciais.md`](resultados-iniciais.md) | Medição oficial **antes** da V3 (dataset corrigido) |
+| [`relatorio-rnf04.md`](relatorio-rnf04.md) | **Relatório final**: comparação antes/depois da V3, todas as tentativas e o experimento de escalabilidade |
+| [`evidencias-pos-v3/`](evidencias-pos-v3) | Saídas brutas da medição oficial **depois** da V3 (k6, tentativas da fase complementar e `EXPLAIN`) |
+| [`evidencias/`](evidencias) | Saídas brutas da medição **antes** da V3: planos, resumos do k6 (inclusive todas as tentativas da fase complementar), SQL capturado e a avaliação dos índices |
 | [`carga-volume-ampliado.sql`](carga-volume-ampliado.sql) | Volume ampliado **isolado** (100.000 solicitações), só para avaliar planos; fora da medição oficial |
 | [`explain-indices-v3.sql`](explain-indices-v3.sql) | Compara os planos sem e com os índices candidatos, em transação que termina em `ROLLBACK` |
 | [`analise-indices-v3.md`](analise-indices-v3.md) | Candidatos a índice, consulta beneficiada, `EXPLAIN` e recomendação (Issue #33) |
@@ -107,6 +109,6 @@ docker exec -i coleta-seletiva-db psql -U coleta -d coleta_desempenho_xl -v ON_E
 docker exec coleta-seletiva-db psql -U coleta -d postgres -c "DROP DATABASE coleta_desempenho_xl"
 ```
 
-## Comparação futura (V3)
+## Comparação antes/depois da V3 (feita)
 
-Depois da migração V3, repita **exatamente** os passos acima com o roteiro definitivo (`k6-consultas.js` sem alterações, mesmo dataset, tag do k6, fases, parâmetros e máquina, documentando qualquer diferença) e compare com [`resultados-iniciais.md`](resultados-iniciais.md). O relatório final do RNF04 fecha a Issue #58.
+A medição depois da V3 repetiu **exatamente** estes passos (mesmo banco e dataset de 1.000 solicitações, roteiro `k6-consultas.js` sem alterações, mesma tag do k6, fases e máquina; a única diferença é a migração V3). A comparação e todas as tentativas estão em [`relatorio-rnf04.md`](relatorio-rnf04.md). Para repetir a medição no futuro, siga os passos acima e compare com o relatório.

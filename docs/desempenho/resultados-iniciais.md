@@ -1,6 +1,6 @@
 # RNF04 — medição inicial (sem os índices da V3)
 
-**Data:** 2026-11-08 · **Issue:** #58 (etapa 1, repetida na #33) · **Meta:** p95 ≤ 2.000 ms com 1.000 solicitações · **Resultado: meta atendida, com folga de mais de 150 vezes.**
+**Data:** 2026-11-08 · **Issue:** #58 (etapa 1, repetida na #33) · **Meta:** p95 ≤ 2.000 ms com 1.000 solicitações · **Resultado: meta atendida, com folga de mais de 150 vezes.** Comparação com a medição depois da V3: [`relatorio-rnf04.md`](relatorio-rnf04.md).
 
 Esta é a linha de base **antes** dos índices da V3 (Issue #33), medida com o **dataset corrigido**. O esquema é o da V1 mais a V2 (só o tamanho da cópia do endereço), sem índices além das chaves e das restrições `UNIQUE`.
 

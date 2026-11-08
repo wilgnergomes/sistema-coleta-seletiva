@@ -123,7 +123,7 @@ Estes critérios pertencem a um RF, mas dependem de outro estar pronto ou de uma
 
 | RNF | Evidência a registrar | Quando |
 |-----|----------------------|--------|
-| RNF04 | Relatório de desempenho com máquina, ferramenta e resultados, medido sobre o dataset de desempenho. **Medição inicial feita** (2026-11-08, Issue #58 etapa 1): p95 geral 7,05 ms com 1 VU e 10,44 ms com 10 VUs, em 17 variantes de consulta, repetida com o dataset corrigido (Issue #33) (RF06 com material, filtros combinados e paginação; RF09 como administrador, morador e operador), contra a meta de 2.000 ms ([resultados](../desempenho/resultados-iniciais.md)). Pendentes: medição final depois da V3 (Issue #33) e relatório completo, que encerra a #58 | Ciclo 6 |
+| RNF04 | Relatório de desempenho com máquina, ferramenta e resultados, medido sobre o dataset de desempenho. **Atendido** (2026-11-08, Issues #58 e #33): p95 geral de 7,05 ms (1 VU) e 10,44 ms (10 VUs) antes da V3, e de 7,17 ms e 7,23 ms depois, contra a meta de 2.000 ms, em 17 variantes de consulta; V3 com 7 índices ([relatório final](../desempenho/relatorio-rnf04.md)). A investigação da instabilidade da fase complementar segue na #58 | Ciclo 6 |
 | RNF06 | Dados de demonstração fictícios; nenhuma senha, token ou credencial de banco versionados (variáveis de ambiente); consultas públicas sem informações pessoais | Ao longo dos ciclos; conferir na entrega |
 | RNF07 | Documentação OpenAPI (ou coleção Postman) com exemplos e respostas; README com requisitos, configuração e comandos; migrações e dados de demonstração reproduzíveis | Atualizar a cada ciclo |
 | RNF08 | Resultado da execução dos testes automatizados, incluindo o teste de integração com rollback | Ao fechar cada ciclo |
@@ -139,8 +139,8 @@ O RNF04 não pertence a um único RF: a meta de 95% das consultas em até 2 segu
 | Como é carregado | **Implementado** (Issue #58): `docs/desempenho/carga-dataset.sql`, em banco dedicado `coleta_desempenho`, executado sob demanda, com guarda contra segunda carga e `limpar-dataset.sql` (apaga só o marcador `PERF`). Nunca junto da carga de demonstração |
 | Como é medido | k6 `1.8.2` via Docker (`docs/desempenho/k6-consultas.js`, ids descobertos no `setup()`): aquecimento, 1 VU com 200 iterações por consulta e 10 VUs por 30 s; `EXPLAIN (ANALYZE, BUFFERS)` em `explain-consultas.sql`. Método completo em `docs/desempenho/README.md` |
 | Testes | `DatasetDesempenhoIntegracaoTest`: contagens exatas, coerência com as regras, carga repetida recusada, limpeza que preserva outros dados, determinismo e consultas da API sobre o dataset |
-| Quando medir | Linha de base feita (ciclo 6, antes da V3). Repetir depois dos índices da V3 (Issue #33), com o mesmo dataset, parâmetros e método |
-| Evidência | Máquina, ferramenta, versões, p95 e planos em `docs/desempenho/resultados-iniciais.md`, como exige o RNF04 |
+| Quando medir | Feito antes e depois da V3 (ciclo 6), com o mesmo dataset, parâmetros e método |
+| Evidência | Máquina, ferramenta, versões, p95 e planos em `docs/desempenho/relatorio-rnf04.md` (final) e `docs/desempenho/resultados-iniciais.md` (antes da V3), como exige o RNF04 |
 
 ## Observações para o seed e as fixtures
 
