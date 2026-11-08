@@ -10,7 +10,9 @@ import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
 import br.edu.ifs.coletaseletiva.form.EnderecoForm;
 import br.edu.ifs.coletaseletiva.form.PontoColetaForm;
+import br.edu.ifs.coletaseletiva.mapper.MaterialAceitoMapper;
 import br.edu.ifs.coletaseletiva.mapper.PontoColetaMapper;
+import br.edu.ifs.coletaseletiva.repository.MaterialAceitoRepository;
 import br.edu.ifs.coletaseletiva.repository.PontoColetaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,12 +43,15 @@ class PontoColetaServiceTest {
 
     @Mock
     private PontoColetaRepository repository;
+    @Mock
+    private MaterialAceitoRepository vinculoRepository;
 
     private PontoColetaService service;
 
     @BeforeEach
     void preparar() {
-        service = new PontoColetaService(repository, new PontoColetaMapper());
+        service = new PontoColetaService(repository, vinculoRepository, new PontoColetaMapper(),
+                new MaterialAceitoMapper());
     }
 
     private static EnderecoForm endereco(String numero, String complemento) {

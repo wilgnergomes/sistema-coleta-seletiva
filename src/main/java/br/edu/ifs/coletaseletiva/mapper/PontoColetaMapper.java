@@ -1,6 +1,7 @@
 package br.edu.ifs.coletaseletiva.mapper;
 
 import br.edu.ifs.coletaseletiva.dto.EnderecoPontoDTO;
+import br.edu.ifs.coletaseletiva.dto.MaterialAceitoDTO;
 import br.edu.ifs.coletaseletiva.dto.PontoColetaDTO;
 import br.edu.ifs.coletaseletiva.entity.EnderecoPonto;
 import br.edu.ifs.coletaseletiva.entity.PontoColeta;
@@ -33,8 +34,8 @@ public class PontoColetaMapper {
         ponto.setEndereco(paraEndereco(form.endereco()));
     }
 
-    /** Os materiais aceitos entram a partir do RF05; até lá a lista é sempre vazia. */
-    public PontoColetaDTO paraDTO(PontoColeta ponto) {
+    /** Os materiais aceitos (RF05) chegam já convertidos; o mapper só os coloca na resposta. */
+    public PontoColetaDTO paraDTO(PontoColeta ponto, List<MaterialAceitoDTO> materiaisAceitos) {
         EnderecoPonto e = ponto.getEndereco();
         return new PontoColetaDTO(
                 ponto.getId(),
@@ -45,7 +46,7 @@ public class PontoColetaMapper {
                 ponto.getSituacao(),
                 new EnderecoPontoDTO(e.getLogradouro(), e.getNumero(), e.getBairro(), e.getMunicipio(),
                         e.getUf(), e.getCep(), e.getComplemento()),
-                List.of()
+                materiaisAceitos
         );
     }
 

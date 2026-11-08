@@ -24,7 +24,7 @@ info:
     **Idioma (ADR 0023).** As mensagens de erro e de validação saem em português do Brasil
     (padrão) ou em inglês, conforme o cabeçalho `Accept-Language`. Os endpoints passam a
     documentar o cabeçalho conforme cada funcionalidade recebe suas mensagens nos dois idiomas
-    (hoje, RF01 a RF04).
+    (hoje, RF01 a RF05).
 
     **Períodos (ADR 0014, proposta).** Os filtros `de` e `ate` são datas no fuso de
     negócio (America/Sao_Paulo). O intervalo é semiaberto: do início do dia `de`
@@ -448,6 +448,7 @@ paths:
     parameters:
       - { $ref: '#/components/parameters/PontoId' }
       - { $ref: '#/components/parameters/MaterialId' }
+      - { $ref: '#/components/parameters/AcceptLanguage' }
     put:
       tags: [Materiais aceitos]
       summary: Vincula um material ao ponto, ou atualiza o vínculo (RF05)
