@@ -167,7 +167,7 @@ Executar a aplicação:
 
 ### Dados de demonstração (perfil `demo`)
 
-Para carregar os dados fictícios de demonstração (hoje, 5 moradores do RF01, 7 endereços do RF02, 7 materiais do RF03, 5 pontos de coleta do RF04, 13 vínculos de materiais do RF05, 3 operadores do RF07 e 8 solicitações do RF09, uma em cada situação), ative o perfil `demo`:
+Para carregar os dados fictícios de demonstração (hoje, 5 moradores do RF01, 7 endereços do RF02, 7 materiais do RF03, 5 pontos de coleta do RF04, 14 vínculos de materiais do RF05, 3 operadores do RF07 e 11 solicitações dos RF09 e RF15, uma em cada situação e quatro concluídas), ative o perfil `demo`:
 
 ```bash
 # Windows (PowerShell/CMD)
@@ -303,7 +303,7 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 - [x] Consultas de solicitações com filtros e paginação (RF09)
 - [x] Solicitação de recolhimento (compatibilidade, itens e protocolo) (RF08)
 - [x] Transições de situação e histórico (RF10 a RF14)
-- [ ] Resumo gerencial
+- [x] Resumo gerencial (RF15)
 - [ ] Testes de integração e de concorrência
 - [ ] Interface web responsiva (segunda unidade)
 
