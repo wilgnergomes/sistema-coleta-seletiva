@@ -3,18 +3,23 @@ package br.edu.ifs.coletaseletiva.service;
 import br.edu.ifs.coletaseletiva.config.Ator;
 import br.edu.ifs.coletaseletiva.dto.SolicitacaoDetalheDTO;
 import br.edu.ifs.coletaseletiva.entity.Historico;
+import br.edu.ifs.coletaseletiva.entity.ItemSolicitacao;
 import br.edu.ifs.coletaseletiva.entity.Morador;
 import br.edu.ifs.coletaseletiva.entity.Operador;
 import br.edu.ifs.coletaseletiva.entity.Solicitacao;
 import br.edu.ifs.coletaseletiva.enumeration.Perfil;
 import br.edu.ifs.coletaseletiva.enumeration.SituacaoSolicitacao;
+import br.edu.ifs.coletaseletiva.enumeration.Unidade;
 import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
 import br.edu.ifs.coletaseletiva.exception.ConflitoRegraException;
 import br.edu.ifs.coletaseletiva.exception.ConflitoVersaoException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
 import br.edu.ifs.coletaseletiva.exception.ParametroInvalidoException;
 import br.edu.ifs.coletaseletiva.form.AgendamentoForm;
+import br.edu.ifs.coletaseletiva.form.ConclusaoForm;
+import br.edu.ifs.coletaseletiva.form.ItemConclusaoForm;
 import br.edu.ifs.coletaseletiva.form.MotivoForm;
+import br.edu.ifs.coletaseletiva.form.VersaoForm;
 import br.edu.ifs.coletaseletiva.mapper.SolicitacaoMapper;
 import br.edu.ifs.coletaseletiva.repository.HistoricoRepository;
 import br.edu.ifs.coletaseletiva.repository.SolicitacaoRepository;
@@ -24,6 +29,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Mudanças de situação da solicitação (RN06). Cada ação é uma única transação: altera a solicitação e grava o
@@ -101,6 +113,45 @@ public class TransicaoSolicitacaoService {
                 OffsetDateTime.now(relogio), formulario.motivo(), null);
     }
 
+    /**
+     * RF13: o operador ativo do ponto inicia o recolhimento. Só AGENDADA -> EM_RECOLHIMENTO, e pode ser antes da data
+     * marcada: o enunciado não exige que o horário tenha chegado.
+     */
+    @Transactional
+    public SolicitacaoDetalheDTO iniciar(Ator ator, Integer id, VersaoForm formulario) {
+        Operador operador = operadorDoAtor(ator);
+        Solicitacao solicitacao = solicitacaoDoPonto(operador, id);
+
+        exigirSituacao(solicitacao, SituacaoSolicitacao.AGENDADA, SituacaoSolicitacao.EM_RECOLHIMENTO);
+        exigirVersao(solicitacao, formulario.versao());
+
+        return aplicar(solicitacao, SituacaoSolicitacao.EM_RECOLHIMENTO, Responsavel.de(operador),
+                OffsetDateTime.now(relogio), null, null);
+    }
+
+    /**
+     * RF13: o operador ativo do ponto conclui o recolhimento com a quantidade efetiva de cada item (zero para o item
+     * não recolhido, mas pelo menos uma positiva). Só EM_RECOLHIMENTO -> CONCLUIDA. Situação, quantidades, data da
+     * conclusão (do servidor, pelo relógio) e histórico mudam na mesma transação: se qualquer parte falhar, nada fica.
+     */
+    @Transactional
+    public SolicitacaoDetalheDTO concluir(Ator ator, Integer id, ConclusaoForm formulario) {
+        Operador operador = operadorDoAtor(ator);
+        Solicitacao solicitacao = solicitacaoDoPonto(operador, id);
+
+        // Regra só sobre o corpo (como a data passada do agendamento): 400 no campo itens.
+        if (formulario.itens().stream().noneMatch(i -> i.quantidadeEfetiva().signum() > 0)) {
+            throw new ParametroInvalidoException("itens", "erro.solicitacao.conclusao-sem-quantidade-positiva");
+        }
+        exigirSituacao(solicitacao, SituacaoSolicitacao.EM_RECOLHIMENTO, SituacaoSolicitacao.CONCLUIDA);
+        exigirVersao(solicitacao, formulario.versao());
+        registrarQuantidadesEfetivas(solicitacao, formulario.itens());
+
+        OffsetDateTime agora = OffsetDateTime.now(relogio);
+        solicitacao.setConcluidaEm(agora);
+        return aplicar(solicitacao, SituacaoSolicitacao.CONCLUIDA, Responsavel.de(operador), agora, null, null);
+    }
+
     // =====================================================================
     // apoio compartilhado pelas ações de situação
     // =====================================================================
@@ -149,6 +200,44 @@ public class TransicaoSolicitacaoService {
         if (solicitacao.getSituacao() != origem) {
             throw transicaoInvalida(solicitacao.getSituacao(), destino);
         }
+    }
+
+    /**
+     * A conclusão informa cada item da solicitação, exatamente uma vez (RF13). Valida tudo contra os itens gravados antes
+     * de alterar qualquer um. A regra "inteiro para peça" (RN02) usa a unidade copiada no item (ADR 0008), a fonte
+     * histórica, e não a unidade atual do cadastro do material.
+     */
+    private void registrarQuantidadesEfetivas(Solicitacao solicitacao, List<ItemConclusaoForm> enviados) {
+        Map<Integer, ItemSolicitacao> itens = solicitacao.getItens().stream()
+                .collect(Collectors.toMap(i -> i.getMaterial().getId(), Function.identity()));
+        Set<Integer> informados = new HashSet<>();
+
+        for (ItemConclusaoForm enviado : enviados) {
+            ItemSolicitacao item = itens.get(enviado.materialId());
+            if (item == null) {
+                // O id vai como texto: um Integer seria formatado pela mensagem com separador de milhar ("999.999").
+                throw new ConflitoRegraException("erro.solicitacao.conclusao-item-desconhecido",
+                        String.valueOf(enviado.materialId()));
+            }
+            String nome = item.getMaterial().getNome();
+            if (!informados.add(enviado.materialId())) {
+                throw new ConflitoRegraException("erro.solicitacao.material-repetido", nome);
+            }
+            if (item.getUnidadeCopia() == Unidade.UN && enviado.quantidadeEfetiva().stripTrailingZeros().scale() > 0) {
+                throw new ConflitoRegraException("erro.solicitacao.quantidade-inteira", nome);
+            }
+        }
+
+        String faltantes = itens.values().stream()
+                .filter(i -> !informados.contains(i.getMaterial().getId()))
+                .sorted(Comparator.comparing(i -> i.getMaterial().getId()))
+                .map(i -> i.getMaterial().getNome())
+                .collect(Collectors.joining(", "));
+        if (!faltantes.isEmpty()) {
+            throw new ConflitoRegraException("erro.solicitacao.conclusao-item-faltante", faltantes);
+        }
+
+        enviados.forEach(e -> itens.get(e.materialId()).setQuantidadeEfetiva(e.quantidadeEfetiva()));
     }
 
     private void exigirVersao(Solicitacao solicitacao, Integer versaoDoCliente) {
