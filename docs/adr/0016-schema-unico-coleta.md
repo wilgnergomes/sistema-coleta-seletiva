@@ -17,7 +17,7 @@ Foram consideradas as seguintes alternativas: manter tudo em `public`, o que mis
    - `spring.flyway.schemas=coleta`: o Flyway cria o schema se necessário, executa as migrações com ele como padrão e guarda nele a tabela `flyway_schema_history`;
    - `spring.jpa.properties.hibernate.default_schema=coleta`: as entidades apontam para o schema sem `@Table(schema = ...)`;
    - `currentSchema=coleta` na URL de conexão: consultas nativas e `JdbcTemplate` também enxergam o schema.
-3. As duas visões do DER continuam sendo uma divisão de documentação (ADR 0004) e não correspondem a schemas. Tabelas novas entram no mesmo schema.
+3. As duas visões do DER continuam sendo uma divisão de documentação (ADR 0004) e não correspondem a schemas. Tabelas novas entram no mesmo schema. *(Nota de 2026-11-08: o ADR 0004 foi substituído pelo [ADR 0025](0025-der-fisico-unico-e-completo.md), que adota um único DER; o schema único continua valendo.)*
 
 ## Consequências
 

@@ -151,6 +151,6 @@ O RNF04 não pertence a um único RF: a meta de 95% das consultas em até 2 segu
 
 ## Pendências fora da matriz
 
-- **DER:** atualizar a nota de `mat_tx_unidade` em `der-estrutural.dbml` com a restrição do ADR 0013 e regenerar a imagem, conforme o ADR 0003.
-- **Migração V2 com índices candidatos:** `iso_item_solicitacao (mat_nr_id)`, `his_historico (sol_nr_id, his_dt_data)` (ambos recomendados no ADR 0007 e ausentes na V1) e `mac_material_aceito (mat_nr_id)`. A chave primária de `mac_material_aceito` começa por `poc_nr_id` e atende mal as consultas só por material. Antes de incluir cada índice, confirmar o padrão das consultas e o plano de execução, e documentar a motivação.
+- **DER:** ✔ resolvido em 2026-11-08. O DER físico único (`der-unificado.dbml` e `der-unificado.svg`, ADR 0025) substituiu as duas visões e traz a nota do ADR 0013 em `mat_tx_unidade`.
+- **Migração V3 com índices candidatos (Issue #33):** `iso_item_solicitacao (mat_nr_id)`, `his_historico (sol_nr_id, his_dt_data)` (ambos recomendados no ADR 0007 e ausentes na V1) e `mac_material_aceito (mat_nr_id)`. A chave primária de `mac_material_aceito` começa por `poc_nr_id` e atende mal as consultas só por material. Antes de incluir cada índice, confirmar o padrão das consultas e o plano de execução, e documentar a motivação.
 

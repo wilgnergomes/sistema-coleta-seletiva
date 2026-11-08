@@ -2,7 +2,7 @@
 
 **Data:** 2026-10-11
 
-**Status:** Aceita
+**Status:** Substituída por ADR-0025
 
 ## Contexto
 
@@ -24,3 +24,7 @@ Ambas as visões terão seus próprios arquivos-fonte na linguagem DBML (ex.: `e
 - **Positivas:** redução da sobrecarga visual para entender o sistema; eliminação do cruzamento excessivo de linhas (grafo mais limpo); facilidade para apresentar, documentar e discutir o projeto em partes menores; maior flexibilidade para escalar a documentação se novos módulos (como faturamento ou rotas) forem adicionados no futuro.
 - **Negativas:** exigência de manter duas fontes de documentação (dois arquivos `.dbml` e duas imagens separadas) em vez de apenas uma; necessidade de navegar entre duas imagens para ter a visão global de todo o banco de dados.
 - **Cuidados:** será necessário ter atenção ao atualizar tabelas que aparecem como "referência" (stubs) na Visão Transacional. Se uma tabela estrutural (como `mor_morador`) sofrer mudança em sua Chave Primária, essa alteração deverá ser refletida manualmente em ambos os arquivos `.dbml` para manter a consistência da documentação.
+
+## Substituição
+
+Em 2026-11-08 esta decisão foi substituída pelo [ADR 0025](0025-der-fisico-unico-e-completo.md), que adota um único DER físico completo (`der-unificado.dbml` e `der-unificado.svg`). O texto acima foi preservado como registro histórico; os arquivos `der-estrutural.*` e `der-transacional.*` citados nele foram removidos e continuam disponíveis no histórico do Git.

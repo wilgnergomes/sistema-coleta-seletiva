@@ -1,0 +1,152 @@
+// =====================================================================
+// DER físico único e completo — Sistema Coleta Seletiva (ADR 0025)
+// Cadastros, catálogo, operação e fluxo de solicitações em um só diagrama:
+// 9 tabelas e 11 chaves estrangeiras, conforme as migrações Flyway V1 e V2.
+// Fonte do diagrama der-unificado.svg (exportado do dbdiagram.io, ADR 0003).
+// CHECKs e índices de desempenho ficam nas migrações Flyway (fonte da
+// verdade do banco); aqui aparecem apenas as unicidades e o índice já
+// existente da V1.
+// =====================================================================
+
+Project coleta_seletiva_completo {
+  database_type: 'PostgreSQL'
+  Note: 'DER físico único: cadastros, catálogo, operação e fluxo de solicitações. Regras de negócio detalhadas pertencem ao backend e às migrações Flyway.'
+}
+
+// CADASTROS
+Table mor_morador [headercolor: #3498db] {
+  mor_nr_id       integer      [pk, increment]
+  mor_tx_nome     varchar(80)  [not null]
+  mor_tx_email    varchar(150) [not null, note: 'Único; guardado normalizado (trim + minúsculas)']
+  mor_tx_fone     varchar(20)
+  mor_tx_situacao varchar(10)  [not null, default: 'ATIVO', note: 'ATIVO | INATIVO']
+
+  indexes {
+    mor_tx_email [unique, name: 'uq_mor_email']
+  }
+  Note: 'RF01, RN03. Morador vinculado a solicitações é inativado, nunca excluído.'
+}
+
+Table end_endereco [headercolor: #3498db] {
+  end_nr_id          integer      [pk, increment]
+  mor_nr_id          integer      [not null]
+  end_tx_logradouro  varchar(150) [not null]
+  end_tx_numero      varchar(10)  [not null, note: "Número ou 'S/N'. Sem valor padrão"]
+  end_tx_bairro      varchar(100) [not null]
+  end_tx_municipio   varchar(100) [not null]
+  end_tx_uf          varchar(2)   [not null]
+  end_tx_cep         varchar(8)   [not null, note: 'Somente dígitos']
+  end_tx_complemento varchar(100)
+  Note: 'RF02. Cada endereço pertence a um único morador.'
+}
+
+// CATÁLOGO E PONTOS DE COLETA
+Table mat_material [headercolor: #27ae60] {
+  mat_nr_id         integer       [pk, increment]
+  mat_tx_nome       varchar(80)   [not null, note: 'Único, sem diferenciar maiúsculas/minúsculas']
+  mat_tx_descricao  varchar(500)  [not null]
+  mat_tx_unidade    varchar(5)    [not null, note: 'KG | L | UN. Só pode mudar se o material não tiver item de solicitação nem vínculo com ponto (ADR 0013)']
+  mat_tx_orientacao varchar(1000) [not null]
+  mat_tx_situacao   varchar(10)   [not null, default: 'ATIVO', note: 'ATIVO | INATIVO']
+
+  indexes {
+    `lower(btrim(mat_tx_nome))` [unique, name: 'uq_mat_nome']
+  }
+  Note: 'RF03, RN02, RN03. A unidade de medida pertence ao material.'
+}
+
+Table poc_ponto_coleta [headercolor: #27ae60] {
+  poc_nr_id             integer      [pk, increment]
+  poc_tx_nome           varchar(120) [not null]
+  poc_tx_contato        varchar(150) [note: 'Opcional; se informado, não pode ser em branco']
+  poc_tx_horarios       varchar(500) [note: 'Opcional; texto descritivo']
+  poc_tx_situacao       varchar(10)  [not null, default: 'ATIVO', note: 'ATIVO | INATIVO']
+  poc_bl_rec_domiciliar boolean      [not null, default: false]
+  poc_tx_logradouro     varchar(150) [not null]
+  poc_tx_numero         varchar(10)  [not null, note: "Número ou 'S/N'. Sem valor padrão"]
+  poc_tx_bairro         varchar(100) [not null]
+  poc_tx_municipio      varchar(100) [not null]
+  poc_tx_uf             varchar(2)   [not null]
+  poc_tx_cep            varchar(8)   [not null, note: 'Somente dígitos']
+  poc_tx_complemento    varchar(100)
+  Note: 'RF04, RN03, RN05. Endereço embutido no cadastro do ponto.'
+}
+
+Table mac_material_aceito [headercolor: #27ae60] {
+  poc_nr_id          integer [not null, pk]
+  mat_nr_id          integer [not null, pk]
+  mac_tx_observacoes varchar(500)
+  mac_nr_limite      numeric(12,3) [note: 'Opcional; > 0; na unidade do material']
+  Note: 'RF05. Vínculo único ponto + material (PK composta).'
+}
+
+// OPERAÇÃO
+Table ope_operador [headercolor: #e67e22] {
+  ope_nr_id       integer      [pk, increment]
+  ope_tx_nome     varchar(80)  [not null]
+  ope_tx_email    varchar(150) [not null, note: 'Único; guardado normalizado (trim + minúsculas)']
+  ope_tx_situacao varchar(10)  [not null, default: 'ATIVO', note: 'ATIVO | INATIVO']
+  poc_nr_id       integer      [not null, note: 'Ponto de coleta ao qual o operador está vinculado']
+
+  indexes {
+    ope_tx_email [unique, name: 'uq_ope_email']
+    poc_nr_id [name: 'idx_ope_poc']
+  }
+  Note: 'RF07. Cada operador está vinculado a um único ponto de coleta.'
+}
+
+// SOLICITAÇÕES, ITENS E HISTÓRICO
+Table sol_solicitacao [headercolor: #c0392b] {
+  sol_nr_id             integer      [pk, increment]
+  sol_tx_protocolo      varchar(30)  [not null, note: 'Único']
+  mor_nr_id             integer      [not null]
+  poc_nr_id             integer      [not null]
+  sol_tx_endereco_copia varchar(500) [not null, note: 'Cópia do endereço no momento da solicitação (RN04)']
+  sol_tx_situacao       varchar(20)  [not null, default: 'SOLICITADA', note: 'SOLICITADA | AGENDADA | EM_RECOLHIMENTO | CONCLUIDA | RECUSADA | CANCELADA']
+  sol_dt_criacao        timestamptz  [not null, default: `now()`]
+  sol_dt_agendamento    timestamptz  [note: 'Agendamento vigente']
+  sol_dt_conclusao      timestamptz  [note: 'Preenchida somente em CONCLUIDA']
+  sol_tx_observacoes    varchar(500)
+  sol_nr_versao         integer      [not null, default: 0, note: 'Controle otimista (@Version, RN06)']
+
+  indexes {
+    sol_tx_protocolo [unique, name: 'uq_sol_protocolo']
+  }
+  Note: 'RF08-RF15, RN01-RN06. Criada junto com itens e histórico inicial, em uma única transação.'
+}
+
+Table iso_item_solicitacao [headercolor: #c0392b] {
+  sol_nr_id                  integer       [not null, pk]
+  mat_nr_id                  integer       [not null, pk]
+  iso_tx_copia_unidade       varchar(5)    [not null, note: 'Cópia da unidade do material (RN04)']
+  iso_nr_quantidade_estimada numeric(12,3) [not null, note: '> 0']
+  iso_nr_quantidade_efetiva  numeric(12,3) [note: 'Nula até a conclusão; 0 = item não recolhido']
+  Note: 'RF08, RF13, RN02, RN04. O mesmo material não repete na solicitação (PK composta).'
+}
+
+Table his_historico [headercolor: #c0392b] {
+  his_nr_id                    integer      [pk, increment]
+  sol_nr_id                    integer      [not null]
+  his_tx_situacao_anterior     varchar(20)  [note: 'Nula apenas no registro inicial']
+  his_tx_situacao_nova         varchar(20)  [not null]
+  his_dt_data                  timestamptz  [not null, default: `now()`]
+  mor_nr_id                    integer      [note: 'Responsável morador (exclusivo com ope_nr_id)']
+  ope_nr_id                    integer      [note: 'Responsável operador (exclusivo com mor_nr_id)']
+  his_tx_motivo                varchar(500) [note: 'Obrigatório em recusa, cancelamento, reagendamento e falha']
+  his_dt_agendamento           timestamptz  [note: 'Data agendada vigente nesta alteração']
+  his_tx_informacoes_tentativa varchar(500) [note: 'Somente tentativa sem sucesso']
+  Note: 'RF10-RF14, RN03. Reagendar mantém AGENDADA; por isso anterior e nova podem ser iguais.'
+}
+
+// RELACIONAMENTOS — 11 chaves estrangeiras, sem tabelas duplicadas
+Ref fk_end_mor: end_endereco.mor_nr_id > mor_morador.mor_nr_id [delete: restrict]
+Ref fk_mac_poc: mac_material_aceito.poc_nr_id > poc_ponto_coleta.poc_nr_id [delete: restrict]
+Ref fk_mac_mat: mac_material_aceito.mat_nr_id > mat_material.mat_nr_id [delete: restrict]
+Ref fk_ope_poc: ope_operador.poc_nr_id > poc_ponto_coleta.poc_nr_id [delete: restrict]
+Ref fk_sol_mor: sol_solicitacao.mor_nr_id > mor_morador.mor_nr_id [delete: restrict]
+Ref fk_sol_poc: sol_solicitacao.poc_nr_id > poc_ponto_coleta.poc_nr_id [delete: restrict]
+Ref fk_iso_sol: iso_item_solicitacao.sol_nr_id > sol_solicitacao.sol_nr_id [delete: restrict]
+Ref fk_iso_mat: iso_item_solicitacao.mat_nr_id > mat_material.mat_nr_id [delete: restrict]
+Ref fk_his_sol: his_historico.sol_nr_id > sol_solicitacao.sol_nr_id [delete: restrict]
+Ref fk_his_ope: his_historico.ope_nr_id > ope_operador.ope_nr_id [delete: restrict]
+Ref fk_his_mor: his_historico.mor_nr_id > mor_morador.mor_nr_id [delete: restrict]
