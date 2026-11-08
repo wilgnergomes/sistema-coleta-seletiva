@@ -8,6 +8,7 @@ import br.edu.ifs.coletaseletiva.enumeration.Perfil;
 import br.edu.ifs.coletaseletiva.enumeration.SituacaoCadastro;
 import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
+import br.edu.ifs.coletaseletiva.form.FiltroPontoColeta;
 import br.edu.ifs.coletaseletiva.form.PontoColetaForm;
 import br.edu.ifs.coletaseletiva.service.PontoColetaService;
 import org.junit.jupiter.api.Test;
@@ -113,8 +114,10 @@ class PontoColetaControllerTest {
 
     @Test
     void rf04_getListaEPublicaEAceitaFiltroDeSituacaoDoAdministrador() throws Exception {
-        when(service.listar(Optional.empty(), null, 0, 20)).thenReturn(new Pagina<>(List.of(ponto()), 0, 20, 1L, 1));
-        when(service.listar(Optional.of(ADMINISTRADOR), SituacaoCadastro.INATIVO, 0, 20))
+        when(service.listar(Optional.empty(), new FiltroPontoColeta(null, null, null, null, null), 0, 20))
+                .thenReturn(new Pagina<>(List.of(ponto()), 0, 20, 1L, 1));
+        when(service.listar(Optional.of(ADMINISTRADOR),
+                new FiltroPontoColeta(null, null, null, null, SituacaoCadastro.INATIVO), 0, 20))
                 .thenReturn(new Pagina<>(List.of(), 0, 20, 0L, 0));
 
         mockMvc.perform(get("/pontos-coleta"))
@@ -123,6 +126,39 @@ class PontoColetaControllerTest {
         mockMvc.perform(get("/pontos-coleta?situacao=INATIVO").header("X-Perfil", "ADMINISTRADOR"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElementos").value(0));
+    }
+
+    @Test
+    void rf06_filtrosDePesquisaSaoRepassadosAoService() throws Exception {
+        FiltroPontoColeta esperado = new FiltroPontoColeta("verde", "Lagarto", "Centro", 3, null);
+        when(service.listar(Optional.empty(), esperado, 1, 5)).thenReturn(new Pagina<>(List.of(ponto()), 1, 5, 6L, 2));
+
+        mockMvc.perform(get("/pontos-coleta?municipio=Lagarto&bairro=Centro&materialId=3&page=1&size=5")
+                        .param("nome", " verde "))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElementos").value(6));
+    }
+
+    @Test
+    void rf06_filtroEmBrancoVaiComoAusente() throws Exception {
+        when(service.listar(Optional.empty(), new FiltroPontoColeta(null, null, null, null, null), 0, 20))
+                .thenReturn(new Pagina<>(List.of(), 0, 20, 0L, 0));
+
+        mockMvc.perform(get("/pontos-coleta?municipio=").param("nome", "  ")).andExpect(status().isOk());
+    }
+
+    @Test
+    void rf06_filtrosInvalidosRetornam400NosDoisIdiomas() throws Exception {
+        String longo = "a".repeat(121);
+
+        mockMvc.perform(get("/pontos-coleta?nome=" + longo))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='nome')].mensagem").value("deve ter no máximo 120 caracteres"));
+        mockMvc.perform(get("/pontos-coleta?nome=" + longo).header("Accept-Language", "en"))
+                .andExpect(jsonPath("$.erros[?(@.campo=='nome')].mensagem").value("must have at most 120 characters"));
+        mockMvc.perform(get("/pontos-coleta?municipio=" + "b".repeat(101))).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/pontos-coleta?materialId=abc")).andExpect(status().isBadRequest());
+        verifyNoInteractions(service);
     }
 
     @Test
