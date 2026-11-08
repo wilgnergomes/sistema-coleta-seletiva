@@ -143,6 +143,20 @@ class SeedDemoIntegracaoTest {
     }
 
     @Test
+    void rf07_seedTemDoisOperadoresNoMesmoPontoEUmEmOutroComEmailNormalizado() {
+        assertEquals(3, contar("SELECT COUNT(*) FROM coleta.ope_operador"));
+        assertEquals(2, contar("""
+                SELECT MAX(qtd) FROM (SELECT COUNT(*) AS qtd FROM coleta.ope_operador GROUP BY poc_nr_id) t"""));
+        assertEquals(2, contar("SELECT COUNT(DISTINCT poc_nr_id) FROM coleta.ope_operador"));
+        assertEquals(0, contar(
+                "SELECT COUNT(*) FROM coleta.ope_operador WHERE ope_tx_email <> LOWER(BTRIM(ope_tx_email))"));
+
+        flyway.migrate();
+
+        assertEquals(3, contar("SELECT COUNT(*) FROM coleta.ope_operador"));
+    }
+
+    @Test
     void rf01_oSeedNaoApareceNoHistoricoDoFlyway() {
         assertEquals(0, contar("SELECT COUNT(*) FROM coleta.flyway_schema_history WHERE description ILIKE '%morador%'"));
         assertEquals(0, contar("SELECT COUNT(*) FROM coleta.flyway_schema_history WHERE description ILIKE '%endere%'"));
