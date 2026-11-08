@@ -305,6 +305,7 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 - [x] Transições de situação e histórico (RF10 a RF14)
 - [x] Resumo gerencial (RF15)
 - [x] Bloqueio da inativação de ponto e da remoção de vínculo com solicitações abertas (RN05)
+- [x] Dataset de desempenho e medição inicial do RNF04 (Issue #58, etapa 1; veja [docs/desempenho](docs/desempenho/README.md))
 - [ ] Testes de integração e de concorrência
 - [ ] Interface web responsiva (segunda unidade)
 
