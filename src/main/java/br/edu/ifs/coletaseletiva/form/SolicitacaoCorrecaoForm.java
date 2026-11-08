@@ -17,7 +17,7 @@ public record SolicitacaoCorrecaoForm(
         String observacoes,
 
         @NotEmpty(message = "{solicitacao.itens.obrigatorio}")
-        List<@Valid ItemForm> itens,
+        List<@NotNull(message = "{solicitacao.item.nulo}") @Valid ItemForm> itens,
 
         @NotNull(message = "{solicitacao.versao.obrigatoria}")
         @Min(value = 0, message = "{solicitacao.versao.minimo}")
