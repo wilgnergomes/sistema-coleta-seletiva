@@ -4,6 +4,7 @@ import br.edu.ifs.coletaseletiva.dto.HistoricoDTO;
 import br.edu.ifs.coletaseletiva.dto.ItemDTO;
 import br.edu.ifs.coletaseletiva.dto.ResponsavelDTO;
 import br.edu.ifs.coletaseletiva.dto.SolicitacaoDetalheDTO;
+import br.edu.ifs.coletaseletiva.dto.SolicitacaoResumoDTO;
 import br.edu.ifs.coletaseletiva.entity.Historico;
 import br.edu.ifs.coletaseletiva.entity.ItemSolicitacao;
 import br.edu.ifs.coletaseletiva.entity.Solicitacao;
@@ -39,6 +40,23 @@ public class SolicitacaoMapper {
                         .map(this::paraItem)
                         .toList(),
                 historico.stream().map(this::paraHistorico).toList()
+        );
+    }
+
+    /** Só lê colunas da própria solicitação e os ids das relações, sem carregar itens nem histórico. */
+    public SolicitacaoResumoDTO paraResumo(Solicitacao s) {
+        return new SolicitacaoResumoDTO(
+                s.getId(),
+                s.getProtocolo(),
+                s.getMorador().getId(),
+                s.getPonto().getId(),
+                s.getEnderecoCopia(),
+                s.getSituacao(),
+                s.getCriadaEm(),
+                s.getAgendadaPara(),
+                s.getConcluidaEm(),
+                s.getObservacoes(),
+                s.getVersao()
         );
     }
 

@@ -101,6 +101,14 @@ public class TratadorGlobalExceptions {
                 traduzir("erro.geral.parametro-invalido"), erros);
     }
 
+    /** Combinação de parâmetros inválida, detectada no service (ex.: período com fim antes do início). */
+    @ExceptionHandler(ParametroInvalidoException.class)
+    public ResponseEntity<RespostaErro> parametrosInvalidos(ParametroInvalidoException excecao) {
+        List<ErroCampo> erros = List.of(new ErroCampo(excecao.getCampo(), traduzir(excecao)));
+        return montar(HttpStatus.BAD_REQUEST, CodigoErro.VALIDACAO,
+                traduzir("erro.geral.parametro-invalido"), erros);
+    }
+
     /** Parâmetro obrigatório da URL não foi enviado. */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<RespostaErro> parametroAusente(MissingServletRequestParameterException excecao) {
