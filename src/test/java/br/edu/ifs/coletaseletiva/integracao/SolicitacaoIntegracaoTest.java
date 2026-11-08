@@ -183,6 +183,34 @@ class SolicitacaoIntegracaoTest extends IntegracaoBase {
     }
 
     @Test
+    void rf08_elementoNuloNaListaDeItensRetorna400EmVezDe500SemGravarNada() throws Exception {
+        criar(maria, "{\"pontoId\": " + ponto + ", \"enderecoId\": " + enderecoMaria + ", \"itens\": [null]}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.codigo").value("VALIDACAO"))
+                .andExpect(jsonPath("$.erros[?(@.campo=='itens[0]')].mensagem").value("o item não pode ser nulo"));
+        criar(maria, "{\"pontoId\": " + ponto + ", \"enderecoId\": " + enderecoMaria + ", \"itens\": ["
+                + item(papel, "1") + ", null]}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='itens[1]')]").exists());
+
+        naoGravouNada();
+    }
+
+    @Test
+    void rf08_elementoNuloNaListaDeItensDaCorrecaoRetorna400EmVezDe500ENaoAlteraNada() throws Exception {
+        int id = criarValida();
+
+        corrigir(id, maria, "{\"enderecoId\": " + enderecoMaria + ", \"versao\": 0, \"itens\": [null]}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.codigo").value("VALIDACAO"))
+                .andExpect(jsonPath("$.erros[?(@.campo=='itens[0]')]").exists());
+
+        assertEquals(0, jdbc.queryForObject(
+                "SELECT sol_nr_versao FROM coleta.sol_solicitacao WHERE sol_nr_id = ?", Integer.class, id));
+        assertEquals(2, c.contar("iso_item_solicitacao"));
+    }
+
+    @Test
     void rf08_pontoMaterialOuEnderecoInexistentesOuDeOutroMoradorRetornam404() throws Exception {
         int joao = c.morador("joao@exemplo.com");
         int enderecoJoao = c.endereco(joao);

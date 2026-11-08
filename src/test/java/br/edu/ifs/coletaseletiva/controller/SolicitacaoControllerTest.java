@@ -100,6 +100,23 @@ class SolicitacaoControllerTest {
     }
 
     @Test
+    void rf08_elementoNuloEmItensRetorna400NoPostEnoPutSemChamarOService() throws Exception {
+        postar("{\"pontoId\": 1, \"enderecoId\": 3, \"itens\": [null]}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.codigo").value("VALIDACAO"))
+                .andExpect(jsonPath("$.erros[?(@.campo=='itens[0]')].mensagem").value("o item não pode ser nulo"));
+        postar("{\"pontoId\": 1, \"enderecoId\": 3, \"itens\": [null]}", "en")
+                .andExpect(jsonPath("$.erros[?(@.campo=='itens[0]')].mensagem").value("the item cannot be null"));
+        mockMvc.perform(put("/solicitacoes/9").header("X-Perfil", "MORADOR").header("X-Usuario-Id", "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"enderecoId\": 3, \"versao\": 0, \"itens\": [null]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='itens[0]')]").exists());
+
+        verifyNoInteractions(service);
+    }
+
+    @Test
     void rf08_validacaoSaiEmInglesComAcceptLanguage() throws Exception {
         postar("{\"pontoId\": 1, \"enderecoId\": 3, \"itens\": []}", "en")
                 .andExpect(jsonPath("$.erros[?(@.campo=='itens')].mensagem").value("provide at least one item"));
