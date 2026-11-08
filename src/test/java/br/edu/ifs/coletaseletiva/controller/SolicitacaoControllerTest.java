@@ -2,7 +2,12 @@ package br.edu.ifs.coletaseletiva.controller;
 
 import br.edu.ifs.coletaseletiva.config.Ator;
 import br.edu.ifs.coletaseletiva.dto.ItemDTO;
+import br.edu.ifs.coletaseletiva.dto.Pagina;
 import br.edu.ifs.coletaseletiva.dto.SolicitacaoDetalheDTO;
+import br.edu.ifs.coletaseletiva.dto.SolicitacaoResumoDTO;
+import br.edu.ifs.coletaseletiva.exception.ParametroInvalidoException;
+import br.edu.ifs.coletaseletiva.form.FiltroSolicitacao;
+import org.mockito.ArgumentCaptor;
 import br.edu.ifs.coletaseletiva.enumeration.SituacaoSolicitacao;
 import br.edu.ifs.coletaseletiva.enumeration.Unidade;
 import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
@@ -20,10 +25,14 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -122,6 +131,66 @@ class SolicitacaoControllerTest {
         mockMvc.perform(get("/solicitacoes/9").header("X-Perfil", "ADMINISTRADOR").header("Accept-Language", "en"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.mensagem").value("Request not found."));
+    }
+
+    // ---------- RF09: listagem ----------
+
+    @Test
+    void rf09_listagemRepassaOsFiltrosEDevolveAPagina() throws Exception {
+        var resumo = new SolicitacaoResumoDTO(9, "SOL-20261107-ABC234", 1, 1, "Rua A, 1", SituacaoSolicitacao.AGENDADA,
+                OffsetDateTime.now(), null, null, null, 2);
+        when(service.listar(any(Ator.class), any(FiltroSolicitacao.class), eq(1), eq(5)))
+                .thenReturn(new Pagina<>(List.of(resumo), 1, 5, 6, 2));
+
+        mockMvc.perform(get("/solicitacoes").header("X-Perfil", "ADMINISTRADOR")
+                        .param("situacao", "AGENDADA").param("pontoId", "3")
+                        .param("de", "2026-11-01").param("ate", "2026-11-30")
+                        .param("page", "1").param("size", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo[0].protocolo").value("SOL-20261107-ABC234"))
+                .andExpect(jsonPath("$.conteudo[0].itens").doesNotExist())
+                .andExpect(jsonPath("$.totalElementos").value(6))
+                .andExpect(jsonPath("$.totalPaginas").value(2));
+
+        ArgumentCaptor<FiltroSolicitacao> filtro = ArgumentCaptor.forClass(FiltroSolicitacao.class);
+        verify(service).listar(any(Ator.class), filtro.capture(), eq(1), eq(5));
+        assertEquals(new FiltroSolicitacao(SituacaoSolicitacao.AGENDADA, 3,
+                LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30)), filtro.getValue());
+    }
+
+    @Test
+    void rf09_listagemRejeitaEntradaInvalidaSemChamarOService() throws Exception {
+        mockMvc.perform(get("/solicitacoes").header("X-Perfil", "ADMINISTRADOR").param("situacao", "XYZ"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.codigo").value("VALOR_INVALIDO"));
+        mockMvc.perform(get("/solicitacoes").header("X-Perfil", "ADMINISTRADOR").param("de", "01/11/2026"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.codigo").value("VALIDACAO"));
+        mockMvc.perform(get("/solicitacoes").header("X-Perfil", "ADMINISTRADOR").param("size", "101"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/solicitacoes").header("X-Perfil", "ADMINISTRADOR").param("page", "-1"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void rf09_periodoInvertidoRetorna400ComOCampoAteEMensagemNoIdioma() throws Exception {
+        when(service.listar(any(Ator.class), any(FiltroSolicitacao.class), eq(0), eq(20)))
+                .thenThrow(new ParametroInvalidoException("ate", "erro.solicitacao.periodo-invalido"));
+
+        mockMvc.perform(get("/solicitacoes").header("X-Perfil", "ADMINISTRADOR").header("Accept-Language", "en"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[0].campo").value("ate"))
+                .andExpect(jsonPath("$.erros[0].mensagem").value("The end date cannot be earlier than the start date."));
+    }
+
+    @Test
+    void rf09_listagemSemAtorOuComAtorSemPermissaoRetorna403() throws Exception {
+        mockMvc.perform(get("/solicitacoes")).andExpect(status().isForbidden());
+
+        when(service.listar(any(Ator.class), any(FiltroSolicitacao.class), eq(0), eq(20)))
+                .thenThrow(new AcessoNegadoException("erro.operador.usuario-inexistente-ou-inativo"));
+        mockMvc.perform(get("/solicitacoes").header("X-Perfil", "OPERADOR").header("X-Usuario-Id", "7"))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.codigo").value("ACESSO_NEGADO"));
     }
 
     @Test

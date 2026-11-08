@@ -24,9 +24,9 @@ info:
     **Idioma (ADR 0023).** As mensagens de erro e de validação saem em português do Brasil
     (padrão) ou em inglês, conforme o cabeçalho `Accept-Language`. Os endpoints passam a
     documentar o cabeçalho conforme cada funcionalidade recebe suas mensagens nos dois idiomas
-    (hoje, RF01 a RF08).
+    (hoje, RF01 a RF09).
 
-    **Períodos (ADR 0014, proposta).** Os filtros `de` e `ate` são datas no fuso de
+    **Períodos (ADR 0014).** Os filtros `de` e `ate` são datas no fuso de
     negócio (America/Sao_Paulo). O intervalo é semiaberto: do início do dia `de`
     (inclusive) até o início do dia seguinte a `ate` (exclusive).
 
@@ -620,9 +620,11 @@ paths:
       tags: [Solicitações]
       summary: Consulta solicitações com filtros (RF09)
       description: |
-        O resultado respeita o contexto do ator: o morador vê as suas, o operador vê as do seu
-        ponto e o administrador vê todas. O filtro de período usa a data de criação
-        (ADR 0014, proposta).
+        O resultado respeita o contexto do ator: o morador (ativo) vê as suas, o operador (existente
+        e ativo) vê as do ponto ao qual está vinculado e o administrador vê todas. Os filtros se
+        somam ao contexto e nunca o ampliam. O filtro de período usa a data de criação
+        (ADR 0014); `ate` anterior a `de` é 400. Ordenação: da mais recente para a mais antiga.
+        A lista traz o resumo; itens e histórico ficam em `GET /solicitacoes/{id}`.
       operationId: listarSolicitacoes
       parameters:
         - name: situacao
@@ -879,7 +881,7 @@ paths:
         Dois blocos. (1) Número de solicitações por situação, com filtro de período pela data de
         criação. (2) Quantidades efetivamente recolhidas por material e unidade, somando só
         solicitações CONCLUIDA, com filtro de período pela data de conclusão. Unidades diferentes
-        nunca são somadas. Datas de referência a confirmar (ADR 0014, proposta).
+        nunca são somadas. Datas de referência definidas no ADR 0014.
       operationId: resumoGerencial
       parameters:
         - { $ref: '#/components/parameters/De' }

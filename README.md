@@ -300,7 +300,7 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 - [x] Vínculo de materiais aos pontos de coleta (RF05)
 - [x] Cadastro de operadores e vínculo com os pontos (RF07)
 - [x] Pesquisa de pontos e materiais com filtros e paginação (RF06)
-- [ ] Consultas de solicitações com filtros e paginação
+- [x] Consultas de solicitações com filtros e paginação (RF09)
 - [x] Solicitação de recolhimento (compatibilidade, itens e protocolo) (RF08)
 - [ ] Transições de situação e histórico
 - [ ] Resumo gerencial

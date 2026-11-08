@@ -1,7 +1,10 @@
 package br.edu.ifs.coletaseletiva.service;
 
 import br.edu.ifs.coletaseletiva.config.Ator;
+import br.edu.ifs.coletaseletiva.config.FusoNegocio;
+import br.edu.ifs.coletaseletiva.dto.Pagina;
 import br.edu.ifs.coletaseletiva.dto.SolicitacaoDetalheDTO;
+import br.edu.ifs.coletaseletiva.dto.SolicitacaoResumoDTO;
 import br.edu.ifs.coletaseletiva.entity.Endereco;
 import br.edu.ifs.coletaseletiva.entity.Historico;
 import br.edu.ifs.coletaseletiva.entity.ItemSolicitacao;
@@ -20,6 +23,8 @@ import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
 import br.edu.ifs.coletaseletiva.exception.ConflitoRegraException;
 import br.edu.ifs.coletaseletiva.exception.ConflitoVersaoException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
+import br.edu.ifs.coletaseletiva.exception.ParametroInvalidoException;
+import br.edu.ifs.coletaseletiva.form.FiltroSolicitacao;
 import br.edu.ifs.coletaseletiva.form.ItemForm;
 import br.edu.ifs.coletaseletiva.form.SolicitacaoCorrecaoForm;
 import br.edu.ifs.coletaseletiva.form.SolicitacaoForm;
@@ -31,9 +36,14 @@ import br.edu.ifs.coletaseletiva.repository.MaterialRepository;
 import br.edu.ifs.coletaseletiva.repository.MoradorRepository;
 import br.edu.ifs.coletaseletiva.repository.PontoColetaRepository;
 import br.edu.ifs.coletaseletiva.repository.SolicitacaoRepository;
+import br.edu.ifs.coletaseletiva.repository.SolicitacaoSpecifications;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -73,6 +83,7 @@ public class SolicitacaoService {
     private final MoradorService moradorService;
     private final OperadorService operadorService;
     private final SolicitacaoMapper mapper;
+    private final FusoNegocio fusoNegocio;
     private final EntityManager entityManager;
 
     private final SecureRandom aleatorio = new SecureRandom();
@@ -134,6 +145,33 @@ public class SolicitacaoService {
             throw new NaoEncontradoException("erro.solicitacao.nao-encontrada");
         }
         return detalhe(solicitacao);
+    }
+
+    /**
+     * Consulta paginada (RF09). O contexto do ator é uma condição fixa do WHERE: o morador só enxerga as
+     * suas, o operador ativo só as do ponto ao qual está vinculado no banco (ADR 0019) e o administrador
+     * todas. Os filtros do usuário se somam a essa condição, nunca a substituem.
+     */
+    @Transactional(readOnly = true)
+    public Pagina<SolicitacaoResumoDTO> listar(Ator ator, FiltroSolicitacao filtro, int page, int size) {
+        Specification<Solicitacao> contexto = switch (ator.perfil()) {
+            case ADMINISTRADOR -> SolicitacaoSpecifications.qualquer();
+            case MORADOR -> {
+                moradorService.autorizarAcesso(ator, ator.usuarioId());
+                yield SolicitacaoSpecifications.doMorador(ator.usuarioId());
+            }
+            case OPERADOR -> SolicitacaoSpecifications.doPonto(
+                    operadorService.autorizarOperador(ator).getPonto().getId());
+        };
+        if (filtro.de() != null && filtro.ate() != null && filtro.ate().isBefore(filtro.de())) {
+            throw new ParametroInvalidoException("ate", "erro.solicitacao.periodo-invalido");
+        }
+
+        // Mais recentes primeiro; o id desempata solicitações criadas no mesmo instante e deixa a página estável.
+        PageRequest paginacao = PageRequest.of(page, size, Sort.by(Sort.Order.desc("criadaEm"), Sort.Order.desc("id")));
+        Page<Solicitacao> pagina = repository.findAll(
+                SolicitacaoSpecifications.de(filtro, fusoNegocio).and(contexto), paginacao);
+        return Pagina.de(pagina.map(mapper::paraResumo));
     }
 
     // =====================================================================
