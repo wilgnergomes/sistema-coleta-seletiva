@@ -1,6 +1,7 @@
 package br.edu.ifs.coletaseletiva.service;
 
 import br.edu.ifs.coletaseletiva.config.Ator;
+import br.edu.ifs.coletaseletiva.dto.MaterialAceitoDTO;
 import br.edu.ifs.coletaseletiva.dto.Pagina;
 import br.edu.ifs.coletaseletiva.dto.PontoColetaDTO;
 import br.edu.ifs.coletaseletiva.entity.PontoColeta;
@@ -9,7 +10,9 @@ import br.edu.ifs.coletaseletiva.enumeration.SituacaoCadastro;
 import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
 import br.edu.ifs.coletaseletiva.form.PontoColetaForm;
+import br.edu.ifs.coletaseletiva.mapper.MaterialAceitoMapper;
 import br.edu.ifs.coletaseletiva.mapper.PontoColetaMapper;
+import br.edu.ifs.coletaseletiva.repository.MaterialAceitoRepository;
 import br.edu.ifs.coletaseletiva.repository.PontoColetaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,19 +22,25 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PontoColetaService {
 
     private final PontoColetaRepository repository;
+    private final MaterialAceitoRepository vinculoRepository;
     private final PontoColetaMapper mapper;
+    private final MaterialAceitoMapper vinculoMapper;
 
     @Transactional
     public PontoColetaDTO criar(Ator ator, PontoColetaForm formulario) {
         exigirAdministrador(ator);
-        return mapper.paraDTO(repository.save(mapper.paraEntidade(normalizar(formulario))));
+        PontoColeta salvo = repository.save(mapper.paraEntidade(normalizar(formulario)));
+        return mapper.paraDTO(salvo, materiaisDo(salvo.getId()));
     }
 
     /** Público, morador e operador: só pontos ATIVOS. Administrador: todos, com filtro por situação. */
@@ -43,7 +52,10 @@ public class PontoColetaService {
         Page<PontoColeta> pontos = (filtro == null)
                 ? repository.findAll(paginacao)
                 : repository.findBySituacao(filtro, paginacao);
-        return Pagina.de(pontos.map(mapper::paraDTO));
+
+        // Uma única consulta traz os materiais de todos os pontos da página (evita o "N+1").
+        Map<Integer, List<MaterialAceitoDTO>> materiaisPorPonto = materiaisDosPontos(pontos.getContent());
+        return Pagina.de(pontos.map(p -> mapper.paraDTO(p, materiaisPorPonto.getOrDefault(p.getId(), List.of()))));
     }
 
     @Transactional(readOnly = true)
@@ -52,7 +64,7 @@ public class PontoColetaService {
         if (ponto.getSituacao() == SituacaoCadastro.INATIVO && !ehAdministrador(ator)) {
             throw new NaoEncontradoException("erro.ponto.nao-encontrado");
         }
-        return mapper.paraDTO(ponto);
+        return mapper.paraDTO(ponto, materiaisDo(id));
     }
 
     @Transactional
@@ -61,7 +73,7 @@ public class PontoColetaService {
         PontoColeta ponto = buscarOuFalhar(id);
         // O bloqueio da inativação com solicitações abertas (RN05) entra no ciclo das solicitações.
         mapper.atualizar(ponto, normalizar(formulario));
-        return mapper.paraDTO(repository.save(ponto));
+        return mapper.paraDTO(repository.save(ponto), materiaisDo(id));
     }
 
     // ---------- apoio ----------
@@ -69,6 +81,22 @@ public class PontoColetaService {
     private PontoColeta buscarOuFalhar(Integer id) {
         return repository.findById(id)
                 .orElseThrow(() -> new NaoEncontradoException("erro.ponto.nao-encontrado"));
+    }
+
+    private List<MaterialAceitoDTO> materiaisDo(Integer pontoId) {
+        return vinculoRepository.findByPontoIdOrderByMaterialId(pontoId).stream()
+                .map(vinculoMapper::paraDTO)
+                .toList();
+    }
+
+    private Map<Integer, List<MaterialAceitoDTO>> materiaisDosPontos(List<PontoColeta> pontos) {
+        if (pontos.isEmpty()) {
+            return Map.of();
+        }
+        List<Integer> ids = pontos.stream().map(PontoColeta::getId).toList();
+        return vinculoRepository.findByPontoIdInOrderByMaterialId(ids).stream()
+                .collect(Collectors.groupingBy(v -> v.getId().getPontoId(),
+                        Collectors.mapping(vinculoMapper::paraDTO, Collectors.toList())));
     }
 
     /** Contato e horários em branco viram nulos (o banco recusa texto vazio); o endereço segue o ADR 0005. */
