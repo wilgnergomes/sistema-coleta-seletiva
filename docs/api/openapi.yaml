@@ -24,7 +24,7 @@ info:
     **Idioma (ADR 0023).** As mensagens de erro e de validação saem em português do Brasil
     (padrão) ou em inglês, conforme o cabeçalho `Accept-Language`. Os endpoints passam a
     documentar o cabeçalho conforme cada funcionalidade recebe suas mensagens nos dois idiomas
-    (hoje, RF01 a RF10).
+    (hoje, RF01 a RF11).
 
     **Períodos (ADR 0014).** Os filtros `de` e `ate` são datas no fuso de
     negócio (America/Sao_Paulo). O intervalo é semiaberto: do início do dia `de`
@@ -723,10 +723,19 @@ paths:
   /solicitacoes/{id}/recusa:
     parameters:
       - { $ref: '#/components/parameters/Id' }
+      - { $ref: '#/components/parameters/AcceptLanguage' }
     post:
       tags: [Situação da solicitação]
       summary: Recusa a solicitação (RF11)
-      description: Operador do ponto. Só em SOLICITADA. O motivo é obrigatório.
+      description: |
+        Só o operador ativo do ponto da solicitação (o responsável do histórico vem do ator, nunca do
+        corpo). Só a partir de SOLICITADA; RECUSADA é situação final. O `motivo` é obrigatório: ausente,
+        vazio, só com espaços ou com mais de 500 caracteres é 400 no campo `motivo`, e o texto é guardado
+        sem os espaços das pontas. Muda a situação para RECUSADA e grava o histórico (com o motivo e o
+        operador) na mesma transação, somando 1 à versão; o morador vê a recusa e o motivo no histórico
+        do `GET /solicitacoes/{id}`. Perfil sem permissão (morador, administrador) ou operador inexistente
+        ou inativo: 403. Solicitação inexistente ou de outro ponto: 404. Fora de SOLICITADA ou versão
+        diferente da atual: 409.
       operationId: recusarSolicitacao
       requestBody:
         required: true
@@ -1329,7 +1338,7 @@ components:
       type: object
       required: [motivo, versao]
       properties:
-        motivo: { type: string, minLength: 1, maxLength: 500 }
+        motivo: { type: string, minLength: 1, maxLength: 500, description: 'Justificativa obrigatória; texto só com espaços não conta.' }
         versao: { type: integer, minimum: 0 }
     ConclusaoEntrada:
       type: object
