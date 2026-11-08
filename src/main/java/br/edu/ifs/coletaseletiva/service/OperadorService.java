@@ -79,6 +79,17 @@ public class OperadorService {
         return mapper.paraDTO(repository.save(operador));
     }
 
+    /**
+     * Confere o operador que age como ator (ADR 0019): ele precisa existir e estar ATIVO. O ponto dele
+     * é o que está no banco, nunca um valor vindo do cliente.
+     */
+    @Transactional(readOnly = true)
+    public Operador autorizarOperador(Ator ator) {
+        return repository.findById(ator.usuarioId())
+                .filter(o -> o.getSituacao() == br.edu.ifs.coletaseletiva.enumeration.SituacaoCadastro.ATIVO)
+                .orElseThrow(() -> new AcessoNegadoException("erro.operador.usuario-inexistente-ou-inativo"));
+    }
+
     // ---------- apoio ----------
 
     private Operador buscarOuFalhar(Integer id) {
