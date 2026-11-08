@@ -24,7 +24,7 @@ info:
     **Idioma (ADR 0023).** As mensagens de erro e de validação saem em português do Brasil
     (padrão) ou em inglês, conforme o cabeçalho `Accept-Language`. Os endpoints passam a
     documentar o cabeçalho conforme cada funcionalidade recebe suas mensagens nos dois idiomas
-    (hoje, RF01 a RF07).
+    (hoje, RF01 a RF08).
 
     **Períodos (ADR 0014, proposta).** Os filtros `de` e `ate` são datas no fuso de
     negócio (America/Sao_Paulo). O intervalo é semiaberto: do início do dia `de`
@@ -580,6 +580,8 @@ paths:
 
   # ----------------------------------------------- RF08 (RN04) e RF09
   /solicitacoes:
+    parameters:
+      - { $ref: '#/components/parameters/AcceptLanguage' }
     post:
       tags: [Solicitações]
       summary: Cria uma solicitação de recolhimento (RF08)
@@ -644,6 +646,7 @@ paths:
   /solicitacoes/{id}:
     parameters:
       - { $ref: '#/components/parameters/Id' }
+      - { $ref: '#/components/parameters/AcceptLanguage' }
     get:
       tags: [Solicitações]
       summary: Consulta os detalhes de uma solicitação (RF09)

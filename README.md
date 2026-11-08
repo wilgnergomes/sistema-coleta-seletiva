@@ -301,7 +301,7 @@ Esta visão detalha o fluxo principal e o histórico de ações.
 - [x] Cadastro de operadores e vínculo com os pontos (RF07)
 - [x] Pesquisa de pontos e materiais com filtros e paginação (RF06)
 - [ ] Consultas de solicitações com filtros e paginação
-- [ ] Solicitação de recolhimento (compatibilidade, itens e protocolo)
+- [x] Solicitação de recolhimento (compatibilidade, itens e protocolo) (RF08)
 - [ ] Transições de situação e histórico
 - [ ] Resumo gerencial
 - [ ] Testes de integração e de concorrência
