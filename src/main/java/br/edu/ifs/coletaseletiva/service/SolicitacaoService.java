@@ -68,7 +68,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SolicitacaoService {
 
-    private static final int LIMITE_ENDERECO_COPIA = 400;
     private static final String ALFABETO_PROTOCOLO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final int TENTATIVAS_PROTOCOLO = 5;
     private static final DateTimeFormatter DATA_PROTOCOLO = DateTimeFormatter.ofPattern("yyyyMMdd");
@@ -307,18 +306,14 @@ public class SolicitacaoService {
     }
 
     /**
-     * Texto único do endereço (ADR 0008). A coluna guarda até 400 caracteres e o cadastro admite mais no pior caso:
-     * em vez de cortar o texto em silêncio e perder dados do histórico, o pedido é recusado.
+     * Texto único do endereço (ADR 0008). Com todos os campos no limite do cadastro ele tem 489 caracteres, e a
+     * coluna guarda 500, então a cópia sempre cabe inteira.
      */
     private String copiarEndereco(Endereco e) {
         String complemento = (e.getComplemento() == null || e.getComplemento().isBlank())
                 ? "" : " (" + e.getComplemento() + ")";
-        String texto = e.getLogradouro() + ", " + e.getNumero() + complemento + " - " + e.getBairro()
+        return e.getLogradouro() + ", " + e.getNumero() + complemento + " - " + e.getBairro()
                 + " - " + e.getMunicipio() + "/" + e.getUf() + " - CEP " + e.getCep();
-        if (texto.length() > LIMITE_ENDERECO_COPIA) {
-            throw new ConflitoRegraException("erro.solicitacao.endereco-muito-longo", LIMITE_ENDERECO_COPIA);
-        }
-        return texto;
     }
 
     /** SOL-AAAAMMDD-XXXXXX: data e 6 caracteres aleatórios; tenta de novo se já existir. */

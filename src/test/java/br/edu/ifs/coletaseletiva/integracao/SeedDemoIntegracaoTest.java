@@ -161,7 +161,8 @@ class SeedDemoIntegracaoTest {
     @Test
     void rf01_oSeedNaoApareceNoHistoricoDoFlyway() {
         assertEquals(0, contar("SELECT COUNT(*) FROM coleta.flyway_schema_history WHERE description ILIKE '%morador%'"));
-        assertEquals(0, contar("SELECT COUNT(*) FROM coleta.flyway_schema_history WHERE description ILIKE '%endere%'"));
+        assertEquals(0, contar(
+                "SELECT COUNT(*) FROM coleta.flyway_schema_history WHERE script ILIKE '%afterMigrate%' OR script ILIKE '%seed%'"));
     }
 
     @Test

@@ -44,7 +44,7 @@ Table mat_material [headercolor: #27ae60] {
   mat_nr_id         integer       [pk, increment]
   mat_tx_nome       varchar(80)   [not null, note: 'Único, sem diferenciar maiúsculas/minúsculas']
   mat_tx_descricao  varchar(500)  [not null]
-  mat_tx_unidade    varchar(5)    [not null, note: 'KG | L | UN']
+  mat_tx_unidade    varchar(5)    [not null, note: 'KG | L | UN. Só pode mudar se o material não tiver item de solicitação nem vínculo com ponto (ADR 0013)']
   mat_tx_orientacao varchar(1000) [not null]
   mat_tx_situacao   varchar(10)   [not null, default: 'ATIVO', note: 'ATIVO | INATIVO']
 

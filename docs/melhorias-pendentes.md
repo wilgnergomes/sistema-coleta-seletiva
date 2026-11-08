@@ -23,7 +23,7 @@ Também entram aqui os defeitos confirmados, as melhorias opcionais e as hipóte
 
 ## Funcionalidades
 
-- [ ] **Cópia do endereço limitada a 400 caracteres (decisão aprovada, implementação pendente na Issue #33).** `sol_tx_endereco_copia` guarda até 400 caracteres, mas o endereço cadastrado pode somar 470 só de dados (150 + 10 + 100 + 100 + 2 + 8 + 100) e cerca de 490 com o formato do texto. Para não truncar o histórico (ADR 0008), o RF08 **recusa** o pedido com 409 quando o texto passa de 400, e continua assim até a V2. **Aprovado em 2026-11-08:** ampliar a coluna para 500 caracteres em uma migração V2, sem editar a V1, junto da Issue #33 (que registra a compatibilidade com os limites do endereço, o DER e a documentação). Origem: RF08, 2026-11-07.
+- [x] **Cópia do endereço limitada a 400 caracteres.** Resolvida em 2026-11-08 pela migração `V2__ampliar_copia_do_endereco.sql` (coluna de 500 caracteres; o máximo calculado é 489), Issue #33, PR 1. A verificação que recusava o pedido com 409, sua constante e as mensagens deixaram de existir. Origem: RF08, 2026-11-07.
 
 - [ ] **Pesquisa de pontos sem distinção de acentos.** Hoje "joao" não encontra "João" e "lagarto" encontra "Lagarto", mas "araçá" não encontra "Araca". Ignorar acentos exigiria a extensão `unaccent` do PostgreSQL e uma migração (junto da V2 da Issue #33). O contrato fala apenas de maiúsculas e minúsculas. Origem: RF06, 2026-11-07.
 

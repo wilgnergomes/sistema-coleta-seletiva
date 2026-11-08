@@ -34,7 +34,7 @@ public class Solicitacao {
     private PontoColeta ponto;
 
     /** Texto copiado do endereço no momento do pedido (ADR 0008): mudanças no cadastro não o alteram. */
-    @Column(name = "sol_tx_endereco_copia", nullable = false, length = 400)
+    @Column(name = "sol_tx_endereco_copia", nullable = false, length = 500)
     private String enderecoCopia;
 
     @Builder.Default
