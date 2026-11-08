@@ -11,6 +11,8 @@ import br.edu.ifs.coletaseletiva.exception.ConflitoVersaoException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
 import br.edu.ifs.coletaseletiva.exception.ParametroInvalidoException;
 import br.edu.ifs.coletaseletiva.form.AgendamentoForm;
+import br.edu.ifs.coletaseletiva.form.ConclusaoForm;
+import br.edu.ifs.coletaseletiva.form.VersaoForm;
 import br.edu.ifs.coletaseletiva.form.MotivoForm;
 import br.edu.ifs.coletaseletiva.service.TransicaoSolicitacaoService;
 import org.junit.jupiter.api.Test;
@@ -260,6 +262,117 @@ class TransicaoSolicitacaoControllerTest {
         cancelar("MORADOR", "3", corpo).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.mensagem").value("A solicitação está EM_RECOLHIMENTO e não pode passar para CANCELADA."));
         cancelar("OPERADOR", "5", corpo).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("CONFLITO_VERSAO"));
+    }
+
+    // ---------- RF13: início e conclusão ----------
+
+    private ResultActions acaoDoOperador(String caminho, String corpo, String... idioma) throws Exception {
+        var requisicao = post("/solicitacoes/9/" + caminho).header("X-Perfil", "OPERADOR").header("X-Usuario-Id", "5")
+                .contentType(MediaType.APPLICATION_JSON).content(corpo);
+        if (idioma.length > 0) {
+            requisicao.header("Accept-Language", idioma[0]);
+        }
+        return mockMvc.perform(requisicao);
+    }
+
+    private static SolicitacaoDetalheDTO detalheEm(SituacaoSolicitacao situacao, int versao) {
+        return new SolicitacaoDetalheDTO(9, "SOL-20261107-ABC234", 1, 1, "Rua A, 1", situacao,
+                OffsetDateTime.now(), null, null, null, versao,
+                List.of(new ItemDTO(1, "Papel", Unidade.KG, new BigDecimal("5.5"), new BigDecimal("5"))), List.of());
+    }
+
+    @Test
+    void rf13_inicioValidoRetorna200ComEmRecolhimento() throws Exception {
+        when(service.iniciar(any(Ator.class), eq(9), any(VersaoForm.class)))
+                .thenReturn(detalheEm(SituacaoSolicitacao.EM_RECOLHIMENTO, 2));
+
+        acaoDoOperador("inicio", "{\"versao\": 1}").andExpect(status().isOk())
+                .andExpect(jsonPath("$.situacao").value("EM_RECOLHIMENTO")).andExpect(jsonPath("$.versao").value(2));
+
+        ArgumentCaptor<VersaoForm> form = ArgumentCaptor.forClass(VersaoForm.class);
+        verify(service).iniciar(any(Ator.class), eq(9), form.capture());
+        assertEquals(1, form.getValue().versao());
+    }
+
+    @Test
+    void rf13_inicioSemVersaoOuComVersaoNegativaRetorna400SemChamarOService() throws Exception {
+        acaoDoOperador("inicio", "{}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='versao')].mensagem").value("a versão é obrigatória"));
+        acaoDoOperador("inicio", "{\"versao\": -1}").andExpect(status().isBadRequest());
+
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void rf13_conclusaoValidaRetorna200ComConcluidaERepassaAsQuantidades() throws Exception {
+        when(service.concluir(any(Ator.class), eq(9), any(ConclusaoForm.class)))
+                .thenReturn(detalheEm(SituacaoSolicitacao.CONCLUIDA, 3));
+
+        acaoDoOperador("conclusao", "{\"itens\": [{\"materialId\": 1, \"quantidadeEfetiva\": 5}, "
+                + "{\"materialId\": 2, \"quantidadeEfetiva\": 0}], \"versao\": 2}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.situacao").value("CONCLUIDA"))
+                .andExpect(jsonPath("$.itens[0].quantidadeEfetiva").value(5));
+
+        ArgumentCaptor<ConclusaoForm> form = ArgumentCaptor.forClass(ConclusaoForm.class);
+        verify(service).concluir(any(Ator.class), eq(9), form.capture());
+        assertEquals(2, form.getValue().itens().size());
+        assertEquals(0, form.getValue().itens().get(1).quantidadeEfetiva().signum());
+        assertEquals(2, form.getValue().versao());
+    }
+
+    @Test
+    void rf13_conclusaoComListaOuQuantidadesInvalidasRetorna400SemChamarOService() throws Exception {
+        acaoDoOperador("conclusao", "{\"versao\": 0}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='itens')].mensagem").value("informe a quantidade efetiva de cada item"));
+        acaoDoOperador("conclusao", "{\"itens\": [], \"versao\": 0}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='itens')]").exists());
+        // O elemento nulo é 400 (achado C-04 da auditoria), e não 500.
+        acaoDoOperador("conclusao", "{\"itens\": [null], \"versao\": 0}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='itens[0]')].mensagem").value("o item não pode ser nulo"));
+        acaoDoOperador("conclusao", "{\"itens\": [{\"materialId\": 1}], \"versao\": 0}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='itens[0].quantidadeEfetiva')].mensagem")
+                        .value("a quantidade efetiva é obrigatória"));
+        acaoDoOperador("conclusao", "{\"itens\": [{\"quantidadeEfetiva\": 1}], \"versao\": 0}").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='itens[0].materialId')]").exists());
+        acaoDoOperador("conclusao", "{\"itens\": [{\"materialId\": 1, \"quantidadeEfetiva\": -0.5}], \"versao\": 0}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='itens[0].quantidadeEfetiva')].mensagem")
+                        .value("deve ser maior ou igual a zero"));
+        acaoDoOperador("conclusao", "{\"itens\": [{\"materialId\": 1, \"quantidadeEfetiva\": 1.2345}], \"versao\": 0}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='itens[0].quantidadeEfetiva')]").exists());
+        acaoDoOperador("conclusao", "{\"itens\": [{\"materialId\": 1, \"quantidadeEfetiva\": 1000000000}], \"versao\": 0}")
+                .andExpect(status().isBadRequest());
+        acaoDoOperador("conclusao", "{\"itens\": [{\"materialId\": 1, \"quantidadeEfetiva\": 1}]}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='versao')]").exists());
+        acaoDoOperador("conclusao", "{\"itens\": [null], \"versao\": 0}", "en").andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[?(@.campo=='itens[0]')].mensagem").value("the item cannot be null"));
+
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void rf13_todasZeroRetorna400NoCampoItensEAsRegrasDeEstadoRetornam403404E409() throws Exception {
+        String corpo = "{\"itens\": [{\"materialId\": 1, \"quantidadeEfetiva\": 0}], \"versao\": 0}";
+        when(service.concluir(any(Ator.class), eq(9), any(ConclusaoForm.class)))
+                .thenThrow(new ParametroInvalidoException("itens", "erro.solicitacao.conclusao-sem-quantidade-positiva"))
+                .thenThrow(new AcessoNegadoException("erro.solicitacao.somente-operador"))
+                .thenThrow(new NaoEncontradoException("erro.solicitacao.nao-encontrada"))
+                .thenThrow(new ConflitoRegraException("erro.solicitacao.conclusao-item-faltante", "Vidro"))
+                .thenThrow(new ConflitoVersaoException("erro.solicitacao.versao-desatualizada"));
+
+        acaoDoOperador("conclusao", corpo).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros[0].campo").value("itens"))
+                .andExpect(jsonPath("$.erros[0].mensagem").value("Informe pelo menos uma quantidade efetiva maior que zero."));
+        acaoDoOperador("conclusao", corpo).andExpect(status().isForbidden());
+        acaoDoOperador("conclusao", corpo).andExpect(status().isNotFound());
+        acaoDoOperador("conclusao", corpo).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("CONFLITO_REGRA"))
+                .andExpect(jsonPath("$.mensagem").value("Informe a quantidade efetiva de todos os itens. Faltam: Vidro."));
+        acaoDoOperador("conclusao", corpo).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.codigo").value("CONFLITO_VERSAO"));
     }
 

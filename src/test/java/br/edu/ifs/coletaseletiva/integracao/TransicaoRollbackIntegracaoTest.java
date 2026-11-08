@@ -96,4 +96,41 @@ class TransicaoRollbackIntegracaoTest extends IntegracaoBase {
 
         nadaFoiGravado();
     }
+
+    @Test
+    void rf13_falhaNaGravacaoDoHistoricoDesfazOInicio() throws Exception {
+        jdbc.update("UPDATE coleta.sol_solicitacao SET sol_tx_situacao = 'AGENDADA' WHERE sol_nr_id = ?", solicitacao);
+
+        acao("inicio", "{\"versao\": 0}")
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.codigo").value("ERRO_INTERNO"));
+
+        assertEquals("AGENDADA", jdbc.queryForObject(
+                "SELECT sol_tx_situacao FROM coleta.sol_solicitacao WHERE sol_nr_id = ?", String.class, solicitacao));
+        assertEquals(0, jdbc.queryForObject(
+                "SELECT sol_nr_versao FROM coleta.sol_solicitacao WHERE sol_nr_id = ?", Integer.class, solicitacao));
+        assertEquals(1, c.contar("his_historico"));
+    }
+
+    /** A conclusão altera três coisas (situação, data e quantidades dos itens): a falha no histórico desfaz todas. */
+    @Test
+    void rf13_falhaNaGravacaoDoHistoricoDesfazAConclusaoInclusiveAsQuantidadesEfetivas() throws Exception {
+        jdbc.update("UPDATE coleta.sol_solicitacao SET sol_tx_situacao = 'EM_RECOLHIMENTO' WHERE sol_nr_id = ?", solicitacao);
+        int material = jdbc.queryForObject("SELECT mat_nr_id FROM coleta.iso_item_solicitacao WHERE sol_nr_id = ?",
+                Integer.class, solicitacao);
+
+        acao("conclusao", "{\"itens\": [{\"materialId\": " + material + ", \"quantidadeEfetiva\": 1.5}], \"versao\": 0}")
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.codigo").value("ERRO_INTERNO"));
+
+        assertEquals("EM_RECOLHIMENTO", jdbc.queryForObject(
+                "SELECT sol_tx_situacao FROM coleta.sol_solicitacao WHERE sol_nr_id = ?", String.class, solicitacao));
+        assertNull(jdbc.queryForObject(
+                "SELECT sol_dt_conclusao FROM coleta.sol_solicitacao WHERE sol_nr_id = ?", Object.class, solicitacao));
+        assertNull(jdbc.queryForObject(
+                "SELECT iso_nr_quantidade_efetiva FROM coleta.iso_item_solicitacao WHERE sol_nr_id = ?", Object.class, solicitacao));
+        assertEquals(0, jdbc.queryForObject(
+                "SELECT sol_nr_versao FROM coleta.sol_solicitacao WHERE sol_nr_id = ?", Integer.class, solicitacao));
+        assertEquals(1, c.contar("his_historico"));
+    }
 }

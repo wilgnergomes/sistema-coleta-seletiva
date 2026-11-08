@@ -3,19 +3,25 @@ package br.edu.ifs.coletaseletiva.service;
 import br.edu.ifs.coletaseletiva.config.Ator;
 import br.edu.ifs.coletaseletiva.dto.SolicitacaoDetalheDTO;
 import br.edu.ifs.coletaseletiva.entity.Historico;
+import br.edu.ifs.coletaseletiva.entity.ItemSolicitacao;
+import br.edu.ifs.coletaseletiva.entity.Material;
 import br.edu.ifs.coletaseletiva.entity.Morador;
 import br.edu.ifs.coletaseletiva.entity.Operador;
 import br.edu.ifs.coletaseletiva.entity.PontoColeta;
 import br.edu.ifs.coletaseletiva.entity.Solicitacao;
 import br.edu.ifs.coletaseletiva.enumeration.Perfil;
 import br.edu.ifs.coletaseletiva.enumeration.SituacaoSolicitacao;
+import br.edu.ifs.coletaseletiva.enumeration.Unidade;
 import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
 import br.edu.ifs.coletaseletiva.exception.ConflitoRegraException;
 import br.edu.ifs.coletaseletiva.exception.ConflitoVersaoException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
 import br.edu.ifs.coletaseletiva.exception.ParametroInvalidoException;
 import br.edu.ifs.coletaseletiva.form.AgendamentoForm;
+import br.edu.ifs.coletaseletiva.form.ConclusaoForm;
+import br.edu.ifs.coletaseletiva.form.ItemConclusaoForm;
 import br.edu.ifs.coletaseletiva.form.MotivoForm;
+import br.edu.ifs.coletaseletiva.form.VersaoForm;
 import br.edu.ifs.coletaseletiva.mapper.SolicitacaoMapper;
 import br.edu.ifs.coletaseletiva.repository.HistoricoRepository;
 import br.edu.ifs.coletaseletiva.repository.SolicitacaoRepository;
@@ -28,6 +34,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -342,5 +349,197 @@ class TransicaoSolicitacaoServiceTest {
         assertThrows(AcessoNegadoException.class, () -> service.cancelar(MORADOR, 9, new MotivoForm("Sem condições", 0)));
 
         verifyNoInteractions(repository, historicoRepository);
+    }
+
+    // ---------- RF13: início e conclusão ----------
+
+    private ItemSolicitacao itemDaSolicitacao(int materialId, String nome, Unidade unidade, String estimada) {
+        ItemSolicitacao item = new ItemSolicitacao();
+        item.setSolicitacao(solicitacao);
+        item.setMaterial(Material.builder().id(materialId).nome(nome).unidade(unidade).build());
+        item.setUnidadeCopia(unidade);
+        item.setQuantidadeEstimada(new BigDecimal(estimada));
+        solicitacao.getItens().add(item);
+        return item;
+    }
+
+    private static ItemConclusaoForm efetiva(int materialId, String quantidade) {
+        return new ItemConclusaoForm(materialId, new BigDecimal(quantidade));
+    }
+
+    private static ConclusaoForm conclusao(int versao, ItemConclusaoForm... itens) {
+        return new ConclusaoForm(List.of(itens), versao);
+    }
+
+    @Test
+    void rf13_inicioSoPartindoDeAgendadaGravaHistoricoDoOperadorSemMotivoNemAgendamento() {
+        solicitacao.setSituacao(SituacaoSolicitacao.AGENDADA);
+        operadorEncontraASolicitacao();
+        when(historicoRepository.findBySolicitacaoIdOrderById(9)).thenReturn(List.of());
+
+        SolicitacaoDetalheDTO resposta = service.iniciar(OPERADOR, 9, new VersaoForm(0));
+
+        assertEquals(SituacaoSolicitacao.EM_RECOLHIMENTO, resposta.situacao());
+        ArgumentCaptor<Historico> historico = ArgumentCaptor.forClass(Historico.class);
+        verify(historicoRepository).save(historico.capture());
+        assertEquals(SituacaoSolicitacao.AGENDADA, historico.getValue().getSituacaoAnterior());
+        assertEquals(SituacaoSolicitacao.EM_RECOLHIMENTO, historico.getValue().getSituacaoNova());
+        assertEquals(operador, historico.getValue().getOperador());
+        assertNull(historico.getValue().getMorador());
+        assertNull(historico.getValue().getMotivo());
+        assertEquals(AGORA, historico.getValue().getData().toInstant());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = SituacaoSolicitacao.class, names = "AGENDADA", mode = EnumSource.Mode.EXCLUDE)
+    void rf13_inicioForaDeAgendadaEh409(SituacaoSolicitacao situacao) {
+        solicitacao.setSituacao(situacao);
+        operadorEncontraASolicitacao();
+
+        ConflitoRegraException erro = assertThrows(ConflitoRegraException.class,
+                () -> service.iniciar(OPERADOR, 9, new VersaoForm(0)));
+
+        assertEquals("erro.solicitacao.transicao-invalida", erro.getChave());
+        verify(historicoRepository, never()).save(any());
+        assertEquals(situacao, solicitacao.getSituacao());
+    }
+
+    @Test
+    void rf13_inicioComVersaoDiferenteEOutroPontoEOutrosPerfis() {
+        solicitacao.setSituacao(SituacaoSolicitacao.AGENDADA);
+        operadorEncontraASolicitacao();
+        assertThrows(ConflitoVersaoException.class, () -> service.iniciar(OPERADOR, 9, new VersaoForm(5)));
+
+        Operador outro = Operador.builder().id(6).ponto(PontoColeta.builder().id(2).build()).build();
+        when(operadorService.autorizarOperador(OPERADOR)).thenReturn(outro);
+        assertThrows(NaoEncontradoException.class, () -> service.iniciar(OPERADOR, 9, new VersaoForm(0)));
+        assertThrows(AcessoNegadoException.class, () -> service.iniciar(MORADOR, 9, new VersaoForm(0)));
+
+        verify(historicoRepository, never()).save(any());
+    }
+
+    @Test
+    void rf13_conclusaoGravaEfetivasComZeroDataDoRelogioEHistoricoDoOperador() {
+        solicitacao.setSituacao(SituacaoSolicitacao.EM_RECOLHIMENTO);
+        ItemSolicitacao papel = itemDaSolicitacao(1, "Papel", Unidade.KG, "5.5");
+        ItemSolicitacao vidro = itemDaSolicitacao(2, "Vidro", Unidade.KG, "10");
+        operadorEncontraASolicitacao();
+        when(historicoRepository.findBySolicitacaoIdOrderById(9)).thenReturn(List.of());
+
+        SolicitacaoDetalheDTO resposta = service.concluir(OPERADOR, 9, conclusao(0, efetiva(1, "5"), efetiva(2, "0")));
+
+        assertEquals(SituacaoSolicitacao.CONCLUIDA, resposta.situacao());
+        assertEquals(new BigDecimal("5"), papel.getQuantidadeEfetiva());
+        assertEquals(0, vidro.getQuantidadeEfetiva().signum(), "zero é aceito para o item não recolhido");
+        assertEquals(AGORA, solicitacao.getConcluidaEm().toInstant());
+        ArgumentCaptor<Historico> historico = ArgumentCaptor.forClass(Historico.class);
+        verify(historicoRepository).save(historico.capture());
+        assertEquals(SituacaoSolicitacao.EM_RECOLHIMENTO, historico.getValue().getSituacaoAnterior());
+        assertEquals(SituacaoSolicitacao.CONCLUIDA, historico.getValue().getSituacaoNova());
+        assertEquals(operador, historico.getValue().getOperador());
+        assertEquals(AGORA, historico.getValue().getData().toInstant());
+    }
+
+    @Test
+    void rf13_todasAsQuantidadesZeroSaoRejeitadasNoCampoItensENadaMuda() {
+        solicitacao.setSituacao(SituacaoSolicitacao.EM_RECOLHIMENTO);
+        ItemSolicitacao papel = itemDaSolicitacao(1, "Papel", Unidade.KG, "5.5");
+        itemDaSolicitacao(2, "Vidro", Unidade.KG, "10");
+        operadorEncontraASolicitacao();
+
+        ParametroInvalidoException erro = assertThrows(ParametroInvalidoException.class,
+                () -> service.concluir(OPERADOR, 9, conclusao(0, efetiva(1, "0"), efetiva(2, "0.000"))));
+
+        assertEquals("itens", erro.getCampo());
+        assertEquals("erro.solicitacao.conclusao-sem-quantidade-positiva", erro.getChave());
+        assertNull(papel.getQuantidadeEfetiva());
+        assertNull(solicitacao.getConcluidaEm());
+        verify(historicoRepository, never()).save(any());
+    }
+
+    @Test
+    void rf13_umaUnicaQuantidadePositivaBastaMesmoComOsDemaisEmZero() {
+        solicitacao.setSituacao(SituacaoSolicitacao.EM_RECOLHIMENTO);
+        itemDaSolicitacao(1, "Papel", Unidade.KG, "5.5");
+        itemDaSolicitacao(2, "Vidro", Unidade.KG, "10");
+        operadorEncontraASolicitacao();
+        when(historicoRepository.findBySolicitacaoIdOrderById(9)).thenReturn(List.of());
+
+        assertEquals(SituacaoSolicitacao.CONCLUIDA,
+                service.concluir(OPERADOR, 9, conclusao(0, efetiva(1, "0"), efetiva(2, "0.001"))).situacao());
+    }
+
+    @Test
+    void rf13_fracaoParaItemEmPecaEhRejeitadaPelaUnidadeCopiadaENaoPelaDoMaterial() {
+        solicitacao.setSituacao(SituacaoSolicitacao.EM_RECOLHIMENTO);
+        // A unidade copiada na solicitação é UN, embora o cadastro atual do material seja outra (ADR 0008).
+        ItemSolicitacao pilhas = itemDaSolicitacao(3, "Pilhas", Unidade.UN, "4");
+        pilhas.getMaterial().setUnidade(Unidade.KG);
+        operadorEncontraASolicitacao();
+
+        ConflitoRegraException erro = assertThrows(ConflitoRegraException.class,
+                () -> service.concluir(OPERADOR, 9, conclusao(0, efetiva(3, "2.5"))));
+
+        assertEquals("erro.solicitacao.quantidade-inteira", erro.getChave());
+        assertNull(pilhas.getQuantidadeEfetiva());
+    }
+
+    @Test
+    void rf13_inteiroComZerosAposAVirgulaEhAceitoParaItemEmPeca() {
+        solicitacao.setSituacao(SituacaoSolicitacao.EM_RECOLHIMENTO);
+        ItemSolicitacao pilhas = itemDaSolicitacao(3, "Pilhas", Unidade.UN, "4");
+        operadorEncontraASolicitacao();
+        when(historicoRepository.findBySolicitacaoIdOrderById(9)).thenReturn(List.of());
+
+        service.concluir(OPERADOR, 9, conclusao(0, efetiva(3, "3.000")));
+
+        assertEquals(0, new BigDecimal("3").compareTo(pilhas.getQuantidadeEfetiva()));
+    }
+
+    @Test
+    void rf13_itemRepetidoDesconhecidoOuFaltanteSaoConflitosDeRegraENadaMuda() {
+        solicitacao.setSituacao(SituacaoSolicitacao.EM_RECOLHIMENTO);
+        ItemSolicitacao papel = itemDaSolicitacao(1, "Papel", Unidade.KG, "5.5");
+        itemDaSolicitacao(2, "Vidro", Unidade.KG, "10");
+        operadorEncontraASolicitacao();
+
+        assertEquals("erro.solicitacao.material-repetido", assertThrows(ConflitoRegraException.class,
+                () -> service.concluir(OPERADOR, 9, conclusao(0, efetiva(1, "1"), efetiva(1, "2"), efetiva(2, "1")))).getChave());
+        assertEquals("erro.solicitacao.conclusao-item-desconhecido", assertThrows(ConflitoRegraException.class,
+                () -> service.concluir(OPERADOR, 9, conclusao(0, efetiva(1, "1"), efetiva(2, "1"), efetiva(9, "1")))).getChave());
+        ConflitoRegraException faltante = assertThrows(ConflitoRegraException.class,
+                () -> service.concluir(OPERADOR, 9, conclusao(0, efetiva(1, "1"))));
+        assertEquals("erro.solicitacao.conclusao-item-faltante", faltante.getChave());
+        assertEquals("Vidro", faltante.getArgumentos()[0]);
+
+        assertNull(papel.getQuantidadeEfetiva(), "nenhum item é alterado quando a validação falha");
+        verify(historicoRepository, never()).save(any());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = SituacaoSolicitacao.class, names = "EM_RECOLHIMENTO", mode = EnumSource.Mode.EXCLUDE)
+    void rf13_soEmRecolhimentoPodeSerConcluida(SituacaoSolicitacao situacao) {
+        solicitacao.setSituacao(situacao);
+        itemDaSolicitacao(1, "Papel", Unidade.KG, "5.5");
+        operadorEncontraASolicitacao();
+
+        ConflitoRegraException erro = assertThrows(ConflitoRegraException.class,
+                () -> service.concluir(OPERADOR, 9, conclusao(0, efetiva(1, "1"))));
+
+        assertEquals("erro.solicitacao.transicao-invalida", erro.getChave());
+        verify(historicoRepository, never()).save(any());
+    }
+
+    @Test
+    void rf13_conclusaoComVersaoDiferenteOuPerfilSemPermissao() {
+        solicitacao.setSituacao(SituacaoSolicitacao.EM_RECOLHIMENTO);
+        itemDaSolicitacao(1, "Papel", Unidade.KG, "5.5");
+        operadorEncontraASolicitacao();
+
+        assertThrows(ConflitoVersaoException.class, () -> service.concluir(OPERADOR, 9, conclusao(3, efetiva(1, "1"))));
+        assertThrows(AcessoNegadoException.class,
+                () -> service.concluir(new Ator(Perfil.ADMINISTRADOR, null), 9, conclusao(0, efetiva(1, "1"))));
+
+        verify(historicoRepository, never()).save(any());
     }
 }
