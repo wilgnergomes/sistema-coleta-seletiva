@@ -8,8 +8,7 @@ import br.edu.ifs.coletaseletiva.enumeration.SituacaoCadastro;
 import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
 import br.edu.ifs.coletaseletiva.exception.ConflitoRegraException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
-import br.edu.ifs.coletaseletiva.form.MoradorAtualizacaoForm;
-import br.edu.ifs.coletaseletiva.form.MoradorCriacaoForm;
+import br.edu.ifs.coletaseletiva.form.MoradorForm;
 import br.edu.ifs.coletaseletiva.service.MoradorService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,7 +57,7 @@ class MoradorControllerTest {
 
     @Test
     void rf01_postValidoRetorna201ComLocationEPublico() throws Exception {
-        when(service.criar(any(MoradorCriacaoForm.class))).thenReturn(maria());
+        when(service.criar(any(MoradorForm.class))).thenReturn(maria());
 
         mockMvc.perform(post("/moradores")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -98,7 +97,7 @@ class MoradorControllerTest {
 
     @Test
     void rf01_postComEmailRepetidoRetorna409() throws Exception {
-        when(service.criar(any(MoradorCriacaoForm.class)))
+        when(service.criar(any(MoradorForm.class)))
                 .thenThrow(new ConflitoRegraException("erro.morador.email-repetido"));
 
         mockMvc.perform(post("/moradores")
@@ -113,7 +112,7 @@ class MoradorControllerTest {
     @Test
     void rf01_postQueColideComOUniqueDoBancoRetorna409GenericoEnaoMensagemTecnica() throws Exception {
         // Corrida: o service não viu o e-mail repetido, mas o banco barrou na gravação.
-        when(service.criar(any(MoradorCriacaoForm.class)))
+        when(service.criar(any(MoradorForm.class)))
                 .thenThrow(new DataIntegrityViolationException("duplicate key value violates unique constraint uq_mor_email"));
 
         mockMvc.perform(post("/moradores")
@@ -130,7 +129,7 @@ class MoradorControllerTest {
     void rf01_postComEmailCercadoDeEspacosEhAceitoEChegaAparadoAoService() throws Exception {
         // O contrato (OpenAPI e ADR 0021) diz que o e-mail é normalizado: "sem espaços nas pontas".
         // O form apara os espaços; as minúsculas continuam por conta do service.
-        when(service.criar(any(MoradorCriacaoForm.class))).thenReturn(maria());
+        when(service.criar(any(MoradorForm.class))).thenReturn(maria());
 
         mockMvc.perform(post("/moradores")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -139,7 +138,7 @@ class MoradorControllerTest {
                                 """))
                 .andExpect(status().isCreated());
 
-        verify(service).criar(new MoradorCriacaoForm("Maria", "Maria@Exemplo.com", null));
+        verify(service).criar(new MoradorForm("Maria", "Maria@Exemplo.com", null, null));
     }
 
     @Test
@@ -299,7 +298,7 @@ class MoradorControllerTest {
     void rf01_putValidoRetorna200() throws Exception {
         MoradorDTO atualizado = new MoradorDTO(1, "Maria Silva", "maria@exemplo.com", null, SituacaoCadastro.ATIVO);
         when(service.atualizar(new Ator(Perfil.MORADOR, 1), 1,
-                new MoradorAtualizacaoForm("Maria Silva", "maria@exemplo.com", null, null)))
+                new MoradorForm("Maria Silva", "maria@exemplo.com", null, null)))
                 .thenReturn(atualizado);
 
         mockMvc.perform(put("/moradores/1")
@@ -315,7 +314,7 @@ class MoradorControllerTest {
 
     @Test
     void rf01_putComEmailCercadoDeEspacosEhAceitoEChegaAparadoAoService() throws Exception {
-        when(service.atualizar(any(Ator.class), any(Integer.class), any(MoradorAtualizacaoForm.class)))
+        when(service.atualizar(any(Ator.class), any(Integer.class), any(MoradorForm.class)))
                 .thenReturn(maria());
 
         mockMvc.perform(put("/moradores/1")
@@ -327,7 +326,7 @@ class MoradorControllerTest {
                 .andExpect(status().isOk());
 
         verify(service).atualizar(ADMINISTRADOR, 1,
-                new MoradorAtualizacaoForm("Maria", "Maria@Exemplo.com", null, null));
+                new MoradorForm("Maria", "Maria@Exemplo.com", null, null));
     }
 
     @Test
@@ -371,7 +370,7 @@ class MoradorControllerTest {
 
     @Test
     void rf01_putComEmailDeOutroMoradorRetorna409() throws Exception {
-        when(service.atualizar(any(Ator.class), any(Integer.class), any(MoradorAtualizacaoForm.class)))
+        when(service.atualizar(any(Ator.class), any(Integer.class), any(MoradorForm.class)))
                 .thenThrow(new ConflitoRegraException("erro.morador.email-repetido"));
 
         mockMvc.perform(put("/moradores/1")

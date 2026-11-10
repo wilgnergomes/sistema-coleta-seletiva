@@ -60,6 +60,19 @@ class EnderecoIntegracaoTest extends IntegracaoBase {
     }
 
     @Test
+    void rf02_moradorIdEnviadoNoCorpoDaCriacaoNaoMudaODonoDoEndereco() throws Exception {
+        int maria = novoMorador("maria@exemplo.com");
+        int joao = novoMorador("joao@exemplo.com");
+        String comIntruso = corpo("Rua A", "1", null).replaceFirst("\\{", "{\"moradorId\": " + joao + ", \"id\": 999, ");
+
+        int id = novoEndereco(maria, comIntruso);
+
+        assertEquals(maria, jdbc.queryForObject(
+                "SELECT mor_nr_id FROM coleta.end_endereco WHERE end_nr_id = ?", Integer.class, id));
+        assertTrue(id != 999);
+    }
+
+    @Test
     void rf02_enderecoIncompletoOuComFormatoErradoRetorna400SemGravar() throws Exception {
         int morador = novoMorador("maria@exemplo.com");
 

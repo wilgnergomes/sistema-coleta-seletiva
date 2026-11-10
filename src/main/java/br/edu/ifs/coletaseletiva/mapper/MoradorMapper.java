@@ -2,22 +2,22 @@ package br.edu.ifs.coletaseletiva.mapper;
 
 import br.edu.ifs.coletaseletiva.dto.MoradorDTO;
 import br.edu.ifs.coletaseletiva.entity.Morador;
-import br.edu.ifs.coletaseletiva.form.MoradorAtualizacaoForm;
-import br.edu.ifs.coletaseletiva.form.MoradorCriacaoForm;
+import br.edu.ifs.coletaseletiva.form.MoradorForm;
 import org.springframework.stereotype.Component;
 
 @Component
 public class MoradorMapper {
 
-    public Morador paraEntidade(MoradorCriacaoForm form) {
-        return Morador.builder()
-                .nome(form.nome())
-                .email(form.email())
-                .fone(form.fone())
-                .build();
+    /** Não copia {@code situacao}: todo morador nasce ATIVO (padrão da entidade), seja o que o corpo trouxer. */
+    public Morador paraEntidade(MoradorForm form) {
+        Morador morador = new Morador();
+        morador.setNome(form.nome());
+        morador.setEmail(form.email());
+        morador.setFone(form.fone());
+        return morador;
     }
 
-    public void atualizar(Morador morador, MoradorAtualizacaoForm form) {
+    public void atualizar(Morador morador, MoradorForm form) {
         morador.setNome(form.nome());
         morador.setEmail(form.email());
         morador.setFone(form.fone());

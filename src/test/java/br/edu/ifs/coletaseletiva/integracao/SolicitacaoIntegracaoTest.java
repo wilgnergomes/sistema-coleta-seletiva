@@ -72,6 +72,26 @@ class SolicitacaoIntegracaoTest extends IntegracaoBase {
         assertEquals(0, c.contar("his_historico"));
     }
 
+    // ---------- atributos que o cliente não decide ----------
+
+    @Test
+    void rf08_atributosDoServidorEnviadosNoCorpoDaCriacaoSaoIgnorados() throws Exception {
+        int joao = c.morador("joao@exemplo.com");
+        String base = corpo(ponto, enderecoMaria, item(papel, "5"));
+        String comIntrusos = base.replaceFirst("\\{",
+                "{\"id\": 999, \"moradorId\": " + joao + ", \"situacao\": \"CONCLUIDA\", "
+                        + "\"protocolo\": \"SOL-00000000-AAAAAA\", \"versao\": 7, ");
+
+        criar(maria, comIntrusos)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(org.hamcrest.Matchers.not(999)))
+                .andExpect(jsonPath("$.moradorId").value(maria))
+                .andExpect(jsonPath("$.situacao").value("SOLICITADA"))
+                .andExpect(jsonPath("$.versao").value(0))
+                .andExpect(jsonPath("$.protocolo").value(org.hamcrest.Matchers.matchesPattern("SOL-\\d{8}-[A-Z2-9]{6}")))
+                .andExpect(jsonPath("$.concluidaEm").doesNotExist());
+    }
+
     // ---------- criação válida ----------
 
     @Test

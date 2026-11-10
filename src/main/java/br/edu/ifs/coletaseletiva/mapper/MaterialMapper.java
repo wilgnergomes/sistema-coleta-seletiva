@@ -2,7 +2,6 @@ package br.edu.ifs.coletaseletiva.mapper;
 
 import br.edu.ifs.coletaseletiva.dto.MaterialDTO;
 import br.edu.ifs.coletaseletiva.entity.Material;
-import br.edu.ifs.coletaseletiva.enumeration.SituacaoCadastro;
 import br.edu.ifs.coletaseletiva.form.MaterialForm;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +10,6 @@ public class MaterialMapper {
 
     public Material paraEntidade(MaterialForm form) {
         Material material = new Material();
-        material.setSituacao(SituacaoCadastro.ATIVO);
         atualizar(material, form);
         return material;
     }

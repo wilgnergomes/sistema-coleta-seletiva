@@ -71,7 +71,7 @@ O nome do pacote e o sufixo da classe coincidem, exceto na entidade e no enum, q
 | `dto` | `...DTO` | `MoradorDTO` | `record` |
 | `exception` | `...Exception` | `NaoEncontradoException` | classe |
 
-Quando a criação e a atualização têm campos ou regras diferentes no contrato, cada uma tem o seu formulário, com a ação no nome (por exemplo, o ADR 0021 para o morador). Quando são iguais, um único `...Form` basta.
+Quando a criação e a atualização têm campos ou regras diferentes no contrato, cada uma tem o seu formulário, com a ação no nome (por exemplo, o ADR 0021 para o morador). Quando são iguais, um único `...Form` basta. *(Nota de 2026-11-10: o morador passou a ter um único `MoradorForm`, conforme o ADR 0026; `MoradorCriacaoForm` e `MoradorAtualizacaoForm` na tabela acima são registro histórico.)*
 
 A entidade é uma classe comum, porque o JPA exige construtor vazio e atributos alteráveis. Forms e DTOs são `record`, por carregarem apenas dados, e não usam Lombok. O formato de erro (`RespostaErro`, `ErroCampo`) não segue o sufixo `DTO` por ser um caso à parte.
 

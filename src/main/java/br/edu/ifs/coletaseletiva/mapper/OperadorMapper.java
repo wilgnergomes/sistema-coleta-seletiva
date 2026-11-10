@@ -3,7 +3,6 @@ package br.edu.ifs.coletaseletiva.mapper;
 import br.edu.ifs.coletaseletiva.dto.OperadorDTO;
 import br.edu.ifs.coletaseletiva.entity.Operador;
 import br.edu.ifs.coletaseletiva.entity.PontoColeta;
-import br.edu.ifs.coletaseletiva.enumeration.SituacaoCadastro;
 import br.edu.ifs.coletaseletiva.form.OperadorForm;
 import org.springframework.stereotype.Component;
 
@@ -12,7 +11,6 @@ public class OperadorMapper {
 
     public Operador paraEntidade(OperadorForm form, PontoColeta ponto) {
         Operador operador = new Operador();
-        operador.setSituacao(SituacaoCadastro.ATIVO);
         atualizar(operador, form, ponto);
         return operador;
     }

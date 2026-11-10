@@ -9,8 +9,7 @@ import br.edu.ifs.coletaseletiva.enumeration.SituacaoCadastro;
 import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
 import br.edu.ifs.coletaseletiva.exception.ConflitoRegraException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
-import br.edu.ifs.coletaseletiva.form.MoradorAtualizacaoForm;
-import br.edu.ifs.coletaseletiva.form.MoradorCriacaoForm;
+import br.edu.ifs.coletaseletiva.form.MoradorForm;
 import br.edu.ifs.coletaseletiva.mapper.MoradorMapper;
 import br.edu.ifs.coletaseletiva.repository.MoradorRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,7 +56,7 @@ class MoradorServiceTest {
             return m;
         });
 
-        MoradorDTO dto = service.criar(new MoradorCriacaoForm("  Maria ", " Maria@Exemplo.COM ", "   "));
+        MoradorDTO dto = service.criar(new MoradorForm("  Maria ", " Maria@Exemplo.COM ", "   ", null));
 
         assertEquals(1, dto.id());
         assertEquals("Maria", dto.nome());
@@ -67,11 +66,27 @@ class MoradorServiceTest {
     }
 
     @Test
+    void rf01_criarIgnoraASituacaoInformadaEOMoradorNasceAtivo() {
+        when(repository.existsByEmail("maria@exemplo.com")).thenReturn(false);
+        Morador[] gravado = new Morador[1];
+        when(repository.save(any(Morador.class))).thenAnswer(chamada -> {
+            gravado[0] = chamada.getArgument(0);
+            gravado[0].setId(1);
+            return gravado[0];
+        });
+
+        MoradorDTO dto = service.criar(new MoradorForm("Maria", "maria@exemplo.com", null, SituacaoCadastro.INATIVO));
+
+        assertEquals(SituacaoCadastro.ATIVO, gravado[0].getSituacao());
+        assertEquals(SituacaoCadastro.ATIVO, dto.situacao());
+    }
+
+    @Test
     void rf01_emailRepetidoEhRejeitadoSemGravar() {
         when(repository.existsByEmail("maria@exemplo.com")).thenReturn(true);
 
         assertThrows(ConflitoRegraException.class,
-                () -> service.criar(new MoradorCriacaoForm("Maria", "maria@exemplo.com", null)));
+                () -> service.criar(new MoradorForm("Maria", "maria@exemplo.com", null, null)));
 
         verify(repository, never()).save(any());
     }
@@ -82,8 +97,8 @@ class MoradorServiceTest {
         when(repository.findById(1)).thenReturn(Optional.of(existente));
 
         Ator ator = new Ator(Perfil.MORADOR, 1);
-        MoradorAtualizacaoForm form =
-                new MoradorAtualizacaoForm("Maria", "maria@exemplo.com", null, SituacaoCadastro.INATIVO);
+        MoradorForm form =
+                new MoradorForm("Maria", "maria@exemplo.com", null, SituacaoCadastro.INATIVO);
 
         assertThrows(AcessoNegadoException.class, () -> service.atualizar(ator, 1, form));
         verify(repository, never()).save(any());
@@ -98,7 +113,7 @@ class MoradorServiceTest {
 
         Ator ator = new Ator(Perfil.ADMINISTRADOR, null);
         MoradorDTO dto = service.atualizar(ator, 1,
-                new MoradorAtualizacaoForm("Maria", "maria@exemplo.com", null, SituacaoCadastro.INATIVO));
+                new MoradorForm("Maria", "maria@exemplo.com", null, SituacaoCadastro.INATIVO));
 
         assertEquals(SituacaoCadastro.INATIVO, dto.situacao());
     }
@@ -199,7 +214,7 @@ class MoradorServiceTest {
         when(repository.save(any(Morador.class))).thenAnswer(chamada -> chamada.getArgument(0));
 
         MoradorDTO dto = service.atualizar(new Ator(Perfil.ADMINISTRADOR, null), 1,
-                new MoradorAtualizacaoForm("Maria Silva", "maria@exemplo.com", null, null));
+                new MoradorForm("Maria Silva", "maria@exemplo.com", null, null));
 
         assertEquals("Maria Silva", dto.nome());
         assertEquals(SituacaoCadastro.INATIVO, dto.situacao());
@@ -211,7 +226,7 @@ class MoradorServiceTest {
         when(repository.findById(1)).thenReturn(Optional.of(existente));
         when(repository.existsByEmailAndIdNot("joao@exemplo.com", 1)).thenReturn(true);
         Ator administrador = new Ator(Perfil.ADMINISTRADOR, null);
-        MoradorAtualizacaoForm form = new MoradorAtualizacaoForm("Maria", "joao@exemplo.com", null, null);
+        MoradorForm form = new MoradorForm("Maria", "joao@exemplo.com", null, null);
 
         assertThrows(ConflitoRegraException.class, () -> service.atualizar(administrador, 1, form));
         verify(repository, never()).save(any());
@@ -225,7 +240,7 @@ class MoradorServiceTest {
         when(repository.save(any(Morador.class))).thenAnswer(chamada -> chamada.getArgument(0));
 
         MoradorDTO dto = service.atualizar(new Ator(Perfil.MORADOR, 1), 1,
-                new MoradorAtualizacaoForm("Maria Silva", "maria@exemplo.com", "79999990000",
+                new MoradorForm("Maria Silva", "maria@exemplo.com", "79999990000",
                         SituacaoCadastro.ATIVO));
 
         assertEquals("Maria Silva", dto.nome());
@@ -237,7 +252,7 @@ class MoradorServiceTest {
     void rf01_atualizarMoradorInexistenteLancaNaoEncontradoSemGravar() {
         when(repository.findById(99)).thenReturn(Optional.empty());
         Ator administrador = new Ator(Perfil.ADMINISTRADOR, null);
-        MoradorAtualizacaoForm form = new MoradorAtualizacaoForm("Maria", "maria@exemplo.com", null, null);
+        MoradorForm form = new MoradorForm("Maria", "maria@exemplo.com", null, null);
 
         assertThrows(NaoEncontradoException.class, () -> service.atualizar(administrador, 99, form));
         verify(repository, never()).save(any());

@@ -60,14 +60,15 @@ paths:
       summary: Cadastra um morador (RF01)
       description: |
         O e-mail é normalizado (minúsculas, sem espaços nas pontas). E-mail repetido é rejeitado.
-        Todo morador nasce ATIVO; este endpoint não aceita `situacao` (ADR 0021).
+        Todo morador nasce ATIVO. O corpo é o mesmo da atualização (`MoradorEntrada`), mas `situacao`, se enviada,
+        é ignorada e nunca decide a situação inicial; um valor fora de ATIVO e INATIVO é rejeitado com 400 (ADR 0026).
       operationId: criarMorador
       security: []
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/MoradorCriacao' }
+            schema: { $ref: '#/components/schemas/MoradorEntrada' }
             example:
               nome: Maria da Silva
               email: maria.silva@exemplo.com
@@ -1172,17 +1173,11 @@ components:
       enum: [KG, L, UN]
 
     # ------------------------------------------------ moradores e endereços
-    MoradorCriacao:
-      type: object
-      description: 'Corpo do cadastro. Não aceita `situacao`: todo morador nasce ATIVO (ADR 0021).'
-      required: [nome, email]
-      properties:
-        nome: { type: string, minLength: 1, maxLength: 80 }
-        email: { type: string, format: email, maxLength: 150 }
-        fone: { type: string, maxLength: 20 }
     MoradorEntrada:
       type: object
-      description: Corpo da atualização. `situacao` é opcional e só o administrador pode alterá-la (ADR 0021).
+      description: |
+        Corpo do cadastro e da atualização. `situacao` é opcional: na atualização só o administrador pode alterá-la;
+        no cadastro ela é ignorada e o morador nasce sempre ATIVO (ADR 0026).
       required: [nome, email]
       properties:
         nome: { type: string, minLength: 1, maxLength: 80 }
