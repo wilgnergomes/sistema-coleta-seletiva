@@ -1,11 +1,14 @@
 package br.edu.ifs.coletaseletiva.form;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
+
+import static br.edu.ifs.coletaseletiva.config.OpenApiConfig.VERSAO_DESCRICAO;
 
 /**
  * Corpo da conclusão do recolhimento (RF13, schema {@code ConclusaoEntrada}). O {@code @NotNull} no elemento da lista
@@ -14,9 +17,11 @@ import java.util.List;
  */
 public record ConclusaoForm(
         @NotEmpty(message = "{conclusao.itens.obrigatorio}")
+        @Schema(description = "Quantidade efetivamente recolhida de **cada** item da solicitação, uma vez cada. Ao menos uma quantidade precisa ser positiva.")
         List<@NotNull(message = "{conclusao.item.nulo}") @Valid ItemConclusaoForm> itens,
 
         @NotNull(message = "{solicitacao.versao.obrigatoria}")
         @Min(value = 0, message = "{solicitacao.versao.minimo}")
+        @Schema(description = VERSAO_DESCRICAO, example = "2")
         Integer versao
 ) {}
