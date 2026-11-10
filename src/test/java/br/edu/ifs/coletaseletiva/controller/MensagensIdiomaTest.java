@@ -5,7 +5,7 @@ import br.edu.ifs.coletaseletiva.enumeration.Perfil;
 import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
 import br.edu.ifs.coletaseletiva.exception.ConflitoRegraException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
-import br.edu.ifs.coletaseletiva.form.MoradorCriacaoForm;
+import br.edu.ifs.coletaseletiva.form.MoradorForm;
 import br.edu.ifs.coletaseletiva.service.MoradorService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,7 +108,7 @@ class MensagensIdiomaTest {
 
     @Test
     void i18n_conflitoDeRegraTraduzidoPelaChaveDaExcecao() throws Exception {
-        when(service.criar(any(MoradorCriacaoForm.class)))
+        when(service.criar(any(MoradorForm.class)))
                 .thenThrow(new ConflitoRegraException("erro.morador.email-repetido"));
         String corpo = "{\"nome\": \"Maria\", \"email\": \"maria@exemplo.com\"}";
 

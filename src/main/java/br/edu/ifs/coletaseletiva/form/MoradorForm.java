@@ -5,7 +5,12 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record MoradorAtualizacaoForm(
+/**
+ * Corpo de criação e de atualização de morador (schema MoradorEntrada). {@code situacao} é opcional: na
+ * atualização, só o administrador pode alterá-la; na criação ela é sempre ignorada e o morador nasce ATIVO
+ * (ADR 0021, regra aplicada pelo {@code MoradorMapper.paraEntidade}, que não copia esse campo).
+ */
+public record MoradorForm(
         @NotBlank(message = "{morador.nome.obrigatorio}")
         @Size(max = 80, message = "{morador.nome.tamanho-maximo}")
         String nome,
@@ -22,7 +27,7 @@ public record MoradorAtualizacaoForm(
 ) {
 
     /** Apara o e-mail na leitura, para que a validação veja o mesmo texto que o service normaliza. */
-    public MoradorAtualizacaoForm {
+    public MoradorForm {
         email = email == null ? null : email.trim();
     }
 }

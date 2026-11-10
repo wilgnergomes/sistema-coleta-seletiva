@@ -57,6 +57,37 @@ class MoradorFluxoIntegracaoTest extends IntegracaoBase {
     }
 
     @Test
+    void rf01_postComSituacaoInativoNoCorpoCriaMoradorAtivo() throws Exception {
+        String resposta = mockMvc.perform(post("/moradores")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nome": "Maria", "email": "maria@exemplo.com", "situacao": "INATIVO"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.situacao").value("ATIVO"))
+                .andReturn().getResponse().getContentAsString();
+        int id = JsonPath.read(resposta, "$.id");
+
+        // A regra vale no banco, não só na resposta: o corpo da criação nunca decide a situação.
+        String situacao = jdbc.queryForObject(
+                "SELECT mor_tx_situacao FROM coleta.mor_morador WHERE mor_nr_id = ?", String.class, id);
+        assertEquals("ATIVO", situacao);
+    }
+
+    @Test
+    void rf01_postComSituacaoDeValorInvalidoRetorna400SemGravar() throws Exception {
+        mockMvc.perform(post("/moradores")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nome": "Maria", "email": "maria@exemplo.com", "situacao": "XYZ"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.codigo").value("VALOR_INVALIDO"));
+
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM coleta.mor_morador", Integer.class));
+    }
+
+    @Test
     void rf01_foneEmBrancoEhGravadoComoNulo() throws Exception {
         int id = cadastrar("Maria", "maria@exemplo.com", "   ");
 

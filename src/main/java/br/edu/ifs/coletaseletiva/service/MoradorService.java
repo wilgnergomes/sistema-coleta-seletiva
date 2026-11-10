@@ -9,8 +9,7 @@ import br.edu.ifs.coletaseletiva.enumeration.SituacaoCadastro;
 import br.edu.ifs.coletaseletiva.exception.AcessoNegadoException;
 import br.edu.ifs.coletaseletiva.exception.ConflitoRegraException;
 import br.edu.ifs.coletaseletiva.exception.NaoEncontradoException;
-import br.edu.ifs.coletaseletiva.form.MoradorAtualizacaoForm;
-import br.edu.ifs.coletaseletiva.form.MoradorCriacaoForm;
+import br.edu.ifs.coletaseletiva.form.MoradorForm;
 import br.edu.ifs.coletaseletiva.mapper.MoradorMapper;
 import br.edu.ifs.coletaseletiva.repository.MoradorRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +31,8 @@ public class MoradorService {
     private final MoradorMapper mapper;
 
     @Transactional
-    public MoradorDTO criar(MoradorCriacaoForm formulario) {
-        MoradorCriacaoForm dados = normalizar(formulario);
+    public MoradorDTO criar(MoradorForm formulario) {
+        MoradorForm dados = normalizar(formulario);
 
         if (repository.existsByEmail(dados.email())) {
             throw new ConflitoRegraException(EMAIL_REPETIDO);
@@ -60,10 +59,10 @@ public class MoradorService {
     }
 
     @Transactional
-    public MoradorDTO atualizar(Ator ator, Integer id, MoradorAtualizacaoForm formulario) {
+    public MoradorDTO atualizar(Ator ator, Integer id, MoradorForm formulario) {
         autorizarAcesso(ator, id);
         Morador morador = buscarOuFalhar(id);
-        MoradorAtualizacaoForm dados = normalizar(formulario);
+        MoradorForm dados = normalizar(formulario);
 
         boolean mudaSituacao = dados.situacao() != null
                 && dados.situacao() != morador.getSituacao();
@@ -105,12 +104,8 @@ public class MoradorService {
         }
     }
 
-    private MoradorCriacaoForm normalizar(MoradorCriacaoForm f) {
-        return new MoradorCriacaoForm(normalizarNome(f.nome()), normalizarEmail(f.email()), normalizarFone(f.fone()));
-    }
-
-    private MoradorAtualizacaoForm normalizar(MoradorAtualizacaoForm f) {
-        return new MoradorAtualizacaoForm(normalizarNome(f.nome()), normalizarEmail(f.email()),
+    private MoradorForm normalizar(MoradorForm f) {
+        return new MoradorForm(normalizarNome(f.nome()), normalizarEmail(f.email()),
                 normalizarFone(f.fone()), f.situacao());
     }
 

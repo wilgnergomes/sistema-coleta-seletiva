@@ -5,7 +5,6 @@ import br.edu.ifs.coletaseletiva.dto.MaterialAceitoDTO;
 import br.edu.ifs.coletaseletiva.dto.PontoColetaDTO;
 import br.edu.ifs.coletaseletiva.entity.EnderecoPonto;
 import br.edu.ifs.coletaseletiva.entity.PontoColeta;
-import br.edu.ifs.coletaseletiva.enumeration.SituacaoCadastro;
 import br.edu.ifs.coletaseletiva.form.EnderecoForm;
 import br.edu.ifs.coletaseletiva.form.PontoColetaForm;
 import org.springframework.stereotype.Component;
@@ -17,7 +16,6 @@ public class PontoColetaMapper {
 
     public PontoColeta paraEntidade(PontoColetaForm form) {
         PontoColeta ponto = new PontoColeta();
-        ponto.setSituacao(SituacaoCadastro.ATIVO);
         atualizar(ponto, form);
         return ponto;
     }

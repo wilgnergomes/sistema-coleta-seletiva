@@ -3,8 +3,7 @@ package br.edu.ifs.coletaseletiva.controller;
 import br.edu.ifs.coletaseletiva.config.Ator;
 import br.edu.ifs.coletaseletiva.dto.MoradorDTO;
 import br.edu.ifs.coletaseletiva.dto.Pagina;
-import br.edu.ifs.coletaseletiva.form.MoradorAtualizacaoForm;
-import br.edu.ifs.coletaseletiva.form.MoradorCriacaoForm;
+import br.edu.ifs.coletaseletiva.form.MoradorForm;
 import br.edu.ifs.coletaseletiva.service.MoradorService;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
@@ -32,7 +31,7 @@ public class MoradorController {
     private final MoradorService service;
 
     @PostMapping
-    public ResponseEntity<MoradorDTO> criar(@Valid @RequestBody MoradorCriacaoForm formulario) {
+    public ResponseEntity<MoradorDTO> criar(@Valid @RequestBody MoradorForm formulario) {
         MoradorDTO criado = service.criar(formulario);
 
         URI local = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -63,7 +62,7 @@ public class MoradorController {
     @PutMapping("/{id}")
     public MoradorDTO atualizar(@Parameter(hidden = true) Ator ator,
                                 @PathVariable Integer id,
-                                @Valid @RequestBody MoradorAtualizacaoForm formulario) {
+                                @Valid @RequestBody MoradorForm formulario) {
         return service.atualizar(ator, id, formulario);
     }
 }
