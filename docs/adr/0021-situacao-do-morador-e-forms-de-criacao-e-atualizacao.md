@@ -2,7 +2,7 @@
 
 **Data:** 2026-10-15
 
-**Status:** Aceita
+**Status:** Aceita; as decisões 1, 2 e 4 foram substituídas pelo ADR-0026
 
 ## Contexto
 
@@ -25,3 +25,7 @@ Foram consideradas as seguintes alternativas: um formulário único com `situaca
 - **Positivas:** o `POST` não aceita um campo sem efeito; o contrato reflete o comportamento; a regra de permissão fica explícita e testável; o morador edita seus dados sem se preocupar com a situação.
 - **Negativas:** dois formulários e dois schemas no cadastro de morador; o morador não pode desativar a própria conta, e isso exige o administrador.
 - **Cuidados:** a verificação de permissão depende da identificação do ator (ADR 0019), ainda por implementar. Até lá, o `PUT` aceita `situacao` sem checar o perfil, e isso deve constar como pendência na issue do RF01. Os testes devem cobrir morador tentando inativar (403), administrador inativando (200) e `PUT` sem `situacao` mantendo a situação atual. O mesmo padrão pode ser avaliado para material, ponto e operador, e, se for adotado, registrado em ADR próprio. Se um dia o morador puder desativar a própria conta, este ADR deve ser substituído por outro.
+
+## Substituição parcial
+
+Em 2026-11-10 as decisões 1, 2 e 4 (formulários e schemas separados) foram substituídas pelo [ADR 0026](0026-form-unico-de-morador-na-criacao-e-na-atualizacao.md), que unifica o cadastro em um único `MoradorForm`. Continuam valendo as decisões 3 e 5 e a regra de que todo morador nasce ATIVO. O texto acima foi preservado como registro histórico.
