@@ -14,8 +14,8 @@ Também entram aqui os defeitos confirmados, as melhorias opcionais e as hipóte
 
 ## Documentação da API (Swagger)
 
-- [ ] **Swagger gerado mostra só a resposta de sucesso.** A interface gerada pelo springdoc lista apenas `200` (inclusive no `POST /moradores`, que na prática devolve `201`), sem os erros `400`, `403`, `404`, `409` e `500` do contrato e com o tipo de conteúdo `*/*`. O contrato `docs/api/openapi.yaml` está completo e é a fonte da verdade (ADR 0017). Avaliar anotações `@Operation`/`@ApiResponse` nos controllers ou publicar o próprio `openapi.yaml` na interface. Origem: RF01, conferência de 2026-11-07.
-- [ ] **`POST /moradores` aparece com autenticação na interface gerada.** O contrato o define como público (`security: []`); a interface gerada o mostra com os cabeçalhos `X-Perfil` e `X-Usuario-Id`. Resolver junto com o item anterior.
+- [x] **Swagger gerado mostra só a resposta de sucesso.** Resolvida em 2026-11-10 (branch `docs/swagger-ui-completo`): controllers, forms, DTOs e enums anotados e `OpenApiConfig` ajustada; o teste `OpenApiDocumentacaoTest` cobre o documento gerado. Registro original: A interface gerada pelo springdoc lista apenas `200` (inclusive no `POST /moradores`, que na prática devolve `201`), sem os erros `400`, `403`, `404`, `409` e `500` do contrato e com o tipo de conteúdo `*/*`. O contrato `docs/api/openapi.yaml` está completo e é a fonte da verdade (ADR 0017). Avaliar anotações `@Operation`/`@ApiResponse` nos controllers ou publicar o próprio `openapi.yaml` na interface. Origem: RF01, conferência de 2026-11-07.
+- [x] **`POST /moradores` aparece com autenticação na interface gerada.** Resolvida junto com o item anterior: a segurança é definida por operação (sem ator, ator opcional ou ator obrigatório). Registro original: O contrato o define como público (`security: []`); a interface gerada o mostra com os cabeçalhos `X-Perfil` e `X-Usuario-Id`. Resolver junto com o item anterior.
 
 ## Documentação de decisões
 

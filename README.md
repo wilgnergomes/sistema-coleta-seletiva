@@ -234,7 +234,7 @@ docker volume ls --filter name=coleta
 
 O contrato da API está em [`docs/api/openapi.yaml`](docs/api/openapi.yaml), no formato OpenAPI 3.0. Ele é a fonte da verdade dos endpoints, dos formatos de entrada e saída e das respostas de erro (ADR 0017). Para ler, abra o arquivo em um editor com pré-visualização de OpenAPI ou cole o conteúdo em [editor.swagger.io](https://editor.swagger.io).
 
-Com a aplicação em execução, a interface Swagger gerada pelo springdoc fica em <http://localhost:8080/swagger-ui/index.html> e o JSON em <http://localhost:8080/v3/api-docs>. Ela reflete os endpoints implementados, mas por enquanto mostra só as respostas de sucesso; as respostas de erro estão no contrato `openapi.yaml` (veja [melhorias pendentes](docs/melhorias-pendentes.md)). Cada endpoint e seu estado de implementação são acompanhados na [matriz de rastreabilidade](docs/requirements/matriz-rastreabilidade.md).
+Com a aplicação em execução, a interface Swagger gerada pelo springdoc fica em <http://localhost:8080/swagger-ui/index.html> e o JSON em <http://localhost:8080/v3/api-docs>. Ela funciona como manual interativo: cada operação traz resumo, descrição, quem pode executá-la, parâmetros, exemplos de corpo JSON e as respostas de sucesso e de erro. Para executar as operações que exigem ator, clique em **Authorize** e informe `X-Perfil` (`ADMINISTRADOR`, `MORADOR` ou `OPERADOR`) e, para morador e operador, `X-Usuario-Id`; as consultas públicas e o `POST /moradores` funcionam sem isso. A identificação por cabeçalhos é uma simplificação para demonstração, não autenticação (ADR 0019). Cada endpoint e seu estado de implementação são acompanhados na [matriz de rastreabilidade](docs/requirements/matriz-rastreabilidade.md).
 
 Convenções da API (ADR 0018):
 

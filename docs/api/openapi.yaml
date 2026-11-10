@@ -36,14 +36,23 @@ servers:
 
 tags:
   - name: Moradores
+    description: Cadastro de moradores (RF01). O cadastro é público; o restante exige ator.
   - name: Endereços
+    description: Endereços de um morador (RF02). Cada endereço pertence a um único morador.
   - name: Materiais
+    description: Materiais recicláveis (RF03). Consulta pública; cadastro só do administrador.
   - name: Pontos de coleta
+    description: Pontos de coleta (RF04) e sua pesquisa pública (RF06).
   - name: Materiais aceitos
+    description: Quais materiais cada ponto de coleta aceita (RF05).
   - name: Operadores
+    description: Responsáveis pelo recolhimento (RF07). Cada operador pertence a um ponto.
   - name: Solicitações
+    description: "Pedidos de recolhimento: criar, corrigir e consultar (RF08 e RF09)."
   - name: Situação da solicitação
+    description: "Ações que mudam a situação da solicitação (RF10 a RF14): agendar, recusar, cancelar, iniciar, concluir, reagendar e registrar falha."
   - name: Resumo gerencial
+    description: Indicadores para o administrador (RF15).
 
 security:
   - perfil: []
@@ -985,7 +994,7 @@ components:
       type: apiKey
       in: header
       name: X-Usuario-Id
-      description: Id do morador ou do operador que está agindo. Dispensado para o administrador.
+      description: Id do morador ou do operador que está agindo. Obrigatório para MORADOR e OPERADOR; dispensado (ignorado) para o administrador.
 
   headers:
     Location:
@@ -1062,7 +1071,7 @@ components:
           schema: { $ref: '#/components/schemas/RespostaErro' }
           example:
             codigo: ACESSO_NEGADO
-            mensagem: O perfil informado não pode executar esta operação.
+            mensagem: Informe o cabeçalho X-Perfil.
             erros: []
     Erro404:
       description: Registro ausente (NAO_ENCONTRADO).
@@ -1071,7 +1080,7 @@ components:
           schema: { $ref: '#/components/schemas/RespostaErro' }
           example:
             codigo: NAO_ENCONTRADO
-            mensagem: Registro não encontrado.
+            mensagem: Morador não encontrado.
             erros: []
     Erro409:
       description: Conflito de regra (CONFLITO_REGRA) ou de versão (CONFLITO_VERSAO).
