@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 /**
  * Corpo de criação e de atualização de morador (schema MoradorEntrada). {@code situacao} é opcional: na
  * atualização, só o administrador pode alterá-la; na criação ela é sempre ignorada e o morador nasce ATIVO
- * (ADR 0021, regra aplicada pelo {@code MoradorMapper.paraEntidade}, que não copia esse campo).
+ * (ADR 0026, regra aplicada pelo {@code MoradorMapper.paraEntidade}, que não copia esse campo).
  */
 public record MoradorForm(
         @NotBlank(message = "{morador.nome.obrigatorio}")

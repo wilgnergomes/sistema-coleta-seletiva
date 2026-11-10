@@ -61,7 +61,7 @@ paths:
       description: |
         O e-mail é normalizado (minúsculas, sem espaços nas pontas). E-mail repetido é rejeitado.
         Todo morador nasce ATIVO. O corpo é o mesmo da atualização (`MoradorEntrada`), mas `situacao`, se enviada,
-        é ignorada e nunca decide a situação inicial; um valor fora de ATIVO e INATIVO é rejeitado com 400 (ADR 0021).
+        é ignorada e nunca decide a situação inicial; um valor fora de ATIVO e INATIVO é rejeitado com 400 (ADR 0026).
       operationId: criarMorador
       security: []
       requestBody:
@@ -1177,7 +1177,7 @@ components:
       type: object
       description: |
         Corpo do cadastro e da atualização. `situacao` é opcional: na atualização só o administrador pode alterá-la;
-        no cadastro ela é ignorada e o morador nasce sempre ATIVO (ADR 0021).
+        no cadastro ela é ignorada e o morador nasce sempre ATIVO (ADR 0026).
       required: [nome, email]
       properties:
         nome: { type: string, minLength: 1, maxLength: 80 }
