@@ -1,5 +1,7 @@
 package br.edu.ifs.coletaseletiva.enumeration;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -9,6 +11,16 @@ import java.util.Set;
  * <p>A tabela é do domínio; cada endpoint escolhe quais transições expõe. Por exemplo, {@code AGENDADA -> AGENDADA}
  * existe aqui para o reagendamento (RF14), mas o agendamento (RF10) só parte de SOLICITADA.
  */
+@Schema(description = """
+        Situação de uma solicitação de recolhimento.
+
+        * `SOLICITADA`: pedido feito, aguardando o operador.
+        * `AGENDADA`: o operador marcou data e hora.
+        * `EM_RECOLHIMENTO`: o operador saiu para recolher.
+        * `CONCLUIDA`: recolhimento feito (final).
+        * `RECUSADA`: o operador recusou o pedido (final).
+        * `CANCELADA`: o pedido foi cancelado (final).
+        """)
 public enum SituacaoSolicitacao {
     SOLICITADA,
     AGENDADA,
