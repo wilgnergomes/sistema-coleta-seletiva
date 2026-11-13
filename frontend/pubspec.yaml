@@ -1,0 +1,24 @@
+name: coleta_seletiva_web
+description: "Frontend Web do Sistema de Coleta Seletiva"
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.14.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  go_router: ^18.1.4
+  http: ^1.6.0
+  intl: ^0.20.3
+  material_ui: ^1.1.0
+  timezone: ^0.11.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
