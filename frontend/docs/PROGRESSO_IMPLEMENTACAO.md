@@ -8,10 +8,10 @@ anterior (branches cumulativas, `CLAUDE.md`).
 
 | Item | Valor |
 |---|---|
-| Branch atual | `frontend/09-materiais-pontos-e-vinculos` |
-| Base da etapa | `frontend/08-resumo-e-consulta-admin` em `b9dbd2d` |
-| Etapa em andamento | 09 · materiais, pontos e vínculos |
-| Próxima ação | Abrir `frontend/10-moradores-e-operadores-admin` a partir do último commit da 09 |
+| Branch atual | `frontend/10-moradores-e-operadores-admin` |
+| Base da etapa | `frontend/09-materiais-pontos-e-vinculos` em `9b4226f` |
+| Etapa em andamento | 10 · moradores e operadores |
+| Próxima ação | Abrir `frontend/11-qualidade-e-entrega-web` a partir do último commit da 10 |
 
 ## Ambiente
 
@@ -45,7 +45,8 @@ Banco da demonstração: `coleta_frontend_demo`, criado no mesmo container com
 | 06 | `frontend/06-fila-e-agendamento` | Concluída e publicada | `f7ee21d` |
 | 07 | `frontend/07-execucao-e-reagendamento` | Concluída e publicada | `74677c4` |
 | 08 | `frontend/08-resumo-e-consulta-admin` | Concluída e publicada | `b9dbd2d` |
-| 09 | `frontend/09-materiais-pontos-e-vinculos` | Em andamento | — |
+| 09 | `frontend/09-materiais-pontos-e-vinculos` | Concluída e publicada | `9b4226f` |
+| 10 | `frontend/10-moradores-e-operadores-admin` | Em andamento | — |
 
 ## Etapa 01 · estrutura
 
@@ -268,6 +269,22 @@ Verificações executadas:
 | `flutter analyze` | Nenhum problema |
 | `flutter test` | 101 testes aprovados (4 novos): novo ponto com booleano explícito, endereço embutido, erro `endereco.cep` e reenvio; inativação com confirmação e RN05; vínculo com limite nulo e remoção em conflito; troca de unidade bloqueada com JSON completo |
 | Navegador a 1366 × 768 com API real | Administrador: editar Cooperativa Verde Vida para Inativo → confirmação → `409` (2 solicitações abertas), mensagem e `Ver solicitações do ponto`; ponto continua ativo no servidor |
+
+## Etapa 10 · moradores e operadores
+
+Feito:
+
+- `/administracao/operadores` com filtro de ponto preservado na URL (`pontoId`), nome do ponto em cada cartão e paginação; `/novo` e `/:id` com nome, e-mail, ponto (seletor administrativo, aceita ponto inativo como a API) e situação. Inativação ou troca de ponto pede confirmação explicando o efeito na fila. Erros do servidor (e-mail duplicado `409`, ponto ausente `404`, validações `400`) aparecem no formulário.
+- `/administracao/moradores` paginada com nome, e-mail, telefone e situação, mais `Cadastrar morador` (reaproveita `/cadastro`). `/:id` edita o `MoradorForm` com situação (inativação confirmada) e gerencia os endereços com o mesmo componente da conta do morador. `/:id/enderecos` abre a mesma página posicionada nos endereços.
+- O detalhe administrativo da solicitação já abre esses cadastros a partir do morador e dos responsáveis do histórico.
+
+Verificações executadas:
+
+| Verificação | Resultado |
+|---|---|
+| `flutter analyze` | Nenhum problema |
+| `flutter test` | 105 testes aprovados (4 novos): lista de operadores filtrada por ponto, troca de ponto com confirmação e `409` de e-mail, novo operador sem ponto bloqueado, morador administrativo com inativação confirmada e endereços |
+| Navegador a 360 × 740 com API real | Administrador: `/administracao/operadores` com 3 operadores, nome do ponto, gaveta e `scrollWidth` 360 (sem rolagem horizontal) |
 
 ## Pendências e problemas conhecidos
 
