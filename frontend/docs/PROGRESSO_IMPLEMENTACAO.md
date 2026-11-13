@@ -8,10 +8,10 @@ anterior (branches cumulativas, `CLAUDE.md`).
 
 | Item | Valor |
 |---|---|
-| Branch atual | `frontend/04-morador-e-enderecos` |
-| Base da etapa | `frontend/03-catalogo-publico` em `ec5e534` |
-| Etapa em andamento | 04 · morador e endereços |
-| Próxima ação | Abrir `frontend/05-solicitacoes-morador` a partir do último commit da 04 |
+| Branch atual | `frontend/05-solicitacoes-morador` |
+| Base da etapa | `frontend/04-morador-e-enderecos` em `742a9a9` |
+| Etapa em andamento | 05 · solicitações do morador |
+| Próxima ação | Abrir `frontend/06-fila-e-agendamento` a partir do último commit da 05 |
 
 ## Ambiente
 
@@ -40,7 +40,8 @@ Banco da demonstração: `coleta_frontend_demo`, criado no mesmo container com
 | 01 | `frontend/01-estrutura` | Concluída e publicada | `d821e43` |
 | 02 | `frontend/02-design-system` | Concluída e publicada | `03c9f94` |
 | 03 | `frontend/03-catalogo-publico` | Concluída e publicada | `ec5e534` |
-| 04 | `frontend/04-morador-e-enderecos` | Em andamento | — |
+| 04 | `frontend/04-morador-e-enderecos` | Concluída e publicada | `742a9a9` |
+| 05 | `frontend/05-solicitacoes-morador` | Em andamento | — |
 
 ## Etapa 01 · estrutura
 
@@ -166,6 +167,30 @@ Correção: a logomarca no cabeçalho transbordava com fonte larga; o nome agora
 
 Limitação temporária desta etapa: os perfis operador e administrador já são validados, mas suas áreas
 chegam nas etapas 06 e 08.
+
+## Etapa 05 · solicitações do morador
+
+Feito:
+
+- `FusoNegocio` com a base IANA (`timezone`, `latest_10y`) por importação adiada: o build gera `main.dart.js_1.part.js` (≈ 210 KB sem compressão), baixado só no primeiro uso de datas de negócio. Eventos exibidos em `America/Sao_Paulo`; agendamentos combinam dia e hora de parede na zona e são enviados como instante UTC (`…Z`). Horário inexistente ou ambíguo é recusado. Filtros de período usam datas civis `AAAA-MM-DD`.
+- Modelos e `RepositorioSolicitacoes` com criação, correção e as sete ações de transição (usadas a partir da etapa 06).
+- `/morador/solicitacoes`: filtro rápido de situação, período de criação, total, cartões e paginação na URL.
+- `/morador/solicitacoes/:id`: protocolo selecionável e `Copiar protocolo`, situação, endereço copiado, ponto, datas, observações, itens com unidade copiada (estimada e recolhida; ausente diferente de zero) e histórico com responsável, motivo, data marcada e tentativa. `Corrigir solicitação` em `SOLICITADA`; `Cancelar solicitação` em `SOLICITADA` ou `AGENDADA`, com motivo obrigatório e confirmação que identifica o protocolo.
+- `/morador/solicitacoes/nova?pontoId=` e `/:id/corrigir`: seções Ponto e endereço, Materiais e quantidades, Observações. Materiais do ponto confirmados como ativos, sem repetição, unidade e limite junto da quantidade, `UN` inteira, cadastro de endereço dentro da jornada. Na correção, o ponto é fixo, a cópia do endereço é exibida e a escolha do endereço atual é explícita.
+- Política de conflito (RN06): ação com `409` relê o detalhe e atualiza situação, versão e ações; `CONFLITO_VERSAO` na correção relê e preserva a edição para novo envio consciente; `CONFLITO_REGRA` atualiza ponto e catálogo; falha de rede em gravação orienta a conferir a lista antes de repetir.
+- Nomes de pontos: uma leitura pública de até 100 pontos ativos alimenta os rótulos; pontos inativos aparecem como `Ponto #id` e o detalhe tenta resolver o nome sob demanda.
+- Início do morador: `Pontos usados recentemente` (até dois, sem repetição, só ativos com recolhimento domiciliar, filtrados pelo município do endereço selecionado; sem resultado, a seção não aparece) e `Solicitações recentes` (três), ambos a partir de uma única página de 20 solicitações e no máximo 4 leituras de ponto com cache. Limitação documentada: pontos usados antes das 20 solicitações mais recentes não entram.
+
+Verificações executadas:
+
+| Verificação | Resultado |
+|---|---|
+| `dart format --set-exit-if-changed`, `flutter analyze` | Sem alterações; nenhum problema |
+| `flutter test` | 77 testes aprovados (13 novos): fuso e serialização, data civil, filtro `TODAS`, pontos recentes (repetição, limite, 404, município, teto de consultas), criação com JSON exato, `UN` fracionária, limite, erro `itens[0]` na linha, correção com `409 CONFLITO_VERSAO` e reenvio com versão nova, ações por situação, cancelamento, `409 CONFLITO_REGRA` com releitura, 404 |
+| Navegador a 1366 × 768 com API real | Morador 3: nova solicitação na Cooperativa Verde Vida (Papel 3,5 kg) → `201`, protocolo `SOL-20261113-M6HPRU`, horário 04:04 em UTC-03; motivo vazio recusado; cancelamento → `Cancelada` e ações retiradas |
+
+Problema de teste encontrado: um `Future` concluído fora da zona do `testWidgets` não avança no tempo
+simulado. Os testes de widget criam o próprio `FusoNegocio`.
 
 ## Pendências e problemas conhecidos
 
