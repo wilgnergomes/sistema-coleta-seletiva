@@ -119,8 +119,8 @@ void main() {
       definirTela(tester, computador);
       int? escolhido;
       await tester.pumpWidget(comTema(_shell(aoSelecionar: (i) => escolhido = i)));
-      final trilho = tester.widget<NavigationRail>(find.byType(NavigationRail));
-      expect(trilho.extended, isTrue);
+      expect(find.byType(NavigationDrawer), findsOneWidget);
+      expect(find.byType(NavigationRail), findsNothing);
       expect(find.byType(NavigationBar), findsNothing);
       await tester.tap(find.text('Conta'));
       expect(escolhido, 3);
@@ -149,7 +149,7 @@ void main() {
       await tester.enterText(find.byType(TextField), 'Lagarto');
       definirTela(tester, computador);
       await tester.pump();
-      expect(find.byType(NavigationRail), findsOneWidget);
+      expect(find.byType(NavigationDrawer), findsOneWidget);
       expect(controlador.text, 'Lagarto');
     });
 

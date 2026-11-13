@@ -21,10 +21,15 @@ class PaginaRolavel extends StatelessWidget {
           child: SingleChildScrollView(
             controller: controlador,
             padding: EdgeInsets.fromLTRB(margem, Espaco.l, margem, Espaco.xxl),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: larguraMaxima),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: filhos),
+            // Uma área de seleção para a página: protocolo, endereço e
+            // orientações podem ser copiados sem que cada linha vire um alvo
+            // de toque pequeno para o leitor de tela.
+            child: SelectionArea(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: larguraMaxima),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: filhos),
+                ),
               ),
             ),
           ),
@@ -117,7 +122,7 @@ class CampoLeitura extends StatelessWidget {
           children: [
             Text(rotulo, style: tema.bodySmall),
             const SizedBox(height: 2),
-            SelectableText(valor, style: tema.bodyLarge),
+            Text(valor, style: tema.bodyLarge),
           ],
         ),
       ),

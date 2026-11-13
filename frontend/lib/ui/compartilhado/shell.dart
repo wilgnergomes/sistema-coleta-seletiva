@@ -37,6 +37,8 @@ FormaNavegacao formaNavegacao({
   required NavegacaoCompacta compacta,
   double escalaTexto = 1,
 }) {
+  // Com texto muito ampliado, os rótulos laterais não cabem: usa a gaveta.
+  if (quantidadeDestinos >= 2 && largura >= Limiar.amplo && escalaTexto > 1.5) return FormaNavegacao.gaveta;
   if (quantidadeDestinos >= 2 && largura >= Limiar.amplo) return FormaNavegacao.lateral;
   if (quantidadeDestinos >= 2 && largura >= Limiar.intermediario) return FormaNavegacao.trilho;
   return switch (compacta) {
@@ -139,16 +141,12 @@ class ShellAdaptativo extends StatelessWidget {
             body: conteudo,
           ),
           FormaNavegacao.cabecalho => Scaffold(appBar: cabecalho, body: conteudo),
-          FormaNavegacao.trilho || FormaNavegacao.lateral => Scaffold(
+          FormaNavegacao.trilho => Scaffold(
             appBar: cabecalho,
             body: Row(
               children: [
                 NavigationRail(
-                  extended: forma == FormaNavegacao.lateral,
-                  minExtendedWidth: 232,
-                  labelType: forma == FormaNavegacao.lateral
-                      ? NavigationRailLabelType.none
-                      : NavigationRailLabelType.all,
+                  labelType: NavigationRailLabelType.all,
                   selectedIndex: indiceSelecionado,
                   onDestinationSelected: aoSelecionar,
                   destinations: [
@@ -159,6 +157,38 @@ class ShellAdaptativo extends StatelessWidget {
                         label: Text(d.rotulo),
                       ),
                   ],
+                ),
+                const VerticalDivider(width: 1),
+                Expanded(child: conteudo),
+              ],
+            ),
+          ),
+          // Lateral persistente: gaveta fixa de 232 dp, com destinos de 56 dp
+          // (o trilho estendido teria destinos de 44 dp, abaixo do alvo mínimo).
+          FormaNavegacao.lateral => Scaffold(
+            appBar: cabecalho,
+            body: Row(
+              children: [
+                SizedBox(
+                  width: 232,
+                  child: NavigationDrawer(
+                    elevation: 0,
+                    selectedIndex: indiceSelecionado,
+                    onDestinationSelected: aoSelecionar,
+                    tilePadding: const EdgeInsets.symmetric(horizontal: Espaco.s),
+                    children: [
+                      const SizedBox(height: Espaco.s),
+                      for (final d in destinos)
+                        NavigationDrawerDestination(
+                          icon: Icon(d.icone),
+                          selectedIcon: Icon(d.iconeSelecionado),
+                          label: SizedBox(
+                            width: 140,
+                            child: Text(d.rotulo, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
                 const VerticalDivider(width: 1),
                 Expanded(child: conteudo),
