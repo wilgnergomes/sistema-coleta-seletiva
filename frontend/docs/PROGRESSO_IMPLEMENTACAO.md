@@ -8,10 +8,10 @@ anterior (branches cumulativas, `CLAUDE.md`).
 
 | Item | Valor |
 |---|---|
-| Branch atual | `frontend/03-catalogo-publico` |
-| Base da etapa | `frontend/02-design-system` em `03c9f94` |
-| Etapa em andamento | 03 · catálogo público |
-| Próxima ação | Abrir `frontend/04-morador-e-enderecos` a partir do último commit da 03 |
+| Branch atual | `frontend/04-morador-e-enderecos` |
+| Base da etapa | `frontend/03-catalogo-publico` em `ec5e534` |
+| Etapa em andamento | 04 · morador e endereços |
+| Próxima ação | Abrir `frontend/05-solicitacoes-morador` a partir do último commit da 04 |
 
 ## Ambiente
 
@@ -39,7 +39,8 @@ Banco da demonstração: `coleta_frontend_demo`, criado no mesmo container com
 |---|---|---|---|
 | 01 | `frontend/01-estrutura` | Concluída e publicada | `d821e43` |
 | 02 | `frontend/02-design-system` | Concluída e publicada | `03c9f94` |
-| 03 | `frontend/03-catalogo-publico` | Em andamento | — |
+| 03 | `frontend/03-catalogo-publico` | Concluída e publicada | `ec5e534` |
+| 04 | `frontend/04-morador-e-enderecos` | Em andamento | — |
 
 ## Etapa 01 · estrutura
 
@@ -138,6 +139,33 @@ continua dominante.
 Problema encontrado e corrigido: o Caddy servia `main.dart.js` sem `Cache-Control`, e o navegador
 aplicou cache heurístico, carregando um build antigo. O `Caddyfile` agora envia `Cache-Control:
 no-cache` nos arquivos estáticos (revalidação com `ETag`).
+
+## Etapa 04 · morador e endereços
+
+Feito:
+
+- `Sessao` em memória com o ator simulado (`X-Perfil`, `X-Usuario-Id`), geração, endereço de referência e limpeza de caches na troca. O `ClienteApi` lê os cabeçalhos da sessão só nas chamadas de ator; o catálogo continua público.
+- `/demonstracao` (`Identidade de demonstração`): perfil, identificador para morador e operador, aviso de simulação e validação pela primeira chamada do perfil (`GET /moradores/{id}`, `GET /solicitacoes?situacao=SOLICITADA&page=0&size=20` ou `GET /resumo-gerencial`). A resposta é guardada para reaproveitamento. Morador inativo é recusado.
+- Guard central: rota restrita sem ator vai para `/demonstracao?retorno=…`. Perfil diferente vai para `/acesso-restrito`. Na compilação pública (`APP_MODE=publico`), as rotas restritas e a demonstração voltam a `/pontos`. O retorno aceita só rota interna do mesmo perfil.
+- Shell por contexto: público com cabeçalho e menu, morador com barra inferior de quatro destinos (Início, Pontos, Solicitações, Conta), operador com cabeçalho e administrador com gaveta, todos com trilho ou navegação lateral no amplo. Faixa `Simulação de identidade · Morador #3 · Maria Silva` com `Trocar`.
+- `/cadastro`: `MoradorForm` sem situação, validação local, `409` de e-mail duplicado preservando os campos, confirmação e `Usar este cadastro na demonstração`.
+- `/morador/inicio`: seletor compacto do endereço de referência (cartão arredondado com folha de escolha e `Gerenciar endereços`), saudação, barra de pesquisa larga, `Pontos em [município]` com `Ver todos em [município]` e atalhos por material. Não há referência a localização: o endereço só define o município da pesquisa. Sem endereço, a pesquisa funciona sem município.
+- `/morador/conta`: dados pessoais com edição (`PUT /moradores/{id}`, sem situação), acesso aos endereços e configurações (respeito à escala de texto, ao zoom e à redução de movimento; troca de identidade).
+- `/morador/conta/enderecos`: lista e formulário com os sete campos do `EnderecoForm`, `Sem número (S/N)`, UF em maiúsculas, CEP com máscara aceita e enviado com 8 dígitos, erros do servidor por campo. O componente é reutilizável pela administração.
+- Detalhe do ponto mostra `Solicitar recolhimento` só para o morador e só em ponto ativo com recolhimento domiciliar.
+
+Verificações executadas:
+
+| Verificação | Resultado |
+|---|---|
+| `flutter analyze` | Nenhum problema |
+| `flutter test` | 64 testes aprovados (14 novos): cabeçalhos por perfil, invalidação na troca, área pela rota, retorno seguro, guard sem ator, perfil diferente, modo público, entrada pela demonstração com cabeçalhos, morador inativo, validação do operador, cadastro com `409` e sucesso, validação local, endereço S/N e erro do servidor, CEP incompleto |
+| Navegador a 360 × 740 com API real | `/morador/inicio` sem ator → demonstração; morador 3 → início com `Avenida Principal, S/N · Lagarto`; atalho Papel → `/pontos?municipio=Lagarto&materialId=1` com 1 resultado; Conta com `GET /api/moradores/3` |
+
+Correção: a logomarca no cabeçalho transbordava com fonte larga; o nome agora encolhe com reticências.
+
+Limitação temporária desta etapa: os perfis operador e administrador já são validados, mas suas áreas
+chegam nas etapas 06 e 08.
 
 ## Pendências e problemas conhecidos
 
