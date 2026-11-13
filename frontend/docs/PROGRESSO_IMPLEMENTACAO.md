@@ -8,10 +8,10 @@ anterior (branches cumulativas, `CLAUDE.md`).
 
 | Item | Valor |
 |---|---|
-| Branch atual | `frontend/02-design-system` |
-| Base da etapa | `frontend/01-estrutura` em `d821e43` |
-| Etapa em andamento | 02 · design system |
-| Próxima ação | Abrir `frontend/03-catalogo-publico` a partir do último commit da 02 |
+| Branch atual | `frontend/03-catalogo-publico` |
+| Base da etapa | `frontend/02-design-system` em `03c9f94` |
+| Etapa em andamento | 03 · catálogo público |
+| Próxima ação | Abrir `frontend/04-morador-e-enderecos` a partir do último commit da 03 |
 
 ## Ambiente
 
@@ -38,7 +38,8 @@ Banco da demonstração: `coleta_frontend_demo`, criado no mesmo container com
 | Etapa | Branch | Situação | Último commit |
 |---|---|---|---|
 | 01 | `frontend/01-estrutura` | Concluída e publicada | `d821e43` |
-| 02 | `frontend/02-design-system` | Em andamento | — |
+| 02 | `frontend/02-design-system` | Concluída e publicada | `03c9f94` |
+| 03 | `frontend/03-catalogo-publico` | Em andamento | — |
 
 ## Etapa 01 · estrutura
 
@@ -106,6 +107,37 @@ Verificações executadas:
 | `flutter test` | 38 testes aprovados (19 novos): contraste calculado dos tokens, situações e ícones; limiares 600/1000 dp; composições a 360 e 1366 px; gaveta do administrador; texto a 200% sem transbordo; estado preservado ao redimensionar; `androidTapTargetGuideline`, `labeledTapTargetGuideline` e `textContrastGuideline`; descarte de resposta obsoleta |
 | Build release | Concluído |
 | Navegador a 360 × 740 | Inter e logomarca renderizadas; leitura real via `/api` |
+
+## Etapa 03 · catálogo público
+
+Feito:
+
+- `/pontos` com barra de pesquisa larga (busca, nome e ícone de filtros dentro da barra), atalhos circulares de Papel, Plástico, Vidro e Metal, acesso a `Outros`, filtros secundários em folha inferior (nome, município, bairro, material), filtros aplicados removíveis, total da consulta, grade de cartões e paginação. Filtros e página ficam na URL (`/pontos?municipio=Lagarto&materialId=1&pagina=2`).
+- A API aceita um único `materialId`, então a seleção de material é única. Pesquisa por vários materiais (condição E) fica como melhoria futura da API.
+- `/pontos/:id` com endereço, horários, contato, modalidade e materiais aceitos (orientação, observação e limite com unidade). Campos ausentes recebem `Contato não informado` e `Horários não informados`. Material vinculado fora do catálogo ativo aparece como indisponível. A página de 100 materiais ativos é reaproveitada e, quando completa, dispensa consultas por material.
+- `/materiais` e `/materiais/:id` com orientação completa e atalho `Ver pontos que aceitam`.
+- Repositório com cache em memória limitado (30 páginas, 1 minuto), deduplicação de leituras de material e invalidação.
+- `Quantidade` em milésimos inteiros, com leitura pt-BR (vírgula ou ponto, até 9 + 3 dígitos, inteiro em `UN`) e formatação com unidade.
+- Rota desconhecida ou ID inválido mostram `Página não encontrada` com `Voltar para pontos`. `GoRouter.optionURLReflectsImperativeAPIs` mantém a URL do detalhe aberto por `push`.
+
+Verificações executadas:
+
+| Verificação | Resultado |
+|---|---|
+| `flutter analyze` | Nenhum problema |
+| `flutter test` | 50 testes aprovados (12 novos): filtros na URL, quantidades, total, modalidade e paginação a 360 px, busca preservando filtros, atalho com um único `materialId`, vazio com e sem filtros, erro com nova tentativa, detalhe com padrões, limite e material inativo sem consulta extra, 404 |
+| Navegador a 360 × 740 com API real | Catálogo com 4 pontos, atalho Papel → `?materialId=1` com 3 resultados, detalhe aberto e `Voltar` |
+| Navegador a 1366 × 768 | Grade de 3 colunas, navegação lateral, `scrollWidth` igual a `clientWidth` (sem rolagem horizontal) |
+| Chamadas na primeira tela | `GET /api/pontos-coleta?page=0&size=20` e `GET /api/materiais?page=0&size=100` |
+
+Transferência da primeira tela real (comprimida): 3.234.108 bytes (≈ 3,08 MiB), contra 2,83 MiB do
+piso da etapa 01. A diferença vem do código (`main.dart.js` de 690 KB para 986 KB) e das duas fontes
+Inter (64 KB). Fica dentro do orçamento exploratório de 3,5 MiB, e o motor CanvasKit (2,04 MiB)
+continua dominante.
+
+Problema encontrado e corrigido: o Caddy servia `main.dart.js` sem `Cache-Control`, e o navegador
+aplicou cache heurístico, carregando um build antigo. O `Caddyfile` agora envia `Cache-Control:
+no-cache` nos arquivos estáticos (revalidação com `ETag`).
 
 ## Pendências e problemas conhecidos
 
