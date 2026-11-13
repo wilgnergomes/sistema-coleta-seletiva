@@ -8,10 +8,10 @@ anterior (branches cumulativas, `CLAUDE.md`).
 
 | Item | Valor |
 |---|---|
-| Branch atual | `frontend/05-solicitacoes-morador` |
-| Base da etapa | `frontend/04-morador-e-enderecos` em `742a9a9` |
-| Etapa em andamento | 05 · solicitações do morador |
-| Próxima ação | Abrir `frontend/06-fila-e-agendamento` a partir do último commit da 05 |
+| Branch atual | `frontend/06-fila-e-agendamento` |
+| Base da etapa | `frontend/05-solicitacoes-morador` em `3a7fbcc` |
+| Etapa em andamento | 06 · fila e agendamento |
+| Próxima ação | Abrir `frontend/07-execucao-e-reagendamento` a partir do último commit da 06 |
 
 ## Ambiente
 
@@ -41,7 +41,8 @@ Banco da demonstração: `coleta_frontend_demo`, criado no mesmo container com
 | 02 | `frontend/02-design-system` | Concluída e publicada | `03c9f94` |
 | 03 | `frontend/03-catalogo-publico` | Concluída e publicada | `ec5e534` |
 | 04 | `frontend/04-morador-e-enderecos` | Concluída e publicada | `742a9a9` |
-| 05 | `frontend/05-solicitacoes-morador` | Em andamento | — |
+| 05 | `frontend/05-solicitacoes-morador` | Concluída e publicada | `3a7fbcc` |
+| 06 | `frontend/06-fila-e-agendamento` | Em andamento | — |
 
 ## Etapa 01 · estrutura
 
@@ -191,6 +192,26 @@ Verificações executadas:
 
 Problema de teste encontrado: um `Future` concluído fora da zona do `testWidgets` não avança no tempo
 simulado. Os testes de widget criam o próprio `FusoNegocio`.
+
+## Etapa 06 · fila e agendamento
+
+Feito:
+
+- `/operador/fila` e `/operador/fila/:id`, com filtros na URL e situação inicial `Solicitada` (`Todas` vira `situacao=TODAS` para não voltar ao padrão). As duas rotas compartilham a chave de página: abrir ou fechar um detalhe não recria a tela, e a lista (mantida por ator) não é relida.
+- A primeira página da fila reaproveita a resposta da validação do operador: nenhuma chamada repetida ao entrar.
+- Amplo (conteúdo ≥ 960 dp e altura ≥ 480): lista de 360 dp e detalhe lado a lado, com rolagens independentes. Compacto: lista; com seleção, o detalhe ocupa a tela com `Voltar para fila`.
+- Detalhe operacional com protocolo, situação, endereço copiado, `Morador #id` (sem nome nem telefone, que o operador não recebe da API), itens, histórico e `Ver histórico`.
+- Ações por situação: em `SOLICITADA`, `Agendar` (principal), `Recusar` e `Cancelar`; em `AGENDADA`, `Cancelar` (as ações de execução chegam na 07). No compacto, as secundárias ficam em `Mais ações`.
+- Formulário de data e hora no fuso de negócio (seletor de data a partir de hoje, seletor de hora, recusa local de horário passado, inexistente ou ambíguo; o servidor decide). Motivo obrigatório para recusa e cancelamento.
+- Após a ação, o detalhe mostra o novo estado e a fila é relida; o item pode sair do filtro atual enquanto o detalhe continua aberto.
+
+Verificações executadas:
+
+| Verificação | Resultado |
+|---|---|
+| `flutter analyze` | Nenhum problema |
+| `flutter test` | 86 testes aprovados (9 novos): ações por situação, agendamento com relógio fixo (hoje 09:00 recusado; 20/11 09:00 → `2026-11-20T12:00:00.000Z` com a versão lida), recusa com motivo obrigatório, 404 de outro ponto, `Mais ações` no compacto, fila lado a lado a 1366 px e detalhe em tela cheia a 360 px |
+| Navegador a 1366 × 768 com API real | Operador 1 (Cooperativa Verde Vida): fila `Solicitada` com 1 pedido sem nova chamada; detalhe; `Agendar` para 16/11/2026 09:00 → `POST /api/solicitacoes/3/agendamento` 200, situação `Agendada`, fila relida com 0 pendentes e detalhe preservado |
 
 ## Pendências e problemas conhecidos
 
