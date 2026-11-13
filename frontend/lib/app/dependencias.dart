@@ -1,11 +1,12 @@
 import 'package:http/http.dart' as http;
 
 import '../core/api/cliente_api.dart';
+import '../features/catalogo/data/repositorio_catalogo.dart';
 import 'configuracao.dart';
 
 /// Composição das dependências por construtores.
 class Dependencias {
-  Dependencias({required this.configuracao, required this.api});
+  Dependencias({required this.configuracao, required this.api}) : repositorioCatalogo = RepositorioCatalogo(api);
 
   factory Dependencias.doAmbiente() {
     final configuracao = ConfiguracaoApp.doAmbiente();
@@ -15,4 +16,5 @@ class Dependencias {
 
   final ConfiguracaoApp configuracao;
   final ClienteApi api;
+  final RepositorioCatalogo repositorioCatalogo;
 }
