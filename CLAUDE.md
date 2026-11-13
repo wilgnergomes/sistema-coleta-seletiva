@@ -105,7 +105,7 @@ Regras:
 ## Registro de pendências não corrigidas
 
 Sempre que identificar um defeito, melhoria, dívida técnica, inconsistência ou limitação que decidirmos
-**não corrigir imediatamente**, registre-o em `docs/melhorias-pendentes.md`:
+**não corrigir imediatamente**, registre-o em `backend/docs/melhorias-pendentes.md`:
 
 - Antes de registrar, verifique se já consta. Se constar, atualize a entrada quando necessário, sem duplicar.
 - Se não constar, escreva uma entrada objetiva com: descrição, impacto, localização no código, prioridade

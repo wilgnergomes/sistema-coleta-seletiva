@@ -129,8 +129,10 @@ docker version     # só se for usar o Docker (opção 2) ou rodar os testes
 
 ```bash
 git clone https://github.com/wilgnergomes/sistema-coleta-seletiva.git
-cd sistema-coleta-seletiva
+cd sistema-coleta-seletiva/backend
 ```
+
+O backend fica na pasta `backend/` do repositório. **Todos os comandos deste README são executados nessa pasta**, e os caminhos citados (como `docs/` e `src/`) são relativos a ela.
 
 ### 2. Criar o arquivo `.env`
 
@@ -277,7 +279,7 @@ Com o banco pronto e o `.env` preenchido, inicie a aplicação:
 ./mvnw spring-boot:run
 ```
 
-> Execute sempre a partir da raiz do projeto, para que o arquivo `.env` seja encontrado. Ao iniciar, a aplicação conecta ao banco e o Flyway aplica as migrações de `src/main/resources/db/migration`, criando o schema `coleta` e as tabelas na primeira execução. Se a porta `8080` estiver ocupada, acrescente `-Dspring-boot.run.arguments=--server.port=8081` ao comando.
+> Execute sempre a partir da pasta `backend/`, para que o arquivo `.env` seja encontrado (na IDE, abra a pasta `backend/` como projeto ou use-a como diretório de trabalho). Ao iniciar, a aplicação conecta ao banco e o Flyway aplica as migrações de `src/main/resources/db/migration`, criando o schema `coleta` e as tabelas na primeira execução. Se a porta `8080` estiver ocupada, acrescente `-Dspring-boot.run.arguments=--server.port=8081` ao comando.
 
 ### 5. Verificar o funcionamento
 
@@ -345,7 +347,7 @@ Os scripts ficam em `src/main/resources/db/seed` e rodam a cada início do perfi
 
 A conexão com o banco é configurada por **variáveis de ambiente**. Nenhuma senha, token ou credencial é versionado no repositório.
 
-Os valores ficam no arquivo `.env`, na raiz do projeto, que **não é versionado** (está no `.gitignore`). O arquivo `.env.example` é o modelo, com valores fictícios e a porta preparada para o Docker (`DB_PORT=5433`). A aplicação lê o `.env`; na opção 2, o Docker Compose lê o mesmo arquivo. Variáveis de ambiente definidas no sistema ou no CI também funcionam e prevalecem sobre o arquivo.
+Os valores ficam no arquivo `.env`, na pasta `backend/`, que **não é versionado** (está no `.gitignore`). O arquivo `.env.example` é o modelo, com valores fictícios e a porta preparada para o Docker (`DB_PORT=5433`). A aplicação lê o `.env`; na opção 2, o Docker Compose lê o mesmo arquivo. Variáveis de ambiente definidas no sistema ou no CI também funcionam e prevalecem sobre o arquivo.
 
 | Variável | Descrição | Exemplo |
 |----------|-----------|---------|
@@ -362,7 +364,7 @@ Na aplicação, o `application.properties` monta a conexão `jdbc:postgresql://l
 - **`password authentication failed for user "coleta"`:** a senha do `.env` não é a do usuário, ou o usuário não existe, ou **outro PostgreSQL responde na porta configurada** (por exemplo, `DB_PORT=5432` apontando para a instalação local quando você queria o Docker, ou o contrário). No PostgreSQL local, redefina a senha com `ALTER USER coleta WITH PASSWORD '<NOVA_SENHA>';` e atualize o `.env`.
 - **`database "..." does not exist`:** crie o banco (`CREATE DATABASE`, passo 1.4) ou corrija `DB_NAME` no `.env`.
 - **`permission denied for database ...`:** o usuário não pode criar o schema `coleta`. Torne-o dono do banco (`ALTER DATABASE coleta_seletiva OWNER TO coleta;`) ou conceda `GRANT ALL PRIVILEGES ON DATABASE coleta_seletiva TO coleta;`.
-- **`Could not resolve placeholder 'DB_PASSWORD'`:** o `.env` não existe ou a aplicação foi executada fora da raiz do projeto.
+- **`Could not resolve placeholder 'DB_PASSWORD'`:** o `.env` não existe ou a aplicação foi executada fora da pasta `backend/`.
 - **Porta `8080` em uso ao iniciar a API:** feche o programa que a usa ou inicie a API em outra porta (veja o passo 4).
 - **Docker, porta já em uso ao subir o banco:** troque `DB_PORT` no `.env` e rode `docker compose up -d` de novo.
 - **Docker, o compose pede para definir `DB_PASSWORD`:** o `.env` não foi criado (passo 2).
@@ -396,21 +398,30 @@ O modelo físico do banco está documentado em **um único DER**, com as 9 tabel
 
 ```text
 .
-├── docs/            # Documentação do projeto
-│   ├── adr/         # Registros de Decisão de Arquitetura (ADRs)
-│   ├── api/         # Contrato da API (OpenAPI)
-│   ├── diagramas/   # Modelos Entidade-Relacionamento e diagramas visuais
-│   ├── referencias/ # Enunciado original da atividade
-│   ├── requirements/# Matriz de rastreabilidade
-│   └── melhorias-pendentes.md  # Melhorias não críticas, para depois
-├── src/
-│   ├── main/        # Código-fonte (Java/Spring) e migrações do banco (Flyway)
-│   └── test/        # Testes automatizados
-├── mvnw / mvnw.cmd  # Maven Wrapper
-├── pom.xml          # Dependências e configuração do build
-└── README.md
+├── backend/             # API (este README)
+│   ├── docs/            # Documentação do projeto
+│   │   ├── adr/         # Registros de Decisão de Arquitetura (ADRs)
+│   │   ├── api/         # Contrato da API (OpenAPI)
+│   │   ├── desempenho/  # Dataset, roteiros e relatórios de desempenho (RNF04)
+│   │   ├── diagramas/   # Modelos Entidade-Relacionamento e diagramas visuais
+│   │   ├── referencias/ # Enunciado original da atividade
+│   │   ├── requirements/# Matriz de rastreabilidade
+│   │   └── melhorias-pendentes.md  # Melhorias não críticas, para depois
+│   ├── src/
+│   │   ├── main/        # Código-fonte (Java/Spring) e migrações do banco (Flyway)
+│   │   └── test/        # Testes automatizados
+│   ├── compose.yaml     # PostgreSQL de desenvolvimento (Docker)
+│   ├── .env.example     # Modelo do .env
+│   ├── mvnw / mvnw.cmd  # Maven Wrapper
+│   ├── pom.xml          # Dependências e configuração do build
+│   └── README.md
+├── .github/             # Template de Pull Request
+├── CONTRIBUTING.md      # Fluxo de trabalho da equipe
+└── README.md            # Apresentação do repositório
 ```
 
+> A organização com o backend em `backend/` e só os arquivos globais na raiz está registrada no [ADR 0027](docs/adr/0027-backend-em-pasta-propria-no-repositorio.md).
+>
 > A pasta `docs/` reúne os ADRs, o contrato OpenAPI, os diagramas, a matriz de rastreabilidade, as referências e os relatórios de auditoria.
 
 ## Roadmap
@@ -440,7 +451,7 @@ O modelo físico do banco está documentado em **um único DER**, com as 9 tabel
 
 ## Contribuindo
 
-Fluxo de trabalho da equipe (branches, commits e Pull Requests): veja o [CONTRIBUTING.md](CONTRIBUTING.md).
+Fluxo de trabalho da equipe (branches, commits e Pull Requests): veja o [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Equipe
 

@@ -13,7 +13,7 @@ Closes #
 - [ ] Regras validadas no backend
 - [ ] Nenhuma credencial no código
 - [ ] Documentação atualizada, se mudou algo (ER, README, ADR, matriz)
-- [ ] `.\mvnw.cmd clean verify` passa
+- [ ] `.\mvnw.cmd clean verify` passa (executado na pasta `backend/`)
 
 ## Observações
 <!-- Dúvidas, decisões tomadas ou pontos para revisar -->

@@ -11,10 +11,10 @@ Você é o arquiteto do projeto "Sistema de Coleta Seletiva" (Spring Boot, Postg
 
 ## Fontes obrigatórias
 - `CLAUDE.md` e as regras de ADR dele.
-- `docs/adr/` (considere apenas ADRs com status Aceita como decisões vigentes; Proposta não vincula).
-- `docs/api/openapi.yaml` (fonte da verdade do contrato, ADR 0017).
-- `docs/requirements/matriz-rastreabilidade.md`.
-- `docs/referencias/sistema_de_coleta_seletiva.md` (enunciado).
+- `backend/docs/adr/` (considere apenas ADRs com status Aceita como decisões vigentes; Proposta não vincula).
+- `backend/docs/api/openapi.yaml` (fonte da verdade do contrato, ADR 0017).
+- `backend/docs/requirements/matriz-rastreabilidade.md`.
+- `backend/docs/referencias/sistema_de_coleta_seletiva.md` (enunciado).
 - O código existente, para conferir se as decisões estão realmente seguidas.
 
 ## Como trabalhar
