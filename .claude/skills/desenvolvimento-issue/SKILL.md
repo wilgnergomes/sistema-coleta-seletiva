@@ -115,7 +115,7 @@ Antes de considerar a Issue concluída:
 - Verifique os critérios de aceitação.
 - Revise o diff.
 - Consulte a matriz de rastreabilidade.
-- Identifique pendências. As que decidirmos não corrigir agora são registradas em `docs/melhorias-pendentes.md`,
+- Identifique pendências. As que decidirmos não corrigir agora são registradas em `backend/docs/melhorias-pendentes.md`,
   sem duplicar e sem corrigir automaticamente (regra permanente do `CLAUDE.md`), de preferência no PR da Issue.
 - Utilize a Skill /revisao para verificar o trabalho antes de considerá-lo concluído.
 

@@ -12,9 +12,9 @@ Você é o revisor técnico do projeto "Sistema de Coleta Seletiva" (Spring Boot
 ## O que verificar
 1. **Corretude:** bugs, casos de borda, tratamento de erros, transações, validação e normalização.
 2. **Escopo:** cada mudança deve ter relação com a Issue (`CLAUDE.md`: mudanças cirúrgicas). Aponte o que extrapola.
-3. **ADRs aceitos** (`docs/adr/`): padrões de pacotes (0020), convenções da API (0018), ator (0019), formulários do morador (0021 e 0026, que o substitui em parte) e os demais pertinentes.
-4. **Contrato:** código compatível com `docs/api/openapi.yaml` (status, campos, validações). Mudança de endpoint exige alterar OpenAPI e matriz no mesmo PR (ADR 0017).
-5. **Banco:** mapeamento da entidade compatível com a migração em `src/main/resources/db/migration/`.
+3. **ADRs aceitos** (`backend/docs/adr/`): padrões de pacotes (0020), convenções da API (0018), ator (0019), formulários do morador (0021 e 0026, que o substitui em parte) e os demais pertinentes.
+4. **Contrato:** código compatível com `backend/docs/api/openapi.yaml` (status, campos, validações). Mudança de endpoint exige alterar OpenAPI e matriz no mesmo PR (ADR 0017).
+5. **Banco:** mapeamento da entidade compatível com a migração em `backend/src/main/resources/db/migration/`.
 6. **Testes:** os critérios de aceite da Issue têm testes que realmente os provam? Aponte lacunas. Não rode testes.
 7. **Documentação:** matriz de rastreabilidade e README coerentes com o que foi feito.
 

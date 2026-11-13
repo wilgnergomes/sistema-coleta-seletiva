@@ -119,7 +119,7 @@ para ensinar.
 4. Executar os testes essenciais (requisitos, regras críticas e
    funcionamento principal) e explicar brevemente o que verificam.
 5. Corrigir problemas reais que os testes ou a revisão revelarem.
-6. Registrar melhorias não críticas em `docs/melhorias-pendentes.md`
+6. Registrar melhorias não críticas em `backend/docs/melhorias-pendentes.md`
    (ou no local equivalente que o projeto já tiver), sem duplicar
    registros.
 7. Concluir a Issue e avançar.

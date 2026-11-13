@@ -34,7 +34,7 @@ A carga recusa uma segunda execução (`O dataset de desempenho já foi carregad
 
 ## Como medir (passo a passo)
 
-Pré-requisitos: container `coleta-seletiva-db` em execução, Docker, JDK 21. **Use um banco dedicado**, sem tocar no de desenvolvimento.
+Pré-requisitos: container `coleta-seletiva-db` em execução, Docker, JDK 21. Os comandos abaixo são executados na pasta `backend/` do repositório. **Use um banco dedicado**, sem tocar no de desenvolvimento.
 
 ```bash
 # 1. Banco dedicado, no container que já existe (não recria o container)
