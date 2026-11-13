@@ -73,7 +73,42 @@ O estudante quer aprender enquanto o projeto é construído.
 - Dê ao estudante partes adequadas ao seu nível para implementar, sem
   impedir o andamento do trabalho.
 
+### Modalidade de implementação integral pela IA
+
+Quando o estudante escolher explicitamente esta modalidade (como no
+desenvolvimento do frontend), a IA implementa integralmente as
+funcionalidades planejadas, com testes e documentação, sem interromper
+as etapas para pedir que o estudante escreva partes do código. O estudante
+estuda depois os commits, os diffs e as branches preservadas.
+
+Mesmo nessa modalidade, a IA deve:
+
+- explicar as decisões importantes e as alternativas consideradas;
+- fazer commits descritivos, que permitam estudar a evolução;
+- entregar ao fim de cada etapa um relatório objetivo: o que foi feito,
+  decisões, testes executados e resultados reais, pendências e a branch
+  de origem.
+
+A metodologia de tutoria acima continua valendo como padrão quando essa
+modalidade não for escolhida.
+
 ## Fluxo permanente de Git e GitHub
+
+### Preservação de branches e do histórico
+
+Vale para todos os fluxos, de backend, documentação ou frontend:
+
+- Não excluir branches locais ou remotas, nem depois do merge. Não usar
+  `--delete-branch` nem ativar a exclusão automática de branches no GitHub.
+  As branches ficam como referência histórica para estudo.
+- Não fazer rebase, squash, reset destrutivo ou force push sem autorização
+  explícita do estudante. Preservar os commits e o histórico.
+- Integrar na `main` só por Pull Request, com merge commit (sem squash nem
+  rebase). A `main` é protegida e exige PR.
+- Não fazer merge sem autorização explícita do estudante.
+- Registrar no PR ou no relatório da etapa de qual branch a etapa foi criada.
+
+### Fluxo de backend e documentação
 
 Cada Issue segue este fluxo (detalhes e comandos manuais em `CONTRIBUTING.md`):
 
@@ -87,20 +122,41 @@ Cada Issue segue este fluxo (detalhes e comandos manuais em `CONTRIBUTING.md`):
 8. Abrir PR para `main`, relacionando a Issue (`Closes #N`), com o template do repositório.
 9. Revisar o PR: critérios de aceite, testes e diff.
 10. **Aguardar a autorização explícita do estudante para o merge.**
-11. Após a aprovação, fazer o merge e confirmar o encerramento da Issue, se todos os critérios foram cumpridos.
+11. Após a aprovação, fazer o merge (merge commit) e confirmar o encerramento da Issue, se todos os critérios foram cumpridos.
 12. Atualizar o `main` local.
-13. Excluir a branch antiga, local e remota, depois de verificar que a integração foi concluída e que não existem alterações não preservadas.
+13. Preservar a branch da Issue, local e remota, como referência histórica.
 14. Deixar o `main` atualizado e limpo antes de começar a próxima Issue.
 
 Regras:
 
 - Não desenvolver funcionalidades diretamente no `main`.
-- Não acumular branches de trabalho já integradas, salvo com justificativa técnica.
 - As operações rotineiras deste fluxo (atualizar o `main`, criar branch, commit, push, abrir PR) podem ser conduzidas sem pedir permissão a cada passo.
-- É obrigatório pedir aprovação antes de **merge**, antes de formalizar **novas decisões arquiteturais** (ADR) e antes de operações destrutivas fora do fluxo (`reset`, `clean`, `stash`, `rebase`, push forçado, apagar branch com trabalho não integrado).
+- É obrigatório pedir aprovação antes de **merge**, antes de formalizar **novas decisões arquiteturais** (ADR) e antes de operações destrutivas ou que reescrevem histórico (`reset`, `clean`, `stash`, `rebase`, squash, push forçado, exclusão de branch).
 - Se houver alterações locais inesperadas, conflitos ou risco de perda de trabalho, interromper a operação e informar o estudante antes de prosseguir.
 - Não incluir configurações locais (`.claude/settings.local.json`), credenciais ou arquivos sensíveis nos commits.
 - Internacionalização (ADR 0023, infraestrutura da Issue #35): mensagens ao cliente não ficam fixas no código. Formulários usam chaves (`message = "{morador.nome.obrigatorio}"`) e as exceções de negócio (`NegocioException`) carregam chave e argumentos; o texto fica em `messages.properties` (pt-BR) e `messages_en.properties`, com as mesmas chaves nos dois (um teste confere). Cada nova funcionalidade acrescenta suas chaves nos dois idiomas na própria branch, sem reabrir a Issue #35, salvo defeito ou requisito pendente da infraestrutura.
+
+### Fluxo do frontend (branches cumulativas)
+
+O frontend é desenvolvido em branches cumulativas, uma por etapa:
+
+`main` → `frontend/01-estrutura` → `frontend/02-design-system` → `frontend/03-catalogo-publico` → próximas etapas.
+
+- Cada branch nasce do último commit validado da branch anterior, e não
+  diretamente da `main` (a primeira nasce da `main`).
+- Durante o desenvolvimento, as etapas não são integradas à `main` e não
+  exigem PR para `main`. A revisão de cada etapa é feita comparando branches
+  consecutivas (`git diff frontend/01-estrutura..frontend/02-design-system`).
+- Cada branch é preservada como snapshot histórico. Não modificar branches
+  antigas para incluir funcionalidades posteriores; uma correção entra na
+  etapa atual.
+- Se for necessário um PR intermediário, ele usa a branch anterior como base
+  apenas para revisão, sem merge que modifique o snapshot histórico.
+- A integração final do frontend à `main` será decidida depois, só com
+  autorização explícita do estudante.
+
+As regras de preservação de branches e do histórico prevalecem sobre
+instruções anteriores de exclusão de branch que ainda constem nas skills.
 
 ## Registro de pendências não corrigidas
 
