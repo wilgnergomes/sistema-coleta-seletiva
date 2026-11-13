@@ -43,10 +43,12 @@ class PaginaConexao extends StatefulWidget {
 }
 
 class _PaginaConexaoState extends State<PaginaConexao> {
+  late final ConexaoViewModel _vm = widget.viewModel;
+
   @override
   void initState() {
     super.initState();
-    widget.viewModel.verificar();
+    _vm.verificar();
   }
 
   @override
@@ -58,9 +60,9 @@ class _PaginaConexaoState extends State<PaginaConexao> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: ListenableBuilder(
-            listenable: widget.viewModel,
+            listenable: _vm,
             builder: (context, _) {
-              final vm = widget.viewModel;
+              final vm = _vm;
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,

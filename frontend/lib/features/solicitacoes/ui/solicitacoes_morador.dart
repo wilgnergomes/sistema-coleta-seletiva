@@ -40,7 +40,9 @@ class PaginaSolicitacoes extends StatefulWidget {
 }
 
 class _PaginaSolicitacoesState extends State<PaginaSolicitacoes> {
-  ListaSolicitacoesViewModel get _vm => widget.viewModel;
+  /// Fixado na criação: o roteador pode reconstruir a rota (por exemplo, na
+  /// troca do endereço selecionado) e entregar outra instância ainda vazia.
+  late final ListaSolicitacoesViewModel _vm = widget.viewModel;
 
   @override
   void initState() {
@@ -179,7 +181,9 @@ class PaginaDetalheSolicitacaoMorador extends StatefulWidget {
 }
 
 class _PaginaDetalheSolicitacaoMoradorState extends State<PaginaDetalheSolicitacaoMorador> {
-  DetalheSolicitacaoViewModel get _vm => widget.viewModel;
+  /// Fixado na criação: o roteador pode reconstruir a rota (por exemplo, na
+  /// troca do endereço selecionado) e entregar outra instância ainda vazia.
+  late final DetalheSolicitacaoViewModel _vm = widget.viewModel;
   String? _rascunhoMotivo;
 
   @override
@@ -191,6 +195,12 @@ class _PaginaDetalheSolicitacaoMoradorState extends State<PaginaDetalheSolicitac
         ..tipoAviso = TipoAviso.sucesso;
     }
     _vm.carregar();
+  }
+
+  @override
+  void dispose() {
+    _vm.dispose();
+    super.dispose();
   }
 
   Future<void> _cancelar(SolicitacaoDetalhe d) async {

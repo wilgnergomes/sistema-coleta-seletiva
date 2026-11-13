@@ -67,7 +67,9 @@ class PaginaInicioMorador extends StatefulWidget {
 class _PaginaInicioMoradorState extends State<PaginaInicioMorador> {
   final _nome = TextEditingController();
 
-  InicioMoradorViewModel get _vm => widget.viewModel;
+  /// Fixado na criação: o roteador pode reconstruir a rota (por exemplo, na
+  /// troca do endereço selecionado) e entregar outra instância ainda vazia.
+  late final InicioMoradorViewModel _vm = widget.viewModel;
 
   @override
   void initState() {
