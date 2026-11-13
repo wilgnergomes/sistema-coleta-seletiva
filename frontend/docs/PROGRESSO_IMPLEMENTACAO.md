@@ -8,10 +8,10 @@ anterior (branches cumulativas, `CLAUDE.md`).
 
 | Item | Valor |
 |---|---|
-| Branch atual | `frontend/01-estrutura` |
-| Base da etapa | `main` em `dfa80517905a834cd1e7c3ca1be73af839f18e4c` |
-| Etapa em andamento | 01 · estrutura |
-| Próxima ação | Concluir a 01 e abrir `frontend/02-design-system` a partir do último commit da 01 |
+| Branch atual | `frontend/02-design-system` |
+| Base da etapa | `frontend/01-estrutura` em `d821e43` |
+| Etapa em andamento | 02 · design system |
+| Próxima ação | Abrir `frontend/03-catalogo-publico` a partir do último commit da 02 |
 
 ## Ambiente
 
@@ -37,7 +37,8 @@ Banco da demonstração: `coleta_frontend_demo`, criado no mesmo container com
 
 | Etapa | Branch | Situação | Último commit |
 |---|---|---|---|
-| 01 | `frontend/01-estrutura` | Em andamento | — |
+| 01 | `frontend/01-estrutura` | Concluída e publicada | `d821e43` |
+| 02 | `frontend/02-design-system` | Em andamento | — |
 
 ## Etapa 01 · estrutura
 
@@ -85,6 +86,26 @@ e 4 Mbps com CPU desacelerada) ainda não foram medidos.
 Problema encontrado: no Git Bash, `--dart-define=API_BASE_URL=/api` vira
 `C:/Program Files/Git/api` pela conversão de caminhos do MSYS. O build passou a ser
 feito no PowerShell, e o README registra o cuidado.
+
+## Etapa 02 · design system
+
+Feito:
+
+- Tokens de cor, espaço, raio e largura (`lib/app/tema/tokens.dart`) e tema Material 3 (`lib/app/tema/tema.dart`) com Inter local, anel de foco `#1C5FB8` de 2 dp nos botões, estados de hover, pressionado e desabilitado, e `ThemeExtension` das situações.
+- Inter 4.1 (OFL) reduzida ao conjunto latino com `pyftsubset` (fontTools 4.60.1 em venv temporário): 64 KB por peso, contra 411 KB do original. A licença está em `assets/fonts/Inter-LICENSE.txt`.
+- Cores de materiais pela Resolução CONAMA 275/2001 (papel azul, plástico vermelho, vidro verde, metal amarelo, pilhas laranja) só em ícones e marcadores, sempre com o nome. A logomarca combina as quatro cores com o centro verde.
+- Componentes em `lib/ui/compartilhado/`: shell adaptativo (barra inferior, gaveta, cabeçalho, trilho e navegação lateral), estados de carregamento, vazio, erro e aviso, selos de situação, paginador, campos com obrigatório e erro do servidor, diálogos de confirmação e formulário, layout de página e grade.
+- `Carga<T>` com geração, para descartar respostas obsoletas após troca de filtro ou de ator.
+- go_router com um shell público inicial.
+
+Verificações executadas:
+
+| Verificação | Resultado |
+|---|---|
+| `flutter analyze` | Nenhum problema |
+| `flutter test` | 38 testes aprovados (19 novos): contraste calculado dos tokens, situações e ícones; limiares 600/1000 dp; composições a 360 e 1366 px; gaveta do administrador; texto a 200% sem transbordo; estado preservado ao redimensionar; `androidTapTargetGuideline`, `labeledTapTargetGuideline` e `textContrastGuideline`; descarte de resposta obsoleta |
+| Build release | Concluído |
+| Navegador a 360 × 740 | Inter e logomarca renderizadas; leitura real via `/api` |
 
 ## Pendências e problemas conhecidos
 

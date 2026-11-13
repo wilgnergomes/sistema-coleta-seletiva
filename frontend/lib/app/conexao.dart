@@ -52,50 +52,47 @@ class _PaginaConexaoState extends State<PaginaConexao> {
   @override
   Widget build(BuildContext context) {
     final texto = Theme.of(context).textTheme;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Coleta Seletiva')),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: ListenableBuilder(
-              listenable: widget.viewModel,
-              builder: (context, _) {
-                final vm = widget.viewModel;
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Estado da conexão', style: texto.headlineSmall),
-                    const SizedBox(height: 8),
-                    Text('API: ${widget.base}', style: texto.bodyMedium),
-                    const SizedBox(height: 24),
-                    if (vm.verificando)
-                      const Row(
-                        children: [
-                          SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                          SizedBox(width: 12),
-                          Text('Verificando a conexão com a API…'),
-                        ],
-                      )
-                    else if (vm.falha != null)
-                      Text(vm.falha!, style: texto.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.error))
-                    else
-                      Text(
-                        'Conexão com a API funcionando. ${vm.totalPontos} ponto(s) de coleta ativo(s) no catálogo.',
-                        style: texto.bodyLarge,
-                      ),
-                    const SizedBox(height: 24),
-                    OutlinedButton.icon(
-                      onPressed: vm.verificando ? null : vm.verificar,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Verificar novamente'),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: ListenableBuilder(
+            listenable: widget.viewModel,
+            builder: (context, _) {
+              final vm = widget.viewModel;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Estado da conexão', style: texto.headlineSmall),
+                  const SizedBox(height: 8),
+                  Text('API: ${widget.base}', style: texto.bodyMedium),
+                  const SizedBox(height: 24),
+                  if (vm.verificando)
+                    const Row(
+                      children: [
+                        SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                        SizedBox(width: 12),
+                        Text('Verificando a conexão com a API…'),
+                      ],
+                    )
+                  else if (vm.falha != null)
+                    Text(vm.falha!, style: texto.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.error))
+                  else
+                    Text(
+                      'Conexão com a API funcionando. ${vm.totalPontos} ponto(s) de coleta ativo(s) no catálogo.',
+                      style: texto.bodyLarge,
                     ),
-                  ],
-                );
-              },
-            ),
+                  const SizedBox(height: 24),
+                  OutlinedButton.icon(
+                    onPressed: vm.verificando ? null : vm.verificar,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Verificar novamente'),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
