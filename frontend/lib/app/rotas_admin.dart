@@ -10,6 +10,8 @@ import '../features/catalogo/ui/admin_materiais.dart';
 import '../features/catalogo/ui/admin_pontos.dart';
 import '../features/catalogo/ui/pagina_pontos.dart';
 import '../features/catalogo/ui/seletor_ponto.dart';
+import '../features/moradores/ui/admin_moradores.dart';
+import '../features/operadores/operadores.dart';
 import '../features/resumo_gerencial/resumo_gerencial.dart';
 import '../features/solicitacoes/data/solicitacoes.dart';
 import '../features/solicitacoes/ui/componentes_solicitacao.dart';
@@ -50,8 +52,94 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
     return Uri(path: '/administracao/materiais', queryParameters: q.isEmpty ? null : q).toString();
   }
 
+  final operadores = RepositorioOperadores(d.api);
+
+  String urlOperadores(int? pontoId, int pagina) {
+    final q = {if (pontoId != null) 'pontoId': '$pontoId', if (pagina > 0) 'pagina': '${pagina + 1}'};
+    return Uri(path: '/administracao/operadores', queryParameters: q.isEmpty ? null : q).toString();
+  }
+
+  int paginaDaUrl(GoRouterState estado) {
+    final p = (int.tryParse(estado.uri.queryParameters['pagina'] ?? '') ?? 1) - 1;
+    return p < 0 ? 0 : p;
+  }
+
   return [
     GoRoute(path: '/administracao', redirect: (_, _) => '/administracao/resumo'),
+    GoRoute(
+      path: '/administracao/operadores',
+      builder: (context, estado) => PaginaOperadores(
+        repositorio: operadores,
+        catalogo: catalogo,
+        pontoId: int.tryParse(estado.uri.queryParameters['pontoId'] ?? ''),
+        pagina: paginaDaUrl(estado),
+        aoMudar: (pontoId, pagina) => context.go(urlOperadores(pontoId, pagina)),
+        aoAbrir: (id) => context.push('/administracao/operadores/$id'),
+        aoNovo: () => context.push('/administracao/operadores/novo'),
+      ),
+    ),
+    GoRoute(
+      path: '/administracao/operadores/novo',
+      builder: (context, estado) => PaginaEditorOperador(
+        repositorio: operadores,
+        catalogo: catalogo,
+        aoVoltar: () => voltarOu(context, '/administracao/operadores'),
+        aoSalvar: (_) => voltarOu(context, '/administracao/operadores'),
+      ),
+    ),
+    GoRoute(
+      path: '/administracao/operadores/:id',
+      builder: (context, estado) {
+        final id = idDaRota(estado);
+        if (id == null) return rotaInvalida(context, destino: '/administracao/resumo');
+        return PaginaEditorOperador(
+          key: ValueKey('adm-operador-$id'),
+          id: id,
+          repositorio: operadores,
+          catalogo: catalogo,
+          aoVoltar: () => voltarOu(context, '/administracao/operadores'),
+          aoSalvar: (_) => voltarOu(context, '/administracao/operadores'),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/administracao/moradores',
+      builder: (context, estado) => PaginaMoradoresAdmin(
+        repositorio: d.repositorioMoradores,
+        pagina: paginaDaUrl(estado),
+        aoMudarPagina: (p) =>
+            context.go(p == 0 ? '/administracao/moradores' : '/administracao/moradores?pagina=${p + 1}'),
+        aoAbrir: (id) => context.push('/administracao/moradores/$id'),
+        aoCadastrar: () => context.go('/cadastro'),
+      ),
+    ),
+    GoRoute(
+      path: '/administracao/moradores/:id',
+      builder: (context, estado) {
+        final id = idDaRota(estado);
+        if (id == null) return rotaInvalida(context, destino: '/administracao/resumo');
+        return PaginaMoradorAdmin(
+          key: ValueKey('adm-morador-$id'),
+          id: id,
+          repositorio: d.repositorioMoradores,
+          aoVoltar: () => voltarOu(context, '/administracao/moradores'),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/administracao/moradores/:id/enderecos',
+      builder: (context, estado) {
+        final id = idDaRota(estado);
+        if (id == null) return rotaInvalida(context, destino: '/administracao/resumo');
+        return PaginaMoradorAdmin(
+          key: ValueKey('adm-morador-end-$id'),
+          id: id,
+          focarEnderecos: true,
+          repositorio: d.repositorioMoradores,
+          aoVoltar: () => voltarOu(context, '/administracao/moradores'),
+        );
+      },
+    ),
     GoRoute(
       path: '/administracao/pontos',
       builder: (context, estado) => PaginaPontos(

@@ -17,6 +17,7 @@ class FormularioMorador extends StatefulWidget {
     this.permitirSituacao = false,
     this.aoSalvar,
     this.aoVoltar,
+    this.confirmarAntes,
   });
 
   final Morador? inicial;
@@ -25,6 +26,9 @@ class FormularioMorador extends StatefulWidget {
   final bool permitirSituacao;
   final ValueChanged<Morador>? aoSalvar;
   final VoidCallback? aoVoltar;
+
+  /// Confirmação opcional antes do envio, como a inativação pelo administrador.
+  final Future<bool> Function(DadosMorador dados)? confirmarAntes;
 
   @override
   State<FormularioMorador> createState() => _FormularioMoradorState();
@@ -55,6 +59,7 @@ class _FormularioMoradorState extends State<FormularioMorador> {
       fone: _fone.text,
       situacao: widget.permitirSituacao ? _situacao : null,
     );
+    if (widget.confirmarAntes != null && !await widget.confirmarAntes!(dados)) return;
     final salvo = await _envio.executar(() => widget.salvar(dados));
     if (salvo != null) widget.aoSalvar?.call(salvo);
   }
