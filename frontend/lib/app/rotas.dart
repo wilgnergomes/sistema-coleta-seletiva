@@ -13,6 +13,7 @@ import '../ui/compartilhado/layout.dart';
 import '../ui/compartilhado/marca.dart';
 import 'conexao.dart';
 import 'rotas_morador.dart';
+import 'rotas_operador.dart';
 import 'dependencias.dart';
 import 'sessao.dart';
 import 'shell_app.dart';
@@ -235,6 +236,7 @@ GoRouter criarRotas(Dependencias d, {List<RotasArea> areas = const []}) {
             ),
           ),
           ...rotasSolicitacoesMorador(d),
+          ...rotasOperador(d),
           for (final area in areas) ...area(d),
           GoRoute(
             path: '/conexao',
