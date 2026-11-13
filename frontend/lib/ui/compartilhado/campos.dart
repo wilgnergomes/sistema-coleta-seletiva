@@ -59,13 +59,16 @@ class CampoTexto extends StatelessWidget {
         inputFormatters: formatadores,
         onFieldSubmitted: aoEnviar,
         autofillHints: autofill,
-        forceErrorText: erroServidor,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         decoration: InputDecoration(
           labelText: obrigatorio ? '$rotulo *' : rotulo,
           helperText: ajuda,
           prefixIcon: prefixo,
           alignLabelWithHint: linhas > 1,
+          // Erro do servidor pela decoração: aparece junto ao campo sem
+          // bloquear a validação local de um novo envio (forceErrorText
+          // faria validate() falhar até o próximo envio).
+          errorText: erroServidor,
         ),
         validator: (valor) {
           final texto = valor?.trim() ?? '';
