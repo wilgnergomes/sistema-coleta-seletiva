@@ -2,6 +2,7 @@ import '../../../core/api/cliente_api.dart';
 import '../../../core/api/json.dart';
 import '../../../core/api/pagina.dart';
 import '../../../core/estado/cache.dart';
+import '../../../core/dominio/quantidade.dart';
 import 'modelos.dart';
 
 /// Materiais ativos do catálogo público, lidos numa única página.
@@ -133,5 +134,60 @@ class RepositorioCatalogo {
     _detalhes.limpar();
     _ativos = null;
     _nomes = null;
+  }
+
+  // Gestão administrativa (RF03 a RF05). Toda gravação invalida as leituras.
+
+  Future<MaterialColeta> salvarMaterial(MaterialColeta dados, {int? id}) async {
+    final json = id == null
+        ? await _api.post('/materiais', corpo: dados.paraJson())
+        : await _api.put('/materiais/$id', corpo: dados.paraJson());
+    invalidar();
+    return MaterialColeta.deJson(comoMapa(json));
+  }
+
+  /// `recolhimentoDomiciliar` vai sempre explícito: o mapper do backend trata
+  /// ausência como `false`.
+  Future<PontoColeta> salvarPonto({
+    int? id,
+    required String nome,
+    required Endereco endereco,
+    required bool recolhimentoDomiciliar,
+    required String situacao,
+    String? contato,
+    String? horarios,
+  }) async {
+    String? texto(String? t) => t == null || t.trim().isEmpty ? null : t.trim();
+    final corpo = {
+      'nome': nome.trim(),
+      'contato': texto(contato),
+      'horarios': texto(horarios),
+      'recolhimentoDomiciliar': recolhimentoDomiciliar,
+      'situacao': situacao,
+      'endereco': endereco.paraJson(),
+    };
+    final json = id == null
+        ? await _api.post('/pontos-coleta', corpo: corpo)
+        : await _api.put('/pontos-coleta/$id', corpo: corpo);
+    invalidar();
+    return PontoColeta.deJson(comoMapa(json));
+  }
+
+  /// Inclui ou edita o vínculo. `limite` nulo remove o limite.
+  Future<MaterialAceito> salvarVinculo(int pontoId, int materialId, {String? observacoes, Quantidade? limite}) async {
+    final json = await _api.put(
+      '/pontos-coleta/$pontoId/materiais/$materialId',
+      corpo: {
+        'observacoes': observacoes == null || observacoes.trim().isEmpty ? null : observacoes.trim(),
+        'limite': limite?.comoNumero,
+      },
+    );
+    invalidar();
+    return MaterialAceito.deJson(comoMapa(json));
+  }
+
+  Future<void> removerVinculo(int pontoId, int materialId) async {
+    await _api.delete('/pontos-coleta/$pontoId/materiais/$materialId');
+    invalidar();
   }
 }

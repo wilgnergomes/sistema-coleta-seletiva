@@ -52,7 +52,9 @@ class PaginaPontos extends StatefulWidget {
   final FiltroPontos filtro;
   final RepositorioCatalogo repositorio;
   final ValueChanged<FiltroPontos> aoMudarFiltro;
-  final ValueChanged<int> aoAbrirPonto;
+
+  /// Abre o detalhe. Na administração, a lista é relida ao retornar.
+  final Future<void> Function(int id) aoAbrirPonto;
   final Acesso acesso;
   final String titulo;
   final String subtitulo;
@@ -96,6 +98,11 @@ class _PaginaPontosState extends State<PaginaPontos> {
   }
 
   void _aplicar(FiltroPontos novo) => widget.aoMudarFiltro(novo.naPagina(0));
+
+  Future<void> _abrir(int id) async {
+    await widget.aoAbrirPonto(id);
+    if (mounted && widget.administrativo) await _vm.carregar(widget.filtro, forcar: true);
+  }
 
   void _buscar(String texto) {
     final f = widget.filtro;
@@ -275,7 +282,7 @@ class _PaginaPontosState extends State<PaginaPontos> {
                   key: ValueKey(p.id),
                   ponto: p,
                   mostrarSituacao: widget.administrativo,
-                  aoAbrir: () => widget.aoAbrirPonto(p.id),
+                  aoAbrir: () => _abrir(p.id),
                 ),
             ],
           ),

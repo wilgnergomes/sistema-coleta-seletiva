@@ -4,6 +4,11 @@ import 'package:material_ui/material_ui.dart';
 import '../core/api/falhas.dart';
 import '../core/dominio/datas.dart';
 import '../core/dominio/enums.dart';
+import '../core/api/cliente_api.dart';
+import '../features/catalogo/data/modelos.dart';
+import '../features/catalogo/ui/admin_materiais.dart';
+import '../features/catalogo/ui/admin_pontos.dart';
+import '../features/catalogo/ui/pagina_pontos.dart';
 import '../features/catalogo/ui/seletor_ponto.dart';
 import '../features/resumo_gerencial/resumo_gerencial.dart';
 import '../features/solicitacoes/data/solicitacoes.dart';
@@ -35,8 +40,98 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
     }
   }
 
+  final catalogo = d.repositorioCatalogo;
+
+  String urlPontosAdmin(FiltroPontos f) =>
+      Uri(path: '/administracao/pontos', queryParameters: f.paraUrl().isEmpty ? null : f.paraUrl()).toString();
+
+  String urlMateriaisAdmin(int pagina, SituacaoCadastro? situacao) {
+    final q = {if (pagina > 0) 'pagina': '${pagina + 1}', if (situacao != null) 'situacao': situacao.api};
+    return Uri(path: '/administracao/materiais', queryParameters: q.isEmpty ? null : q).toString();
+  }
+
   return [
     GoRoute(path: '/administracao', redirect: (_, _) => '/administracao/resumo'),
+    GoRoute(
+      path: '/administracao/pontos',
+      builder: (context, estado) => PaginaPontos(
+        titulo: 'Pontos de coleta',
+        subtitulo: 'Cadastro, situação e materiais aceitos de cada ponto.',
+        administrativo: true,
+        acesso: Acesso.ator,
+        filtro: FiltroPontos.deQuery(estado.uri.queryParameters),
+        repositorio: catalogo,
+        aoMudarFiltro: (f) => context.go(urlPontosAdmin(f)),
+        aoAbrirPonto: (id) => context.push('/administracao/pontos/$id'),
+        acaoTitulo: FilledButton.icon(
+          onPressed: () => context.go('/administracao/pontos/novo'),
+          icon: const Icon(Icons.add),
+          label: const Text('Novo ponto'),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/administracao/pontos/novo',
+      builder: (context, estado) => PaginaEditorPonto(
+        repositorio: catalogo,
+        aoVoltar: () => voltarOu(context, '/administracao/pontos'),
+        aoCriado: (p) => context.go('/administracao/pontos/${p.id}'),
+        aoVerSolicitacoes: (id) => context.go(urlSolicitacoesAdmin(FiltroSolicitacoes(pontoId: id))),
+      ),
+    ),
+    GoRoute(
+      path: '/administracao/pontos/:id',
+      builder: (context, estado) {
+        final id = idDaRota(estado);
+        if (id == null) return rotaInvalida(context, destino: '/administracao/resumo');
+        return PaginaEditorPonto(
+          key: ValueKey('adm-ponto-$id'),
+          id: id,
+          repositorio: catalogo,
+          aoVoltar: () => voltarOu(context, '/administracao/pontos'),
+          aoCriado: (_) {},
+          aoVerSolicitacoes: (id) => context.go(urlSolicitacoesAdmin(FiltroSolicitacoes(pontoId: id))),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/administracao/materiais',
+      builder: (context, estado) {
+        final q = estado.uri.queryParameters;
+        final pagina = (int.tryParse(q['pagina'] ?? '') ?? 1) - 1;
+        final situacao = SituacaoCadastro.deApi(q['situacao']);
+        return PaginaMateriaisAdmin(
+          repositorio: catalogo,
+          pagina: pagina < 0 ? 0 : pagina,
+          situacao: situacao == SituacaoCadastro.desconhecida ? null : situacao,
+          aoMudar: (p, s) => context.go(urlMateriaisAdmin(p, s)),
+          aoAbrir: (id) => context.push('/administracao/materiais/$id'),
+          aoNovo: () => context.push('/administracao/materiais/novo'),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/administracao/materiais/novo',
+      builder: (context, estado) => PaginaEditorMaterial(
+        repositorio: catalogo,
+        aoVoltar: () => voltarOu(context, '/administracao/materiais'),
+        aoSalvar: (m) => voltarOu(context, '/administracao/materiais'),
+      ),
+    ),
+    GoRoute(
+      path: '/administracao/materiais/:id',
+      builder: (context, estado) {
+        final id = idDaRota(estado);
+        if (id == null) return rotaInvalida(context, destino: '/administracao/resumo');
+        return PaginaEditorMaterial(
+          key: ValueKey('adm-material-$id'),
+          id: id,
+          repositorio: catalogo,
+          aoVoltar: () => voltarOu(context, '/administracao/materiais'),
+          aoSalvar: (m) => voltarOu(context, '/administracao/materiais'),
+        );
+      },
+    ),
     GoRoute(
       path: '/administracao/resumo',
       builder: (context, estado) {
