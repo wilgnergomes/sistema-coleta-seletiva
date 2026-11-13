@@ -50,15 +50,15 @@ class PaginaInicioMorador extends StatefulWidget {
     required this.viewModel,
     required this.aoPesquisar,
     required this.aoGerenciarEnderecos,
-    this.secoesExtras = const [],
+    this.extras,
   });
 
   final InicioMoradorViewModel viewModel;
   final ValueChanged<FiltroPontos> aoPesquisar;
   final VoidCallback aoGerenciarEnderecos;
 
-  /// Seções adicionais abaixo da descoberta.
-  final List<Widget> secoesExtras;
+  /// Seções adicionais, que recebem o município do endereço selecionado.
+  final Widget Function(BuildContext context, String? municipio)? extras;
 
   @override
   State<PaginaInicioMorador> createState() => _PaginaInicioMoradorState();
@@ -190,7 +190,8 @@ class _PaginaInicioMoradorState extends State<PaginaInicioMorador> {
               selecionado: null,
               aoSelecionar: (m) => _pesquisar(materialId: m?.id),
             ),
-            ...widget.secoesExtras,
+            if (widget.extras != null && (_vm.enderecos.dados != null || _vm.enderecos.falha != null))
+              widget.extras!(context, municipio),
           ],
         );
       },

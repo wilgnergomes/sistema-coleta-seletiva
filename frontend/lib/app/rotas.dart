@@ -12,6 +12,7 @@ import '../ui/compartilhado/estados.dart';
 import '../ui/compartilhado/layout.dart';
 import '../ui/compartilhado/marca.dart';
 import 'conexao.dart';
+import 'rotas_morador.dart';
 import 'dependencias.dart';
 import 'sessao.dart';
 import 'shell_app.dart';
@@ -213,6 +214,7 @@ GoRouter criarRotas(Dependencias d, {List<RotasArea> areas = const []}) {
               viewModel: InicioMoradorViewModel(sessao: sessao, moradores: d.repositorioMoradores, catalogo: catalogo),
               aoPesquisar: (f) => context.go(urlPontos(f)),
               aoGerenciarEnderecos: () => context.push('/morador/conta/enderecos'),
+              extras: (context, municipio) => secoesRecentes(context, d, municipio),
             ),
           ),
           GoRoute(
@@ -232,6 +234,7 @@ GoRouter criarRotas(Dependencias d, {List<RotasArea> areas = const []}) {
               aoVoltar: () => voltarOu(context, '/morador/conta'),
             ),
           ),
+          ...rotasSolicitacoesMorador(d),
           for (final area in areas) ...area(d),
           GoRoute(
             path: '/conexao',
