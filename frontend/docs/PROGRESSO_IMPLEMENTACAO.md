@@ -8,10 +8,10 @@ anterior (branches cumulativas, `CLAUDE.md`).
 
 | Item | Valor |
 |---|---|
-| Branch atual | `frontend/08-resumo-e-consulta-admin` |
-| Base da etapa | `frontend/07-execucao-e-reagendamento` em `74677c4` |
-| Etapa em andamento | 08 · resumo e consulta administrativa |
-| Próxima ação | Abrir `frontend/09-materiais-pontos-e-vinculos` a partir do último commit da 08 |
+| Branch atual | `frontend/09-materiais-pontos-e-vinculos` |
+| Base da etapa | `frontend/08-resumo-e-consulta-admin` em `b9dbd2d` |
+| Etapa em andamento | 09 · materiais, pontos e vínculos |
+| Próxima ação | Abrir `frontend/10-moradores-e-operadores-admin` a partir do último commit da 09 |
 
 ## Ambiente
 
@@ -44,7 +44,8 @@ Banco da demonstração: `coleta_frontend_demo`, criado no mesmo container com
 | 05 | `frontend/05-solicitacoes-morador` | Concluída e publicada | `3a7fbcc` |
 | 06 | `frontend/06-fila-e-agendamento` | Concluída e publicada | `f7ee21d` |
 | 07 | `frontend/07-execucao-e-reagendamento` | Concluída e publicada | `74677c4` |
-| 08 | `frontend/08-resumo-e-consulta-admin` | Em andamento | — |
+| 08 | `frontend/08-resumo-e-consulta-admin` | Concluída e publicada | `b9dbd2d` |
+| 09 | `frontend/09-materiais-pontos-e-vinculos` | Em andamento | — |
 
 ## Etapa 01 · estrutura
 
@@ -248,6 +249,25 @@ Verificações executadas:
 | `flutter analyze` | Nenhum problema |
 | `flutter test` | 97 testes aprovados (5 novos): resumo a 1366 px com valores e unidades da API e navegação por situação, 360 px com zeros e lista vazia e período na consulta, erro de período em `ate`, reaproveitamento sem chamada, regressão da troca de endereço no início |
 | Navegador a 1366 × 768 com API real | Administrador: resumo com 2, 1, 1, 5, 1, 2 e Papel 88 kg (76 do seed mais os 12 concluídos na etapa 07); `Concluída` → `/administracao/solicitacoes?situacao=CONCLUIDA` com 5 solicitações |
+
+## Etapa 09 · materiais, pontos e vínculos
+
+Feito:
+
+- `/administracao/pontos`: a mesma pesquisa do catálogo com identidade administrativa, filtro de situação, selo `Inativo` e `Novo ponto`. A lista é relida ao voltar de um editor.
+- `/administracao/pontos/novo` e `/:id`: nome, contato, horários, `Faz recolhimento domiciliar` (enviado sempre de forma explícita), situação e endereço (`EnderecoForm` embutido, erros `endereco.*` associados ao campo). Inativação com confirmação. Em `409` da RN05, mensagem do servidor, edição preservada e `Ver solicitações do ponto` (abre a consulta com `pontoId`).
+- Materiais aceitos no ponto persistido: `Vincular material` (seletor paginado com inativos identificados e vinculados desabilitados), edição de observações e limite (`null` remove o limite; o contrato aceita fração inclusive em `UN`) e remoção com confirmação que identifica material e ponto; conflito de remoção mostra a mensagem e o atalho.
+- `/administracao/materiais`: lista paginada com filtro de situação. `/novo` e `/:id`: nome, descrição, unidade, orientação e situação, com confirmação de inativação e mensagem do servidor quando a troca de unidade é bloqueada (ADR 0013), preservando os dados.
+
+Defeito corrigido: os erros do servidor eram exibidos com `forceErrorText`, que faz `Form.validate()` falhar enquanto o erro estiver presente; o usuário não conseguia reenviar depois de corrigir. Agora o erro vai para `InputDecoration.errorText`.
+
+Verificações executadas:
+
+| Verificação | Resultado |
+|---|---|
+| `flutter analyze` | Nenhum problema |
+| `flutter test` | 101 testes aprovados (4 novos): novo ponto com booleano explícito, endereço embutido, erro `endereco.cep` e reenvio; inativação com confirmação e RN05; vínculo com limite nulo e remoção em conflito; troca de unidade bloqueada com JSON completo |
+| Navegador a 1366 × 768 com API real | Administrador: editar Cooperativa Verde Vida para Inativo → confirmação → `409` (2 solicitações abertas), mensagem e `Ver solicitações do ponto`; ponto continua ativo no servidor |
 
 ## Pendências e problemas conhecidos
 

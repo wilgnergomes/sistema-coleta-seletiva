@@ -95,7 +95,7 @@ void main() {
           filtro: filtro,
           repositorio: repositorio,
           aoMudarFiltro: (f) => pedido = f,
-          aoAbrirPonto: (_) {},
+          aoAbrirPonto: (_) async {},
         ),
       ),
     );
