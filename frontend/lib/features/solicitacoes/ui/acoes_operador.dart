@@ -5,6 +5,8 @@ import '../../../core/dominio/enums.dart';
 import '../../../ui/compartilhado/estados.dart';
 import '../data/solicitacoes.dart';
 import 'componentes_solicitacao.dart';
+import 'formulario_conclusao.dart';
+import '../../../ui/compartilhado/dialogos.dart';
 import 'formularios_acao.dart';
 import 'view_models.dart';
 
@@ -73,9 +75,68 @@ class AcoesOperador extends StatelessWidget {
       if (motivo == null) return;
       await _executar((a) => repo.cancelar(a.id, motivo, a.versao), 'Solicitação cancelada.');
     });
+    final iniciar = AcaoOperador('Iniciar recolhimento', Icons.play_arrow_outlined, principal: true, (context) async {
+      final ok = await confirmar(
+        context,
+        titulo: 'Iniciar recolhimento',
+        mensagem:
+            'Confirme o início do recolhimento de ${d.protocolo}.'
+            '${d.agendadaPara == null ? '' : ' Agendado para ${fuso.dataHora(d.agendadaPara!)}.'}',
+        rotuloAcao: 'Iniciar recolhimento',
+      );
+      if (!ok) return;
+      await _executar((a) => repo.iniciar(a.id, a.versao), 'Recolhimento iniciado.');
+    });
+    final reagendar = AcaoOperador('Reagendar', Icons.edit_calendar_outlined, (context) async {
+      final dados = await pedirDataHora(
+        context,
+        fuso: fuso,
+        titulo: 'Reagendar recolhimento',
+        descricao: 'Escolha a nova data de ${d.protocolo} e informe o motivo. A data anterior fica no histórico.',
+        rotuloAcao: 'Reagendar',
+        pedirMotivo: true,
+        atual: d.agendadaPara,
+        diferenteDe: d.agendadaPara,
+        agora: agora,
+      );
+      if (dados == null) return;
+      await _executar((a) => repo.reagendar(a.id, dados.instante, dados.motivo!, a.versao), 'Recolhimento reagendado.');
+    });
+    final concluir = AcaoOperador('Concluir recolhimento', Icons.task_alt, principal: true, (context) async {
+      final efetivas = await pedirQuantidadesEfetivas(context, d);
+      if (efetivas == null) return;
+      await _executar((a) => repo.concluir(a.id, efetivas, a.versao), 'Recolhimento concluído.');
+    });
+    final falha = AcaoOperador('Registrar falha', Icons.report_problem_outlined, (context) async {
+      final dados = await pedirDataHora(
+        context,
+        fuso: fuso,
+        titulo: 'Registrar tentativa sem sucesso',
+        descricao:
+            'A solicitação ${d.protocolo} volta para Agendada na nova data. '
+            'O motivo e as informações ficam no histórico.',
+        rotuloAcao: 'Registrar falha',
+        pedirMotivo: true,
+        pedirInformacoes: true,
+        atual: d.agendadaPara,
+        agora: agora,
+      );
+      if (dados == null) return;
+      await _executar(
+        (a) => repo.registrarFalha(
+          a.id,
+          motivo: dados.motivo!,
+          informacoesTentativa: dados.informacoes!,
+          novaDataHora: dados.instante,
+          versao: a.versao,
+        ),
+        'Tentativa sem sucesso registrada. Novo agendamento salvo.',
+      );
+    });
     return switch (d.situacao) {
       SituacaoSolicitacao.solicitada => [agendar, recusar, cancelar],
-      SituacaoSolicitacao.agendada => [cancelar],
+      SituacaoSolicitacao.agendada => [iniciar, reagendar, cancelar],
+      SituacaoSolicitacao.emRecolhimento => [concluir, falha],
       _ => const [],
     };
   }

@@ -26,6 +26,7 @@ Future<DadosDataHora?> pedirDataHora(
   bool pedirMotivo = false,
   bool pedirInformacoes = false,
   DateTime? atual,
+  DateTime? diferenteDe,
   DateTime Function()? agora,
 }) {
   return abrirFormulario<DadosDataHora>(
@@ -38,6 +39,7 @@ Future<DadosDataHora?> pedirDataHora(
       pedirMotivo: pedirMotivo,
       pedirInformacoes: pedirInformacoes,
       atual: atual,
+      diferenteDe: diferenteDe,
       agora: agora ?? DateTime.now,
     ),
   );
@@ -52,6 +54,7 @@ class _FormularioDataHora extends StatefulWidget {
     required this.pedirInformacoes,
     required this.agora,
     this.atual,
+    this.diferenteDe,
   });
 
   final FusoNegocio fuso;
@@ -60,6 +63,9 @@ class _FormularioDataHora extends StatefulWidget {
   final bool pedirMotivo;
   final bool pedirInformacoes;
   final DateTime? atual;
+
+  /// O reagendamento precisa mudar o instante marcado.
+  final DateTime? diferenteDe;
   final DateTime Function() agora;
 
   @override
@@ -111,7 +117,11 @@ class _FormularioDataHoraState extends State<_FormularioDataHora> {
     } else {
       try {
         instante = widget.fuso.instante(_dia!, _hora!.hour, _hora!.minute);
-        if (!instante.isAfter(widget.agora())) erro = 'Escolha uma data e hora futuras.';
+        if (!instante.isAfter(widget.agora())) {
+          erro = 'Escolha uma data e hora futuras.';
+        } else if (widget.diferenteDe != null && instante.isAtSameMomentAs(widget.diferenteDe!)) {
+          erro = 'Escolha uma data ou hora diferente da já agendada.';
+        }
       } on ArgumentError catch (e) {
         erro = '${e.message}';
       }
