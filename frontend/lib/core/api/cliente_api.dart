@@ -50,15 +50,24 @@ class ClienteApi {
     return base.replace(path: '${base.path}$caminho', queryParameters: parametros.isEmpty ? null : parametros);
   }
 
-  Map<String, String> _cabecalhos(Acesso acesso, {required bool comCorpo}) => {
+  Map<String, String> _cabecalhos(Acesso acesso, {required bool comCorpo, Map<String, String>? identidade}) => {
     'Accept': 'application/json',
     'Accept-Language': 'pt-BR',
     if (comCorpo) 'Content-Type': 'application/json',
-    if (acesso == Acesso.ator) ..._identidade(),
+    if (acesso == Acesso.ator) ...(identidade ?? _identidade()),
   };
 
-  Future<Object?> get(String caminho, {Map<String, Object?> query = const {}, Acesso acesso = Acesso.publico}) =>
-      _executar(() => _http.get(url(caminho, query), headers: _cabecalhos(acesso, comCorpo: false)), gravacao: false);
+  /// [identidade] substitui a identidade da sessão nesta chamada. É usada
+  /// para validar um ator antes de selecioná-lo.
+  Future<Object?> get(
+    String caminho, {
+    Map<String, Object?> query = const {},
+    Acesso acesso = Acesso.publico,
+    Map<String, String>? identidade,
+  }) => _executar(
+    () => _http.get(url(caminho, query), headers: _cabecalhos(acesso, comCorpo: false, identidade: identidade)),
+    gravacao: false,
+  );
 
   Future<Object?> post(String caminho, {Object? corpo, Acesso acesso = Acesso.ator}) => _executar(
     () => _http.post(url(caminho), headers: _cabecalhos(acesso, comCorpo: true), body: jsonEncode(corpo)),
