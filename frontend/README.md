@@ -78,6 +78,35 @@ flutter analyze
 flutter test
 ```
 
+Integração HTTP com a API real, pelo proxy (backend com o perfil `demo` e Caddy no ar;
+cria solicitações no banco fictício):
+
+```powershell
+dart test test_integracao
+```
+
+Medição da primeira tela útil com o Chrome headless, nos perfis do planejamento:
+
+```powershell
+python -m pip install websocket-client==1.8.0
+python tool/medir_desempenho.py --chrome "C:/Program Files/Google/Chrome/Application/chrome.exe"
+```
+
+Roteiro, identificadores do seed e resultados: [`docs/ROTEIRO_DEMONSTRACAO.md`](docs/ROTEIRO_DEMONSTRACAO.md).
+Limitações e evoluções: [`docs/MELHORIAS_FUTURAS.md`](docs/MELHORIAS_FUTURAS.md).
+
+## Áreas e rotas
+
+| Perfil | Rotas principais |
+|---|---|
+| Público | `/pontos`, `/pontos/:id`, `/materiais`, `/materiais/:id`, `/cadastro`, `/demonstracao` |
+| Morador | `/morador/inicio`, `/morador/solicitacoes` (`/nova`, `/:id`, `/:id/corrigir`), `/morador/conta`, `/morador/conta/enderecos` |
+| Operador | `/operador/fila`, `/operador/fila/:id` |
+| Administrador | `/administracao/resumo`, `/administracao/solicitacoes`, `/administracao/pontos`, `/administracao/materiais`, `/administracao/operadores`, `/administracao/moradores` |
+
+A identidade é simulada por cabeçalhos (ADR 0019), fica só em memória e é pedida de novo
+ao recarregar a página numa rota restrita.
+
 ## Estrutura
 
 | Pasta | Conteúdo |
@@ -87,4 +116,6 @@ flutter test
 | `lib/ui/compartilhado/` | Componentes reutilizáveis |
 | `lib/features/` | Funcionalidades, com `ui/` (Views e ViewModels) e `data/` (repositórios e modelos) |
 | `test/` | Testes unitários e de widgets |
+| `test_integracao/` | Integração HTTP com a API real |
+| `tool/` | Script de medição de desempenho |
 | `docs/` | Planejamento, progresso e evidências |

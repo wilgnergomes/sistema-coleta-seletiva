@@ -9,8 +9,10 @@ Sistema para conectar **moradores**, **pontos de coleta** e **operadores** respo
 | Pasta | Conteúdo |
 |---|---|
 | [`backend/`](backend/) | API REST em Java/Spring Boot, com banco, testes e documentação técnica (ADRs, contrato OpenAPI, diagramas e requisitos) |
+| [`frontend/`](frontend/) | Aplicativo Flutter Web responsivo que consome a API, com planejamento, testes e roteiro de demonstração |
 
 Instruções de execução, configuração e documentação da API: veja o [README do backend](backend/README.md).
+Execução do aplicativo Web e demonstração: veja o [README do frontend](frontend/README.md).
 
 ## Contribuindo
 

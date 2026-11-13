@@ -8,10 +8,10 @@ anterior (branches cumulativas, `CLAUDE.md`).
 
 | Item | Valor |
 |---|---|
-| Branch atual | `frontend/10-moradores-e-operadores-admin` |
-| Base da etapa | `frontend/09-materiais-pontos-e-vinculos` em `9b4226f` |
-| Etapa em andamento | 10 · moradores e operadores |
-| Próxima ação | Abrir `frontend/11-qualidade-e-entrega-web` a partir do último commit da 10 |
+| Branch atual | `frontend/11-qualidade-e-entrega-web` |
+| Base da etapa | `frontend/10-moradores-e-operadores-admin` em `04dca01` |
+| Etapa em andamento | Nenhuma: entrega Web concluída (etapas 01 a 11) |
+| Próxima ação | Revisão do estudante comparando as branches; a etapa 12 (nativa) é opcional e depende de Android SDK e Visual Studio C++, não instalados |
 
 ## Ambiente
 
@@ -46,7 +46,9 @@ Banco da demonstração: `coleta_frontend_demo`, criado no mesmo container com
 | 07 | `frontend/07-execucao-e-reagendamento` | Concluída e publicada | `74677c4` |
 | 08 | `frontend/08-resumo-e-consulta-admin` | Concluída e publicada | `b9dbd2d` |
 | 09 | `frontend/09-materiais-pontos-e-vinculos` | Concluída e publicada | `9b4226f` |
-| 10 | `frontend/10-moradores-e-operadores-admin` | Em andamento | — |
+| 10 | `frontend/10-moradores-e-operadores-admin` | Concluída e publicada | `04dca01` |
+| 11 | `frontend/11-qualidade-e-entrega-web` | Concluída e publicada | último commit da branch |
+| 12 | `frontend/12-compatibilidade-nativa` | Não iniciada (opcional) | — |
 
 ## Etapa 01 · estrutura
 
@@ -286,6 +288,36 @@ Verificações executadas:
 | `flutter test` | 105 testes aprovados (4 novos): lista de operadores filtrada por ponto, troca de ponto com confirmação e `409` de e-mail, novo operador sem ponto bloqueado, morador administrativo com inativação confirmada e endereços |
 | Navegador a 360 × 740 com API real | Administrador: `/administracao/operadores` com 3 operadores, nome do ponto, gaveta e `scrollWidth` 360 (sem rolagem horizontal) |
 
+## Etapa 11 · qualidade e entrega Web
+
+Feito:
+
+- Integração HTTP com a API real (`test_integracao/`, 10 testes) usando os repositórios do app pelo proxy: RF06, isolamento, RN01 sem gravação parcial, RN02, data passada, operador de outro ponto, administrador sem transições, ciclo completo RF08–RF14 com conflito de versão e histórico em ordem, RN05, RF15 e `403` de perfil inválido.
+- Acessibilidade automatizada em sete rotas principais a 360 e 1366 px (alvo, rótulo e contraste), texto a 200% no catálogo e navegação por teclado até a busca e os filtros.
+- Marca `primeira-tela-util` (Web) e `tool/medir_desempenho.py` (Chrome/Edge headless via CDP, perfis de 10 Mbps e de 4 Mbps com CPU 4×, 15 repetições frias e quentes). Todas as metas iniciais atendidas; detalhes em `ROTEIRO_DEMONSTRACAO.md`.
+- `intl` removido (não era usado); `web` acrescentado para a marca de desempenho; `test` acrescentado para a integração.
+- Documentação: `ROTEIRO_DEMONSTRACAO.md` (preparação, IDs do seed, percurso e evidências), `MELHORIAS_FUTURAS.md` (limitações da API e pendências) e READMEs atualizados.
+
+Defeitos corrigidos nesta etapa, encontrados pelos testes de acessibilidade:
+
+- Linhas de `SelectableText` expunham alvos de toque menores que 48 dp. O texto de detalhe passou a ser selecionável por uma `SelectionArea` na página.
+- Destinos do trilho estendido tinham 44 dp de altura. A navegação lateral persistente (a partir de 1000 dp) passou a usar uma gaveta fixa de 232 dp com destinos de 56 dp, rótulos com reticências e troca para gaveta modal com texto acima de 150%.
+
+Verificações executadas:
+
+| Verificação | Resultado |
+|---|---|
+| `dart format --set-exit-if-changed`, `flutter analyze` | Sem alterações; nenhum problema |
+| `flutter test` | 121 testes aprovados |
+| `dart test test_integracao` | 10 testes aprovados contra a API real |
+| `flutter build web --release --no-web-resources-cdn` | Concluído em cerca de 30 s; `main.dart.js` com 3,97 MB sem compressão |
+| Desempenho (Chrome 157 headless, 15 repetições) | p75 frio 3,38 s (computador) e 8,42 s (entrada); quente 0,58 s e 1,75 s; 3,38 MiB frios; 2 chamadas de API |
+| Backend | `git diff main..HEAD -- backend/` vazio: nenhum arquivo do backend alterado |
+
 ## Pendências e problemas conhecidos
 
-- Medições formais de desempenho nos perfis definidos (etapa 11).
+- Não testados: Firefox, Safari, celular físico, acesso pela rede local, leitores de tela, fluidez de rolagem e memória. A demonstração pelo celular exige `CADDY_BIND` e liberação da porta no firewall, que não foram alterados.
+- Persistência após reinício da API não foi exercitada pelo frontend (o backend tem evidência própria).
+- A etapa 12 (alvos nativos) não foi iniciada: Android SDK e workload C++ do Visual Studio não estão instalados e não foram instalados, conforme a orientação.
+- Limitações da API e evoluções sugeridas em `MELHORIAS_FUTURAS.md`.
+- O banco `coleta_frontend_demo` recebeu as solicitações criadas nos testes de navegador e de integração; o banco de desenvolvimento não foi usado.
