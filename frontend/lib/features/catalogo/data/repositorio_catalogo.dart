@@ -34,6 +34,27 @@ class RepositorioCatalogo {
 
   static const tamanhoPagina = 20;
 
+  /// Nomes de pontos já lidos, para rotular solicitações sem consultas por linha.
+  final nomesConhecidos = <int, String>{};
+  Future<void>? _nomes;
+
+  void _registrar(Iterable<PontoColeta> pontos) {
+    for (final p in pontos) {
+      nomesConhecidos[p.id] = p.nome;
+    }
+  }
+
+  /// Lê uma vez a primeira página pública (até 100 pontos ativos) para
+  /// conhecer os nomes. Pontos inativos ficam com o rótulo `Ponto #id`.
+  Future<void> carregarNomes() => _nomes ??= pesquisarPontos(const FiltroPontos(), tamanho: 100).then(
+    (_) {},
+    onError: (Object _) {
+      _nomes = null;
+    },
+  );
+
+  String rotuloPonto(int id) => nomesConhecidos[id] ?? 'Ponto #$id';
+
   String _chave(Acesso acesso, Object consulta) => '${acesso.name}|$consulta';
 
   Future<Pagina<PontoColeta>> pesquisarPontos(
@@ -50,6 +71,7 @@ class RepositorioCatalogo {
     }
     final json = await _api.get('/pontos-coleta', query: query, acesso: acesso);
     final pagina = Pagina.deJson(json, PontoColeta.deJson);
+    _registrar(pagina.conteudo);
     _pontos.gravar(chave, pagina);
     return pagina;
   }
@@ -61,6 +83,7 @@ class RepositorioCatalogo {
       if (guardado != null) return guardado;
     }
     final ponto = PontoColeta.deJson(comoMapa(await _api.get('/pontos-coleta/$id', acesso: acesso)));
+    _registrar([ponto]);
     _detalhes.gravar(chave, ponto);
     return ponto;
   }
@@ -109,5 +132,6 @@ class RepositorioCatalogo {
     _pontos.limpar();
     _detalhes.limpar();
     _ativos = null;
+    _nomes = null;
   }
 }
