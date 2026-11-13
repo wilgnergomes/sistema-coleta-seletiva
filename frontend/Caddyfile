@@ -1,0 +1,33 @@
+# Serve o build Web e encaminha /api ao Spring na mesma origem.
+#
+# Uso, a partir de frontend/:
+#   flutter build web --release --no-web-resources-cdn --dart-define=APP_MODE=demo --dart-define=API_BASE_URL=/api
+#   caddy run --config Caddyfile
+#
+# Por padrão escuta só no loopback (http://127.0.0.1:8000). Para a
+# demonstração no celular pela rede controlada, defina CADDY_BIND com o
+# endereço de rede do PC (por exemplo 192.168.1.50) e libere a porta 8000 no
+# firewall dessa rede. O Spring continua acessível apenas pelo loopback.
+{
+	admin off
+	auto_https off
+}
+
+http://:8000 {
+	bind {$CADDY_BIND:127.0.0.1}
+	encode zstd gzip
+
+	# Remove o prefixo /api e repassa método, query, corpo e cabeçalhos.
+	handle_path /api/* {
+		header Cache-Control "no-store"
+		reverse_proxy 127.0.0.1:8080
+	}
+
+	handle {
+		root * build/web
+		header /index.html Cache-Control "no-cache"
+		header /flutter_bootstrap.js Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

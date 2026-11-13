@@ -1,0 +1,22 @@
+# Desenvolvimento: Caddy na frente do `flutter run` e do Spring.
+#
+# Uso, a partir de frontend/:
+#   flutter run -d web-server --web-hostname=127.0.0.1 --web-port=8081 --dart-define=APP_MODE=demo --dart-define=API_BASE_URL=/api
+#   caddy run --config Caddyfile.dev
+# Abra http://127.0.0.1:8000.
+{
+	admin off
+	auto_https off
+}
+
+http://127.0.0.1:8000 {
+	handle_path /api/* {
+		header Cache-Control "no-store"
+		reverse_proxy 127.0.0.1:8080
+	}
+
+	# Rotas, recursos e WebSockets do servidor de desenvolvimento do Flutter.
+	handle {
+		reverse_proxy 127.0.0.1:8081
+	}
+}
