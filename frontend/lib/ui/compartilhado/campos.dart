@@ -32,7 +32,7 @@ class CampoTexto extends StatelessWidget {
   final int? limite;
   final String? ajuda;
   final String? erroServidor;
-  final FormFieldValidator<String>? validar;
+  final String? Function(String texto)? validar;
   final TextInputType? teclado;
   final int linhas;
   final List<TextInputFormatter>? formatadores;

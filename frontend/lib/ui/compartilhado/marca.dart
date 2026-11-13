@@ -28,7 +28,14 @@ class Marca extends StatelessWidget {
         children: [
           simbolo,
           const SizedBox(width: Espaco.xs),
-          Text('Coleta Seletiva', style: Theme.of(context).textTheme.titleMedium),
+          Flexible(
+            child: Text(
+              'Coleta Seletiva',
+              style: Theme.of(context).textTheme.titleMedium,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
         ],
       ),
     );

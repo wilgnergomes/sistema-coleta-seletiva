@@ -5,30 +5,17 @@ import '../features/catalogo/data/modelos.dart';
 import '../features/catalogo/ui/pagina_detalhe_ponto.dart';
 import '../features/catalogo/ui/pagina_materiais.dart';
 import '../features/catalogo/ui/pagina_pontos.dart';
+import '../features/demonstracao/pagina_demonstracao.dart';
+import '../features/moradores/ui/pagina_inicio_morador.dart';
+import '../features/moradores/ui/paginas_morador.dart';
 import '../ui/compartilhado/estados.dart';
 import '../ui/compartilhado/layout.dart';
 import '../ui/compartilhado/marca.dart';
-import '../ui/compartilhado/shell.dart';
 import 'conexao.dart';
 import 'dependencias.dart';
-
-const destinosPublicos = [
-  DestinoNavegacao(rotulo: 'Pontos', icone: Icons.place_outlined, iconeSelecionado: Icons.place, rota: '/pontos'),
-  DestinoNavegacao(
-    rotulo: 'Materiais',
-    icone: Icons.recycling_outlined,
-    iconeSelecionado: Icons.recycling,
-    rota: '/materiais',
-  ),
-];
-
-int? indiceDestino(List<DestinoNavegacao> destinos, String caminho) {
-  for (var i = 0; i < destinos.length; i++) {
-    final rota = destinos[i].rota;
-    if (caminho == rota || caminho.startsWith('$rota/')) return i;
-  }
-  return null;
-}
+import 'sessao.dart';
+import 'shell_app.dart';
+import 'tema/tokens.dart';
 
 /// Volta ao item anterior do histórico ou, sem histórico, ao destino dado.
 void voltarOu(BuildContext context, String destino) {
@@ -39,74 +26,95 @@ void voltarOu(BuildContext context, String destino) {
   }
 }
 
-int? _id(GoRouterState estado, [String parametro = 'id']) {
+int? idDaRota(GoRouterState estado, [String parametro = 'id']) {
   final id = int.tryParse(estado.pathParameters[parametro] ?? '');
-  return id != null && id > 0 ? id : null;
+  return id != null && id > 0 && id <= 2147483647 ? id : null;
 }
 
-Widget _rotaInvalida(BuildContext context) => PaginaRolavel(
+String urlPontos(FiltroPontos f) =>
+    Uri(path: '/pontos', queryParameters: f.paraUrl().isEmpty ? null : f.paraUrl()).toString();
+
+Widget rotaInvalida(BuildContext context, {String? destino}) => PaginaRolavel(
   filhos: [
     EstadoVazio(
       icone: Icons.link_off,
       titulo: 'Página não encontrada',
       mensagem: 'O endereço aberto não corresponde a uma página do aplicativo.',
-      acao: FilledButton(onPressed: () => context.go('/pontos'), child: const Text('Voltar para pontos')),
+      acao: FilledButton(
+        onPressed: () => context.go(destino ?? '/pontos'),
+        child: Text(destino == null ? 'Voltar para pontos' : 'Ir para o início'),
+      ),
     ),
   ],
 );
 
-GoRouter criarRotas(Dependencias d) {
+/// Retorno aceito após a seleção do ator: só rotas internas do perfil.
+String destinoAposSelecao(Ator ator, String? retorno) {
+  if (retorno != null && retorno.startsWith('/') && !retorno.startsWith('//')) {
+    final caminho = Uri.tryParse(retorno)?.path;
+    if (caminho != null && Perfil.daRota(caminho) == ator.perfil) return retorno;
+  }
+  return ator.perfil.rotaInicial;
+}
+
+/// Rotas extras de cada área, acrescentadas pelas etapas seguintes.
+typedef RotasArea = List<RouteBase> Function(Dependencias d);
+
+GoRouter criarRotas(Dependencias d, {List<RotasArea> areas = const []}) {
   GoRouter.optionURLReflectsImperativeAPIs = true;
   final catalogo = d.repositorioCatalogo;
+  final sessao = d.sessao;
+  final demo = d.configuracao.demonstracaoHabilitada;
+
   return GoRouter(
     initialLocation: '/pontos',
+    refreshListenable: sessao,
     errorBuilder: (context, estado) => Scaffold(
       appBar: AppBar(title: const Marca()),
-      body: _rotaInvalida(context),
+      body: rotaInvalida(context),
     ),
+    redirect: (context, estado) {
+      final caminho = estado.uri.path;
+      if (caminho == '/demonstracao' && !demo) return '/pontos';
+      final area = Perfil.daRota(caminho);
+      if (area == null) return null;
+      if (!demo) return '/pontos';
+      final perfil = sessao.perfil;
+      if (perfil == null) {
+        return Uri(
+          path: '/demonstracao',
+          queryParameters: {'retorno': estado.uri.toString(), 'perfil': area.name},
+        ).toString();
+      }
+      if (perfil != area) return Uri(path: '/acesso-restrito', queryParameters: {'area': area.name}).toString();
+      return null;
+    },
     routes: [
-      GoRoute(path: '/', redirect: (_, _) => '/pontos'),
+      GoRoute(path: '/', redirect: (_, _) => sessao.perfil?.rotaInicial ?? '/pontos'),
       ShellRoute(
-        builder: (context, estado, filho) => ShellAdaptativo(
-          titulo: const Marca(),
-          destinos: destinosPublicos,
-          indiceSelecionado: indiceDestino(destinosPublicos, estado.uri.path),
-          aoSelecionar: (i) => context.go(destinosPublicos[i].rota),
-          acoes: [
-            if (MediaQuery.sizeOf(context).width < 600)
-              PopupMenuButton<String>(
-                tooltip: 'Menu',
-                icon: const Icon(Icons.menu),
-                onSelected: (rota) => context.go(rota),
-                itemBuilder: (context) => [
-                  for (final destino in destinosPublicos)
-                    PopupMenuItem(value: destino.rota, child: Text(destino.rotulo)),
-                ],
-              ),
-          ],
-          corpo: filho,
-        ),
+        builder: (context, estado, filho) => ShellApp(sessao: sessao, estado: estado, filho: filho, demonstracao: demo),
         routes: [
           GoRoute(
             path: '/pontos',
             builder: (context, estado) => PaginaPontos(
               filtro: FiltroPontos.deQuery(estado.uri.queryParameters),
               repositorio: catalogo,
-              aoMudarFiltro: (f) => context.go(Uri(path: '/pontos', queryParameters: f.paraUrl()).toString()),
+              aoMudarFiltro: (f) => context.go(urlPontos(f)),
               aoAbrirPonto: (id) => context.push('/pontos/$id'),
             ),
           ),
           GoRoute(
             path: '/pontos/:id',
             builder: (context, estado) {
-              final id = _id(estado);
-              if (id == null) return _rotaInvalida(context);
+              final id = idDaRota(estado);
+              if (id == null) return rotaInvalida(context);
               return PaginaDetalhePonto(
                 key: ValueKey('ponto-$id'),
                 id: id,
                 repositorio: catalogo,
                 aoVoltar: () => voltarOu(context, '/pontos'),
                 aoAbrirMaterial: (m) => context.push('/materiais/$m'),
+                acoes: (context, ponto) => _AcaoSolicitar(ponto: ponto, sessao: sessao),
               );
             },
           ),
@@ -125,8 +133,8 @@ GoRouter criarRotas(Dependencias d) {
           GoRoute(
             path: '/materiais/:id',
             builder: (context, estado) {
-              final id = _id(estado);
-              if (id == null) return _rotaInvalida(context);
+              final id = idDaRota(estado);
+              if (id == null) return rotaInvalida(context);
               return PaginaDetalheMaterial(
                 key: ValueKey('material-$id'),
                 id: id,
@@ -137,6 +145,95 @@ GoRouter criarRotas(Dependencias d) {
             },
           ),
           GoRoute(
+            path: '/cadastro',
+            builder: (context, estado) => PaginaCadastro(
+              repositorio: d.repositorioMoradores,
+              demonstracao: demo,
+              aoVoltarAoCatalogo: () => context.go('/pontos'),
+              aoUsarNaDemonstracao: (m) {
+                sessao.entrar(Ator(Perfil.morador, m.id, nome: m.nome), respostaValidacao: m);
+                context.go('/morador/conta/enderecos');
+              },
+            ),
+          ),
+          GoRoute(
+            path: '/demonstracao',
+            builder: (context, estado) {
+              final retorno = estado.uri.queryParameters['retorno'];
+              return PaginaDemonstracao(
+                key: ValueKey(estado.uri.toString()),
+                sessao: sessao,
+                validador: d.validadorAtor,
+                perfilInicial: Perfil.values.where((p) => p.name == estado.uri.queryParameters['perfil']).firstOrNull,
+                aoVoltarAoPublico: () => context.go('/pontos'),
+                aoConcluir: (ator, resposta) {
+                  sessao.entrar(ator, respostaValidacao: resposta);
+                  context.go(destinoAposSelecao(ator, retorno));
+                },
+              );
+            },
+          ),
+          GoRoute(
+            path: '/acesso-restrito',
+            builder: (context, estado) {
+              final area = Perfil.values.where((p) => p.name == estado.uri.queryParameters['area']).firstOrNull;
+              return PaginaRolavel(
+                larguraMaxima: Largura.formulario,
+                filhos: [
+                  EstadoVazio(
+                    icone: Icons.lock_outline,
+                    titulo: 'Área de outro perfil',
+                    mensagem:
+                        'Esta página pertence ao perfil ${area?.rotulo ?? 'selecionado'}. '
+                        'Volte à sua área ou troque a identidade de demonstração.',
+                    acao: Wrap(
+                      spacing: Espaco.s,
+                      runSpacing: Espaco.s,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        if (sessao.perfil != null)
+                          FilledButton(
+                            onPressed: () => context.go(sessao.perfil!.rotaInicial),
+                            child: const Text('Ir para minha área'),
+                          ),
+                        OutlinedButton(
+                          onPressed: () => context.go('/demonstracao?perfil=${area?.name ?? ''}'),
+                          child: const Text('Trocar identidade'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          GoRoute(
+            path: '/morador/inicio',
+            builder: (context, estado) => PaginaInicioMorador(
+              viewModel: InicioMoradorViewModel(sessao: sessao, moradores: d.repositorioMoradores, catalogo: catalogo),
+              aoPesquisar: (f) => context.go(urlPontos(f)),
+              aoGerenciarEnderecos: () => context.push('/morador/conta/enderecos'),
+            ),
+          ),
+          GoRoute(
+            path: '/morador/conta',
+            builder: (context, estado) => PaginaConta(
+              sessao: sessao,
+              repositorio: d.repositorioMoradores,
+              aoAbrirEnderecos: () => context.push('/morador/conta/enderecos'),
+              aoTrocarIdentidade: () => context.go('/demonstracao'),
+            ),
+          ),
+          GoRoute(
+            path: '/morador/conta/enderecos',
+            builder: (context, estado) => PaginaEnderecos(
+              moradorId: sessao.usuarioId!,
+              repositorio: d.repositorioMoradores,
+              aoVoltar: () => voltarOu(context, '/morador/conta'),
+            ),
+          ),
+          for (final area in areas) ...area(d),
+          GoRoute(
             path: '/conexao',
             builder: (context, estado) => PaginaConexao(viewModel: ConexaoViewModel(d.api), base: d.api.base),
           ),
@@ -144,4 +241,32 @@ GoRouter criarRotas(Dependencias d) {
       ),
     ],
   );
+}
+
+/// Ação do detalhe do ponto conforme o contexto: só o morador elegível
+/// inicia uma solicitação, e só em ponto ativo com recolhimento domiciliar.
+class _AcaoSolicitar extends StatelessWidget {
+  const _AcaoSolicitar({required this.ponto, required this.sessao});
+
+  final PontoColeta ponto;
+  final Sessao sessao;
+
+  @override
+  Widget build(BuildContext context) {
+    if (sessao.perfil != Perfil.morador) return const SizedBox.shrink();
+    if (!ponto.aceitaSolicitacao) {
+      return Text(
+        'Este ponto recebe materiais no local e não faz recolhimento domiciliar.',
+        style: Theme.of(context).textTheme.bodyMedium,
+      );
+    }
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: FilledButton.icon(
+        onPressed: () => context.push('/morador/solicitacoes/nova?pontoId=${ponto.id}'),
+        icon: const Icon(Icons.local_shipping_outlined),
+        label: const Text('Solicitar recolhimento'),
+      ),
+    );
+  }
 }
