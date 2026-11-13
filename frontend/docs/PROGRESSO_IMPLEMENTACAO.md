@@ -8,10 +8,10 @@ anterior (branches cumulativas, `CLAUDE.md`).
 
 | Item | Valor |
 |---|---|
-| Branch atual | `frontend/07-execucao-e-reagendamento` |
-| Base da etapa | `frontend/06-fila-e-agendamento` em `f7ee21d` |
-| Etapa em andamento | 07 · execução e reagendamento |
-| Próxima ação | Abrir `frontend/08-resumo-e-consulta-admin` a partir do último commit da 07 |
+| Branch atual | `frontend/08-resumo-e-consulta-admin` |
+| Base da etapa | `frontend/07-execucao-e-reagendamento` em `74677c4` |
+| Etapa em andamento | 08 · resumo e consulta administrativa |
+| Próxima ação | Abrir `frontend/09-materiais-pontos-e-vinculos` a partir do último commit da 08 |
 
 ## Ambiente
 
@@ -43,7 +43,8 @@ Banco da demonstração: `coleta_frontend_demo`, criado no mesmo container com
 | 04 | `frontend/04-morador-e-enderecos` | Concluída e publicada | `742a9a9` |
 | 05 | `frontend/05-solicitacoes-morador` | Concluída e publicada | `3a7fbcc` |
 | 06 | `frontend/06-fila-e-agendamento` | Concluída e publicada | `f7ee21d` |
-| 07 | `frontend/07-execucao-e-reagendamento` | Em andamento | — |
+| 07 | `frontend/07-execucao-e-reagendamento` | Concluída e publicada | `74677c4` |
+| 08 | `frontend/08-resumo-e-consulta-admin` | Em andamento | — |
 
 ## Etapa 01 · estrutura
 
@@ -230,6 +231,23 @@ Verificações executadas:
 | `flutter analyze` | Nenhum problema |
 | `flutter test` | 92 testes aprovados (6 novos e 1 caso atualizado): ações de `AGENDADA` e `EM_RECOLHIMENTO`, início só com a versão, conclusão (vazia, todas zero, fração em peças, JSON com `11.125` e `0`), reagendamento com mesmo instante recusado e JSON correto, falha com motivo, tentativa e data, `409 CONFLITO_VERSAO` relendo o estado sem repetir |
 | Navegador a 1366 × 768 com API real | Operador 1, solicitação 3: `Iniciar recolhimento` → `Em recolhimento`; `Concluir` com Papel 12 e Plástico 0 → `Concluída`; histórico com criação, agendamento (data marcada 16/11/2026 09:00), início e conclusão pelo Operador #1 |
+
+## Etapa 08 · resumo e consulta administrativa
+
+Feito:
+
+- `/administracao/resumo` (RF15) com período na URL (`de`, `ate`), `Alterar período` e `Limpar período`. Bloco `Solicitações criadas no período` (pela data de criação) com as seis situações, barra discreta e valor em texto; cada linha abre `/administracao/solicitacoes` com a mesma situação e o mesmo período. Bloco `Recolhido em atendimentos concluídos` (pela data de conclusão) com material, quantidade e unidade por linha. Nada é somado no cliente. Lado a lado a partir de 744 dp (e escala de texto até 130%), empilhados abaixo disso. A validação do administrador é reaproveitada como primeira leitura. Período invertido mostra o erro do servidor em `ate`.
+- `/administracao/solicitacoes` com situação, período de criação, ponto (seletor administrativo pesquisável e paginado, com inativos identificados) e paginação. `/administracao/solicitacoes/:id` com o detalhe base, sem comandos de situação, e `Abrir cadastro` do morador e dos responsáveis do histórico (as telas de cadastro chegam na 10).
+
+Defeito corrigido nesta etapa: o roteador reconstrói as rotas quando a sessão notifica (por exemplo, ao trocar o endereço selecionado). As páginas liam o `ViewModel` do widget a cada build e recebiam uma instância nova, ainda vazia. Agora cada página fixa o `ViewModel` na criação do `State` e o descarta no `dispose`. Há um teste de regressão.
+
+Verificações executadas:
+
+| Verificação | Resultado |
+|---|---|
+| `flutter analyze` | Nenhum problema |
+| `flutter test` | 97 testes aprovados (5 novos): resumo a 1366 px com valores e unidades da API e navegação por situação, 360 px com zeros e lista vazia e período na consulta, erro de período em `ate`, reaproveitamento sem chamada, regressão da troca de endereço no início |
+| Navegador a 1366 × 768 com API real | Administrador: resumo com 2, 1, 1, 5, 1, 2 e Papel 88 kg (76 do seed mais os 12 concluídos na etapa 07); `Concluída` → `/administracao/solicitacoes?situacao=CONCLUIDA` com 5 solicitações |
 
 ## Pendências e problemas conhecidos
 
