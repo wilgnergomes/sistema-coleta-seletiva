@@ -57,7 +57,8 @@ void main() {
   group('ações por situação', () {
     for (final (situacao, esperadas, ausentes) in [
       ('SOLICITADA', ['Agendar', 'Recusar', 'Cancelar'], ['Iniciar recolhimento']),
-      ('AGENDADA', ['Cancelar'], ['Agendar', 'Recusar']),
+      ('AGENDADA', ['Iniciar recolhimento', 'Reagendar', 'Cancelar'], ['Agendar', 'Recusar']),
+      ('EM_RECOLHIMENTO', ['Concluir recolhimento', 'Registrar falha'], ['Cancelar', 'Reagendar']),
       ('CONCLUIDA', <String>[], ['Agendar', 'Cancelar']),
     ]) {
       testWidgets(situacao, (tester) async {
@@ -209,6 +210,192 @@ void main() {
       expect(find.text('Voltar para fila'), findsOneWidget);
       expect(find.text('Fila do ponto'), findsNothing);
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('execução e reagendamento', () {
+    Map<String, Object?> agendada({int versao = 4}) => {
+      ...detalheJson(
+        3,
+        situacao: 'AGENDADA',
+        versao: versao,
+        itens: [
+          {
+            'materialId': 1,
+            'nomeMaterial': 'Papel',
+            'unidade': 'KG',
+            'quantidadeEstimada': 12.5,
+            'quantidadeEfetiva': null,
+          },
+          {
+            'materialId': 6,
+            'nomeMaterial': 'Pilhas e baterias',
+            'unidade': 'UN',
+            'quantidadeEstimada': 4,
+            'quantidadeEfetiva': null,
+          },
+        ],
+      ),
+      'agendadaPara': '2026-11-20T12:00:00Z',
+    };
+
+    Map<String, Object?> emRecolhimento() => {...agendada(versao: 5), 'situacao': 'EM_RECOLHIMENTO'};
+
+    Future<void> escolherDataHora(WidgetTester tester, String dia) async {
+      await tester.tap(find.text('Escolher data *'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(dia));
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Escolher hora *'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('iniciar pede confirmação e envia só a versão', (tester) async {
+      Map<String, Object?>? corpo;
+      final c = Cenario(
+        ApiFalsa()
+          ..quando('GET /solicitacoes/3', (_) => (200, agendada()))
+          ..quando('POST /solicitacoes/3/inicio', (r) {
+            corpo = jsonDecode(r.body) as Map<String, Object?>;
+            return (200, emRecolhimento());
+          }),
+      );
+      await abrirPainel(tester, c);
+      await tester.tap(botao('Iniciar recolhimento'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Agendado para 20/11/2026 09:00'), findsOneWidget);
+      await tester.tap(botao('Iniciar recolhimento', tipo: FilledButton).last);
+      await tester.pumpAndSettle();
+      expect(corpo, {'versao': 4});
+      expect(botao('Concluir recolhimento'), findsOneWidget);
+    });
+
+    testWidgets('concluir exige efetiva explícita, uma positiva e peças inteiras', (tester) async {
+      Map<String, Object?>? corpo;
+      final c = Cenario(
+        ApiFalsa()
+          ..quando('GET /solicitacoes/3', (_) => (200, emRecolhimento()))
+          ..quando('POST /solicitacoes/3/conclusao', (r) {
+            corpo = jsonDecode(r.body) as Map<String, Object?>;
+            return (200, {...emRecolhimento(), 'situacao': 'CONCLUIDA', 'versao': 6});
+          }),
+      );
+      await abrirPainel(tester, c);
+      await tester.tap(botao('Concluir recolhimento'));
+      await tester.pumpAndSettle();
+      final papel = find.widgetWithText(TextFormField, 'Papel recolhido (kg) *');
+      final pilhas = find.widgetWithText(TextFormField, 'Pilhas e baterias recolhido (un.) *');
+      final confirmar = botao('Concluir recolhimento', tipo: FilledButton).last;
+
+      await tester.tap(confirmar);
+      await tester.pumpAndSettle();
+      expect(find.text('Informe papel recolhido (kg).'), findsOneWidget);
+      expect(find.text('Informe pilhas e baterias recolhido (un.).'), findsOneWidget);
+
+      await tester.enterText(papel, '0');
+      await tester.enterText(pilhas, '0');
+      await tester.tap(confirmar);
+      await tester.pumpAndSettle();
+      expect(find.text('Informe pelo menos uma quantidade recolhida maior que zero.'), findsOneWidget);
+
+      await tester.enterText(pilhas, '1,5');
+      await tester.tap(confirmar);
+      await tester.pumpAndSettle();
+      expect(find.text('Este material é contado em unidades inteiras.'), findsOneWidget);
+
+      await tester.enterText(papel, '11,125');
+      await tester.enterText(pilhas, '0');
+      await tester.tap(confirmar);
+      await tester.pumpAndSettle();
+      expect(corpo, {
+        'versao': 5,
+        'itens': [
+          {'materialId': 1, 'quantidadeEfetiva': 11.125},
+          {'materialId': 6, 'quantidadeEfetiva': 0},
+        ],
+      });
+      expect(find.text('Recolhimento concluído.'), findsOneWidget);
+    });
+
+    testWidgets('reagendar exige motivo e instante diferente do atual', (tester) async {
+      Map<String, Object?>? corpo;
+      final c = Cenario(
+        ApiFalsa()
+          ..quando('GET /solicitacoes/3', (_) => (200, agendada()))
+          ..quando('POST /solicitacoes/3/reagendamento', (r) {
+            corpo = jsonDecode(r.body) as Map<String, Object?>;
+            return (200, agendada(versao: 5));
+          }),
+      );
+      await abrirPainel(tester, c);
+      await tester.tap(botao('Reagendar'));
+      await tester.pumpAndSettle();
+      await escolherDataHora(tester, '20');
+      await tester.enterText(find.byType(TextFormField), 'Chuva forte');
+      await tester.tap(botao('Reagendar', tipo: FilledButton).last);
+      await tester.pumpAndSettle();
+      expect(find.text('Escolha uma data ou hora diferente da já agendada.'), findsOneWidget);
+
+      await tester.tap(find.text('Data: 20/11/2026'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('21'));
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      await tester.tap(botao('Reagendar', tipo: FilledButton).last);
+      await tester.pumpAndSettle();
+      expect(corpo, {'dataHora': '2026-11-21T12:00:00.000Z', 'motivo': 'Chuva forte', 'versao': 4});
+    });
+
+    testWidgets('falha registra motivo, tentativa e nova data, que pode repetir a anterior', (tester) async {
+      Map<String, Object?>? corpo;
+      final c = Cenario(
+        ApiFalsa()
+          ..quando('GET /solicitacoes/3', (_) => (200, emRecolhimento()))
+          ..quando('POST /solicitacoes/3/falha', (r) {
+            corpo = jsonDecode(r.body) as Map<String, Object?>;
+            return (200, agendada(versao: 6));
+          }),
+      );
+      await abrirPainel(tester, c);
+      await tester.tap(botao('Registrar falha'));
+      await tester.pumpAndSettle();
+      await escolherDataHora(tester, '20');
+      await tester.enterText(find.widgetWithText(TextFormField, 'Motivo *'), 'Morador ausente');
+      await tester.enterText(find.widgetWithText(TextFormField, 'Informações da tentativa *'), 'Portão fechado');
+      await tester.tap(botao('Registrar falha', tipo: FilledButton).last);
+      await tester.pumpAndSettle();
+      expect(corpo, {
+        'motivo': 'Morador ausente',
+        'informacoesTentativa': 'Portão fechado',
+        'dataHora': '2026-11-20T12:00:00.000Z',
+        'versao': 5,
+      });
+    });
+
+    testWidgets('conflito de versão relê e apresenta o estado atual sem repetir', (tester) async {
+      var leituras = 0;
+      final c = Cenario(
+        ApiFalsa()
+          ..quando('GET /solicitacoes/3', (_) {
+            leituras++;
+            return (200, leituras == 1 ? agendada() : emRecolhimento());
+          })
+          ..quando(
+            'POST /solicitacoes/3/inicio',
+            (_) => (409, {'codigo': 'CONFLITO_VERSAO', 'mensagem': 'A solicitação foi alterada.', 'erros': []}),
+          ),
+      );
+      await abrirPainel(tester, c);
+      await tester.tap(botao('Iniciar recolhimento'));
+      await tester.pumpAndSettle();
+      await tester.tap(botao('Iniciar recolhimento', tipo: FilledButton).last);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('A solicitação foi alterada.'), findsOneWidget);
+      expect(botao('Concluir recolhimento'), findsOneWidget);
+      expect(c.api.chamadas('POST /solicitacoes/3/inicio'), hasLength(1));
     });
   });
 }

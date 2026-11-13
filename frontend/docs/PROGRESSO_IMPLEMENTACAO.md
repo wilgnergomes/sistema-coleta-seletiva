@@ -8,10 +8,10 @@ anterior (branches cumulativas, `CLAUDE.md`).
 
 | Item | Valor |
 |---|---|
-| Branch atual | `frontend/06-fila-e-agendamento` |
-| Base da etapa | `frontend/05-solicitacoes-morador` em `3a7fbcc` |
-| Etapa em andamento | 06 · fila e agendamento |
-| Próxima ação | Abrir `frontend/07-execucao-e-reagendamento` a partir do último commit da 06 |
+| Branch atual | `frontend/07-execucao-e-reagendamento` |
+| Base da etapa | `frontend/06-fila-e-agendamento` em `f7ee21d` |
+| Etapa em andamento | 07 · execução e reagendamento |
+| Próxima ação | Abrir `frontend/08-resumo-e-consulta-admin` a partir do último commit da 07 |
 
 ## Ambiente
 
@@ -42,7 +42,8 @@ Banco da demonstração: `coleta_frontend_demo`, criado no mesmo container com
 | 03 | `frontend/03-catalogo-publico` | Concluída e publicada | `ec5e534` |
 | 04 | `frontend/04-morador-e-enderecos` | Concluída e publicada | `742a9a9` |
 | 05 | `frontend/05-solicitacoes-morador` | Concluída e publicada | `3a7fbcc` |
-| 06 | `frontend/06-fila-e-agendamento` | Em andamento | — |
+| 06 | `frontend/06-fila-e-agendamento` | Concluída e publicada | `f7ee21d` |
+| 07 | `frontend/07-execucao-e-reagendamento` | Em andamento | — |
 
 ## Etapa 01 · estrutura
 
@@ -212,6 +213,23 @@ Verificações executadas:
 | `flutter analyze` | Nenhum problema |
 | `flutter test` | 86 testes aprovados (9 novos): ações por situação, agendamento com relógio fixo (hoje 09:00 recusado; 20/11 09:00 → `2026-11-20T12:00:00.000Z` com a versão lida), recusa com motivo obrigatório, 404 de outro ponto, `Mais ações` no compacto, fila lado a lado a 1366 px e detalhe em tela cheia a 360 px |
 | Navegador a 1366 × 768 com API real | Operador 1 (Cooperativa Verde Vida): fila `Solicitada` com 1 pedido sem nova chamada; detalhe; `Agendar` para 16/11/2026 09:00 → `POST /api/solicitacoes/3/agendamento` 200, situação `Agendada`, fila relida com 0 pendentes e detalhe preservado |
+
+## Etapa 07 · execução e reagendamento
+
+Feito:
+
+- `AGENDADA`: `Iniciar recolhimento` (principal, com confirmação que mostra protocolo e data agendada; o servidor aceita início antes do horário), `Reagendar` (nova data e motivo, recusando localmente o mesmo instante já agendado) e `Cancelar`.
+- `EM_RECOLHIMENTO`: `Concluir recolhimento` (principal) e `Registrar falha` (motivo, informações da tentativa e nova data, que pode coincidir com a anterior).
+- Conclusão (RN02): uma quantidade efetiva explícita por item gravado, com a estimada e a unidade copiada ao lado; não negativa, pelo menos uma positiva, `UN` inteira; zero é enviado como `0`. Data e responsável vêm do servidor.
+- Todas as ações usam a versão lida; conflito relê o detalhe sem repetir a ação.
+
+Verificações executadas:
+
+| Verificação | Resultado |
+|---|---|
+| `flutter analyze` | Nenhum problema |
+| `flutter test` | 92 testes aprovados (6 novos e 1 caso atualizado): ações de `AGENDADA` e `EM_RECOLHIMENTO`, início só com a versão, conclusão (vazia, todas zero, fração em peças, JSON com `11.125` e `0`), reagendamento com mesmo instante recusado e JSON correto, falha com motivo, tentativa e data, `409 CONFLITO_VERSAO` relendo o estado sem repetir |
+| Navegador a 1366 × 768 com API real | Operador 1, solicitação 3: `Iniciar recolhimento` → `Em recolhimento`; `Concluir` com Papel 12 e Plástico 0 → `Concluída`; histórico com criação, agendamento (data marcada 16/11/2026 09:00), início e conclusão pelo Operador #1 |
 
 ## Pendências e problemas conhecidos
 
