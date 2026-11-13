@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../app/tema/tokens.dart';
 import '../../../core/api/cliente_api.dart';
 import '../../../core/api/pagina.dart';
+import '../../../core/desempenho.dart';
 import '../../../core/estado/carga.dart';
 import '../../../ui/compartilhado/estados.dart';
 import '../../../ui/compartilhado/layout.dart';
@@ -10,6 +11,9 @@ import '../../../ui/compartilhado/paginador.dart';
 import '../data/modelos.dart';
 import '../data/repositorio_catalogo.dart';
 import 'componentes_catalogo.dart';
+
+/// A primeira lista do catálogo marca a primeira tela útil uma única vez.
+bool _primeiraTelaMarcada = false;
 
 class PontosViewModel extends ChangeNotifier {
   PontosViewModel(this._repositorio, {this.acesso = Acesso.publico});
@@ -20,12 +24,17 @@ class PontosViewModel extends ChangeNotifier {
   final materiais = Carga<CatalogoMateriais>();
   FiltroPontos? filtro;
 
-  Future<void> carregar(FiltroPontos novo, {bool forcar = false}) {
+  Future<void> carregar(FiltroPontos novo, {bool forcar = false}) async {
     filtro = novo;
-    return resultados.executar(
+    await resultados.executar(
       () => _repositorio.pesquisarPontos(novo, acesso: acesso, forcar: forcar),
       notifyListeners,
     );
+    if (!_primeiraTelaMarcada && resultados.dados != null) {
+      _primeiraTelaMarcada = true;
+      // Marca após o quadro que apresenta a lista (ou o vazio confirmado).
+      WidgetsBinding.instance.addPostFrameCallback((_) => marcarDesempenho('primeira-tela-util'));
+    }
   }
 
   Future<void> carregarMateriais() => materiais.executar(_repositorio.materiaisAtivos, notifyListeners);

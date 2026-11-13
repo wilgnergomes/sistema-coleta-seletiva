@@ -170,7 +170,7 @@ class _PaginaDetalheMaterialState extends State<PaginaDetalheMaterial> {
               ),
               CampoLeitura(rotulo: 'Descrição', valor: m.descricao),
               const TituloSecao('Como preparar'),
-              SelectableText(m.orientacao, style: Theme.of(context).textTheme.bodyLarge),
+              Text(m.orientacao, style: Theme.of(context).textTheme.bodyLarge),
               const SizedBox(height: Espaco.l),
               Align(
                 alignment: Alignment.centerLeft,

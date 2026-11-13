@@ -317,7 +317,7 @@ class DetalheSolicitacaoView extends StatelessWidget {
           runSpacing: Espaco.xs,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Semantics(header: true, child: SelectableText(d.protocolo, style: texto.headlineSmall)),
+            Semantics(header: true, child: Text(d.protocolo, style: texto.headlineSmall)),
             IconButton(
               tooltip: 'Copiar protocolo',
               icon: const Icon(Icons.copy_outlined),

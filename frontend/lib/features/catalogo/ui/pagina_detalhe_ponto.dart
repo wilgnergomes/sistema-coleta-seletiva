@@ -176,8 +176,8 @@ class _PaginaDetalhePontoState extends State<PaginaDetalhePonto> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SelectableText(p.endereco.linha1, style: texto.bodyLarge),
-                SelectableText(p.endereco.linha2, style: texto.bodyMedium?.copyWith(color: Cores.textoSecundario)),
+                Text(p.endereco.linha1, style: texto.bodyLarge),
+                Text(p.endereco.linha2, style: texto.bodyMedium?.copyWith(color: Cores.textoSecundario)),
               ],
             ),
           ),
