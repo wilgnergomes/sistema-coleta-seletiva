@@ -199,9 +199,11 @@ class _DialogoPeriodoState extends State<_DialogoPeriodo> {
       ),
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop((null, null)), child: const Text('Limpar período')),
-        FilledButton(
-          onPressed: invertido ? null : () => Navigator.of(context).pop((_de, _ate)),
-          child: const Text('Aplicar período'),
+        Elevavel(
+          child: FilledButton(
+            onPressed: invertido ? null : () => Navigator.of(context).pop((_de, _ate)),
+            child: const Text('Aplicar período'),
+          ),
         ),
       ],
     );
@@ -288,12 +290,14 @@ class _DialogoMotivoState extends State<_DialogoMotivo> {
       ),
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Voltar')),
-        FilledButton(
-          style: widget.destrutiva ? FilledButton.styleFrom(backgroundColor: Cores.erro) : null,
-          onPressed: () {
-            if (_form.currentState!.validate()) Navigator.of(context).pop(_motivo.text.trim());
-          },
-          child: Text(widget.rotuloAcao),
+        Elevavel(
+          child: FilledButton(
+            style: widget.destrutiva ? estiloDestrutivo : null,
+            onPressed: () {
+              if (_form.currentState!.validate()) Navigator.of(context).pop(_motivo.text.trim());
+            },
+            child: Text(widget.rotuloAcao),
+          ),
         ),
       ],
     );

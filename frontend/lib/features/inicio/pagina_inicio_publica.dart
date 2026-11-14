@@ -1188,10 +1188,12 @@ class _EncontrarState extends State<_Encontrar> {
                           label: const Text('Filtros'),
                         ),
                         const SizedBox(width: Espaco.xxs),
-                        FilledButton(
-                          style: FilledButton.styleFrom(shape: const StadiumBorder()),
-                          onPressed: () => widget.navegar.pontos(FiltroPontos(nome: _texto)),
-                          child: const Text('Buscar'),
+                        Elevavel(
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(shape: const StadiumBorder()),
+                            onPressed: () => widget.navegar.pontos(FiltroPontos(nome: _texto)),
+                            child: const Text('Buscar'),
+                          ),
                         ),
                       ] else
                         IconButton.filled(

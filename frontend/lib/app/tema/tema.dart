@@ -53,6 +53,35 @@ WidgetStateProperty<BorderSide?> _anelFoco([BorderSide? padrao]) => WidgetStateP
   (estados) => estados.contains(WidgetState.focused) ? const BorderSide(color: Cores.foco, width: 2) : padrao,
 );
 
+/// Elevação das ações cheias: levemente acima da superfície em repouso,
+/// mais alta no hover e mais baixa ao pressionar.
+WidgetStateProperty<double> _elevacaoAcao() => WidgetStateProperty.resolveWith(
+  (e) => e.contains(WidgetState.disabled)
+      ? 0
+      : e.contains(WidgetState.pressed)
+      ? 1
+      : e.contains(WidgetState.hovered)
+      ? 6
+      : e.contains(WidgetState.focused)
+      ? 4
+      : 2,
+);
+
+/// Ação destrutiva (recusar, cancelar a solicitação, inativar): mantém o
+/// vermelho de erro, com hover e pressionamento próprios e sombra da mesma cor.
+final estiloDestrutivo = ButtonStyle(
+  backgroundColor: WidgetStateProperty.resolveWith(
+    (e) => e.contains(WidgetState.disabled)
+        ? Cores.desabilitadoFundo
+        : e.contains(WidgetState.pressed)
+        ? Cores.erroPressionado
+        : e.contains(WidgetState.hovered)
+        ? Cores.erroHover
+        : Cores.erro,
+  ),
+  shadowColor: const WidgetStatePropertyAll(Cores.erro),
+);
+
 const _fonte = 'Inter';
 
 TextTheme _texto() {
@@ -111,8 +140,11 @@ ThemeData criarTema() {
         onErrorContainer: Cores.erro,
       );
   final texto = _texto();
-  final formaCampo = RoundedRectangleBorder(borderRadius: BorderRadius.circular(Raio.campo));
+  // Botões em pílula: a mesma forma do botão principal da página inicial.
+  const formaBotao = StadiumBorder();
   const tamanhoBotao = Size(64, 48);
+  const preenchimentoBotao = WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 22));
+  const transicaoBotao = Duration(milliseconds: 180);
   final rotuloBotao = WidgetStatePropertyAll(texto.labelLarge);
 
   OutlineInputBorder borda(Color cor, [double largura = 1]) => OutlineInputBorder(
@@ -153,9 +185,13 @@ ThemeData criarTema() {
     filledButtonTheme: FilledButtonThemeData(
       style: ButtonStyle(
         minimumSize: const WidgetStatePropertyAll(tamanhoBotao),
-        shape: WidgetStatePropertyAll(formaCampo),
+        shape: const WidgetStatePropertyAll(formaBotao),
+        padding: preenchimentoBotao,
         textStyle: rotuloBotao,
         side: _anelFoco(),
+        elevation: _elevacaoAcao(),
+        shadowColor: const WidgetStatePropertyAll(Cores.primarioPressionado),
+        animationDuration: transicaoBotao,
         backgroundColor: WidgetStateProperty.resolveWith(
           (e) => e.contains(WidgetState.disabled)
               ? Cores.desabilitadoFundo
@@ -170,19 +206,41 @@ ThemeData criarTema() {
         ),
       ),
     ),
+    // Secundário: mesmo cuidado, menos peso. Sem sombra; no hover, a borda
+    // assume a cor primária e o fundo ganha um verde suave.
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: ButtonStyle(
         minimumSize: const WidgetStatePropertyAll(tamanhoBotao),
-        shape: WidgetStatePropertyAll(formaCampo),
+        shape: const WidgetStatePropertyAll(formaBotao),
+        padding: preenchimentoBotao,
         textStyle: rotuloBotao,
+        animationDuration: transicaoBotao,
         foregroundColor: const WidgetStatePropertyAll(Cores.primario),
-        side: _anelFoco(const BorderSide(color: Cores.contorno)),
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (e) => e.contains(WidgetState.disabled)
+              ? null
+              : e.contains(WidgetState.pressed)
+              ? Cores.sucessoFundo
+              : e.contains(WidgetState.hovered)
+              ? Cores.fundoVerde
+              : null,
+        ),
+        side: WidgetStateProperty.resolveWith(
+          (e) => e.contains(WidgetState.focused)
+              ? const BorderSide(color: Cores.foco, width: 2)
+              : e.contains(WidgetState.disabled)
+              ? const BorderSide(color: Cores.divisor)
+              : e.contains(WidgetState.hovered) || e.contains(WidgetState.pressed)
+              ? const BorderSide(color: Cores.primario, width: 1.5)
+              : const BorderSide(color: Cores.contorno),
+        ),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: ButtonStyle(
         minimumSize: const WidgetStatePropertyAll(tamanhoBotao),
-        shape: WidgetStatePropertyAll(formaCampo),
+        shape: const WidgetStatePropertyAll(formaBotao),
+        animationDuration: transicaoBotao,
         textStyle: rotuloBotao,
         foregroundColor: const WidgetStatePropertyAll(Cores.primario),
         side: _anelFoco(),

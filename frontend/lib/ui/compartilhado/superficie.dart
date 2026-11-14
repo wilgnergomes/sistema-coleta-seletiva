@@ -53,25 +53,30 @@ class _CartaoInterativoState extends State<CartaoInterativo> {
     final escala = MediaQuery.textScalerOf(context).scale(16) / 16;
     final altura = widget.altura == null ? null : widget.altura! * escala.clamp(1.0, 2.4);
     final borda = widget.selecionado ? Cores.primario : (_hover ? Cores.secundarioSuave : Cores.divisor);
-    final cartao = AnimatedContainer(
-      duration: duracao(context, 220),
-      curve: Curves.easeOutCubic,
-      height: altura,
-      transform: Matrix4.translationValues(0, elevado && !_pressionado ? -2 : 0, 0),
-      decoration: BoxDecoration(
-        color: Cores.superficie,
-        borderRadius: BorderRadius.circular(Raio.cartao),
-        border: Border.all(color: borda, width: widget.selecionado ? 2 : 1),
-        boxShadow: elevado ? Sombra.elevada : Sombra.repouso,
-      ),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
+    final cartao = AnimatedScale(
+      // Compressão leve ao pressionar: o retorno ao toque onde não há hover.
+      scale: _pressionado && widget.aoTocar != null ? 0.985 : 1,
+      duration: duracao(context, 110),
+      child: AnimatedContainer(
+        duration: duracao(context, 220),
+        curve: Curves.easeOutCubic,
+        height: altura,
+        transform: Matrix4.translationValues(0, elevado && !_pressionado ? -2 : 0, 0),
+        decoration: BoxDecoration(
+          color: Cores.superficie,
           borderRadius: BorderRadius.circular(Raio.cartao),
-          onTap: widget.aoTocar,
-          onHover: (v) => setState(() => _hover = v),
-          onHighlightChanged: (v) => setState(() => _pressionado = v),
-          child: Padding(padding: widget.preenchimento, child: widget.child),
+          border: Border.all(color: borda, width: widget.selecionado ? 2 : 1),
+          boxShadow: elevado ? Sombra.elevada : Sombra.repouso,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(Raio.cartao),
+            onTap: widget.aoTocar,
+            onHover: (v) => setState(() => _hover = v),
+            onHighlightChanged: (v) => setState(() => _pressionado = v),
+            child: Padding(padding: widget.preenchimento, child: widget.child),
+          ),
         ),
       ),
     );

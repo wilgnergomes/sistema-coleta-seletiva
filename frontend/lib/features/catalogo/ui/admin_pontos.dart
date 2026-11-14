@@ -17,6 +17,7 @@ import '../../../ui/compartilhado/paginador.dart';
 import '../../moradores/ui/formulario_endereco.dart';
 import '../data/modelos.dart';
 import '../data/repositorio_catalogo.dart';
+import '../../../ui/compartilhado/superficie.dart';
 
 /// Editor do ponto (RF04) com a seção de materiais aceitos (RF05). Em
 /// conflito da RN05, mostra a mensagem do servidor e o atalho para as
@@ -137,7 +138,9 @@ class _PaginaEditorPontoState extends State<PaginaEditorPonto> {
           if (falhaCarga is ErroHttp && falhaCarga.naoEncontrado)
             EstadoVazio(
               titulo: 'Ponto não encontrado',
-              acao: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar aos pontos')),
+              acao: Elevavel(
+                child: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar aos pontos')),
+              ),
             )
           else if (falhaCarga != null)
             EstadoErro(mensagem: falhaCarga.mensagem, aoTentarNovamente: _carregar)
@@ -347,10 +350,12 @@ class _SecaoVinculosState extends State<SecaoVinculos> {
       children: [
         TituloSecao(
           'Materiais aceitos',
-          acao: FilledButton.icon(
-            onPressed: () => _editar(),
-            icon: const Icon(Icons.add),
-            label: const Text('Vincular material'),
+          acao: Elevavel(
+            child: FilledButton.icon(
+              onPressed: () => _editar(),
+              icon: const Icon(Icons.add),
+              label: const Text('Vincular material'),
+            ),
           ),
         ),
         if (_aviso != null) ...[

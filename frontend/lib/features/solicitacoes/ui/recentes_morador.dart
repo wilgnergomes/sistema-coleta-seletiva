@@ -6,6 +6,7 @@ import '../../../core/api/pagina.dart';
 import '../../../core/dominio/datas.dart';
 import '../../../core/estado/carga.dart';
 import '../../../ui/compartilhado/estados.dart';
+import '../../../ui/compartilhado/superficie.dart';
 import '../../../ui/compartilhado/layout.dart';
 import '../../catalogo/data/modelos.dart';
 import '../../catalogo/data/repositorio_catalogo.dart';
@@ -159,7 +160,9 @@ class _SecoesRecentesMoradorState extends State<SecoesRecentesMorador> {
           for (final s in pagina.conteudo.take(3))
             Padding(
               padding: const EdgeInsets.only(bottom: Espaco.xs),
-              child: Card(
+              child: CartaoInterativo(
+                preenchimento: EdgeInsets.zero,
+                aoTocar: () => widget.aoAbrirSolicitacao(s.id),
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: Espaco.m, vertical: Espaco.xxs),
                   title: Text(s.protocolo, style: texto.titleSmall),
@@ -169,7 +172,6 @@ class _SecoesRecentesMoradorState extends State<SecoesRecentesMorador> {
                         : 'Agendada para ${widget.fuso.dataHora(s.agendadaPara!)}',
                   ),
                   trailing: SeloSituacao(situacao: s.situacao),
-                  onTap: () => widget.aoAbrirSolicitacao(s.id),
                 ),
               ),
             ),

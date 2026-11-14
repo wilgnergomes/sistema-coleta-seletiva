@@ -13,6 +13,7 @@ import '../../ui/compartilhado/estados.dart';
 import '../../ui/compartilhado/layout.dart';
 import '../../ui/compartilhado/material_visual.dart';
 import '../solicitacoes/ui/componentes_solicitacao.dart';
+import '../../ui/compartilhado/superficie.dart';
 
 class TotalSituacao {
   const TotalSituacao(this.situacao, this.total);
@@ -150,10 +151,12 @@ class _PaginaResumoState extends State<PaginaResumo> {
               liveRegion: true,
               child: Text('Período: $periodo', style: Theme.of(context).textTheme.titleMedium),
             ),
-            FilledButton.icon(
-              onPressed: _periodo,
-              icon: const Icon(Icons.date_range_outlined),
-              label: const Text('Alterar período'),
+            Elevavel(
+              child: FilledButton.icon(
+                onPressed: _periodo,
+                icon: const Icon(Icons.date_range_outlined),
+                label: const Text('Alterar período'),
+              ),
             ),
             if (widget.de != null || widget.ate != null)
               TextButton(onPressed: () => widget.aoMudarPeriodo(null, null), child: const Text('Limpar período')),

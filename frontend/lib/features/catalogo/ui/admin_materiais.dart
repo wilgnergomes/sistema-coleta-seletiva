@@ -15,6 +15,7 @@ import '../../../ui/compartilhado/paginador.dart';
 import '../data/modelos.dart';
 import '../data/repositorio_catalogo.dart';
 import 'componentes_catalogo.dart';
+import '../../../ui/compartilhado/superficie.dart';
 
 /// `/administracao/materiais` (RF03): lista paginada com filtro de situação.
 class PaginaMateriaisAdmin extends StatefulWidget {
@@ -76,10 +77,12 @@ class _PaginaMateriaisAdminState extends State<PaginaMateriaisAdmin> {
         TituloPagina(
           'Materiais',
           subtitulo: 'Catálogo de materiais, unidades e orientações.',
-          acao: FilledButton.icon(
-            onPressed: widget.aoNovo,
-            icon: const Icon(Icons.add),
-            label: const Text('Novo material'),
+          acao: Elevavel(
+            child: FilledButton.icon(
+              onPressed: widget.aoNovo,
+              icon: const Icon(Icons.add),
+              label: const Text('Novo material'),
+            ),
           ),
         ),
         Wrap(
@@ -107,7 +110,9 @@ class _PaginaMateriaisAdminState extends State<PaginaMateriaisAdmin> {
                   icone: Icons.recycling,
                   titulo: widget.situacao == null ? 'Nenhum material cadastrado' : 'Nenhum material nesta situação',
                   acao: widget.situacao == null
-                      ? FilledButton(onPressed: _novo, child: const Text('Cadastrar material'))
+                      ? Elevavel(
+                          child: FilledButton(onPressed: _novo, child: const Text('Cadastrar material')),
+                        )
                       : OutlinedButton(onPressed: () => widget.aoMudar(0, null), child: const Text('Limpar filtros')),
                 )
               else
@@ -237,7 +242,9 @@ class _PaginaEditorMaterialState extends State<PaginaEditorMaterial> {
           if (falha is ErroHttp && falha.naoEncontrado)
             EstadoVazio(
               titulo: 'Material não encontrado',
-              acao: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar aos materiais')),
+              acao: Elevavel(
+                child: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar aos materiais')),
+              ),
             )
           else if (falha != null)
             EstadoErro(mensagem: falha.mensagem, aoTentarNovamente: _carregar)

@@ -280,7 +280,9 @@ class _PainelDetalheOperadorState extends State<PainelDetalheOperador> {
                 mensagem: _vm.carga.falha?.mensagem,
                 acao: widget.aoVoltar == null
                     ? null
-                    : FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar para fila')),
+                    : Elevavel(
+                        child: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar para fila')),
+                      ),
               ),
             ],
           );

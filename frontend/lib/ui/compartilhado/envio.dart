@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/api/falhas.dart';
 import 'estados.dart';
+import 'superficie.dart';
 
 /// Estado de um envio de formulário: progresso, erros por campo e mensagem
 /// geral. Preserva o rascunho em qualquer falha.
@@ -97,11 +98,13 @@ class BotaoEnvio extends StatelessWidget {
     );
     return Semantics(
       liveRegion: enviando,
-      child: FilledButton.icon(
-        autofocus: autofocus,
-        onPressed: enviando ? null : aoPressionar,
-        icon: enviando ? indicador : (icone == null ? null : Icon(icone)),
-        label: Text(enviando ? '$rotulo…' : rotulo),
+      child: Elevavel(
+        child: FilledButton.icon(
+          autofocus: autofocus,
+          onPressed: enviando ? null : aoPressionar,
+          icon: enviando ? indicador : (icone == null ? null : Icon(icone)),
+          label: Text(enviando ? '$rotulo…' : rotulo),
+        ),
       ),
     );
   }

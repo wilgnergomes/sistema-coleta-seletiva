@@ -1,6 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/tema/tema.dart';
 import '../../app/tema/tokens.dart';
+import 'superficie.dart';
 
 /// Confirmação simples com `Voltar` e a ação pelo nome.
 Future<bool> confirmar(
@@ -20,10 +22,12 @@ Future<bool> confirmar(
       ),
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Voltar')),
-        FilledButton(
-          style: destrutiva ? FilledButton.styleFrom(backgroundColor: Cores.erro) : null,
-          onPressed: () => Navigator.of(context).pop(true),
-          child: Text(rotuloAcao),
+        Elevavel(
+          child: FilledButton(
+            style: destrutiva ? estiloDestrutivo : null,
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(rotuloAcao),
+          ),
         ),
       ],
     ),

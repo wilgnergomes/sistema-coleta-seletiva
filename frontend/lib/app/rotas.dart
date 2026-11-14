@@ -22,6 +22,7 @@ import 'dependencias.dart';
 import 'sessao.dart';
 import 'shell_app.dart';
 import 'tema/tokens.dart';
+import '../ui/compartilhado/superficie.dart';
 
 /// Rota com transição adequada à função. Destinos principais deslizam na
 /// direção da navegação (ou fazem um fade neutro, fora da ordem dos
@@ -67,9 +68,11 @@ Widget rotaInvalida(BuildContext context, {String? destino}) => PaginaRolavel(
       icone: Icons.link_off,
       titulo: 'Página não encontrada',
       mensagem: 'O endereço aberto não corresponde a uma página do aplicativo.',
-      acao: FilledButton(
-        onPressed: () => context.go(destino ?? '/pontos'),
-        child: Text(destino == null ? 'Voltar para pontos' : 'Ir para o início'),
+      acao: Elevavel(
+        child: FilledButton(
+          onPressed: () => context.go(destino ?? '/pontos'),
+          child: Text(destino == null ? 'Voltar para pontos' : 'Ir para o início'),
+        ),
       ),
     ),
   ],
@@ -253,9 +256,11 @@ GoRouter criarRotas(Dependencias d, {List<RotasArea> areas = const []}) {
                       alignment: WrapAlignment.center,
                       children: [
                         if (sessao.perfil != null)
-                          FilledButton(
-                            onPressed: () => context.go(sessao.perfil!.rotaInicial),
-                            child: const Text('Ir para minha área'),
+                          Elevavel(
+                            child: FilledButton(
+                              onPressed: () => context.go(sessao.perfil!.rotaInicial),
+                              child: const Text('Ir para minha área'),
+                            ),
                           ),
                         OutlinedButton(
                           onPressed: () => context.go('/demonstracao?perfil=${area?.name ?? ''}'),
@@ -339,10 +344,12 @@ class _AcaoSolicitar extends StatelessWidget {
     }
     return Align(
       alignment: Alignment.centerLeft,
-      child: FilledButton.icon(
-        onPressed: () => context.push('/morador/solicitacoes/nova?pontoId=${ponto.id}'),
-        icon: const Icon(Icons.local_shipping_outlined),
-        label: const Text('Solicitar recolhimento'),
+      child: Elevavel(
+        child: FilledButton.icon(
+          onPressed: () => context.push('/morador/solicitacoes/nova?pontoId=${ponto.id}'),
+          icon: const Icon(Icons.local_shipping_outlined),
+          label: const Text('Solicitar recolhimento'),
+        ),
       ),
     );
   }

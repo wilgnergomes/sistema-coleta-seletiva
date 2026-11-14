@@ -5,6 +5,7 @@ import '../ui/compartilhado/marca.dart';
 import '../ui/compartilhado/shell.dart';
 import 'sessao.dart';
 import 'tema/tokens.dart';
+import '../ui/compartilhado/superficie.dart';
 
 const destinosPublicos = [
   DestinoNavegacao(rotulo: 'Início', icone: Icons.home_outlined, iconeSelecionado: Icons.home, rota: '/'),
@@ -212,15 +213,19 @@ class ShellApp extends StatelessWidget {
       const SizedBox(width: Espaco.xs),
       if (demonstracao)
         ator == null
-            ? FilledButton.icon(
-                onPressed: () => context.go('/demonstracao'),
-                icon: const Icon(Icons.play_circle_outline),
-                label: const Text('Demonstração'),
+            ? Elevavel(
+                child: FilledButton.icon(
+                  onPressed: () => context.go('/demonstracao'),
+                  icon: const Icon(Icons.play_circle_outline),
+                  label: const Text('Demonstração'),
+                ),
               )
-            : FilledButton.icon(
-                onPressed: () => context.go(ator.perfil.rotaInicial),
-                icon: const Icon(Icons.arrow_forward),
-                label: const Text('Minha área'),
+            : Elevavel(
+                child: FilledButton.icon(
+                  onPressed: () => context.go(ator.perfil.rotaInicial),
+                  icon: const IconeDirecional(Icons.arrow_forward),
+                  label: const Text('Minha área'),
+                ),
               ),
     ];
   }

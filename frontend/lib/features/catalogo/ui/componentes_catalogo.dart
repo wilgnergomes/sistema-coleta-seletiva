@@ -5,6 +5,7 @@ import '../../../core/dominio/enums.dart';
 import '../../../ui/compartilhado/dialogos.dart';
 import '../../../ui/compartilhado/estados.dart';
 import '../../../ui/compartilhado/material_visual.dart';
+import '../../../ui/compartilhado/movimento.dart';
 import '../../../ui/compartilhado/superficie.dart';
 import '../data/modelos.dart';
 import '../data/repositorio_catalogo.dart';
@@ -105,6 +106,7 @@ class AtalhosMateriais extends StatelessWidget {
                 rotulo: m.nome,
                 selecionado: m.id == selecionado,
                 icone: IconeMaterial(nome: m.nome, tamanho: 52),
+                cor: VisualMaterial.porNome(m.nome).cor,
                 aoTocar: () => aoSelecionar(m.id == selecionado ? null : m),
               ),
             if (outros.isNotEmpty)
@@ -117,6 +119,7 @@ class AtalhosMateriais extends StatelessWidget {
                   decoration: const BoxDecoration(color: Cores.sucessoFundo, shape: BoxShape.circle),
                   child: const Icon(Icons.more_horiz, color: Cores.primario),
                 ),
+                cor: Cores.primario,
                 aoTocar: () async {
                   final escolhido = await escolherMaterial(context, outros, selecionado: selecionado);
                   if (escolhido != null) aoSelecionar(escolhido.id == selecionado ? null : escolhido);
@@ -129,47 +132,116 @@ class AtalhosMateriais extends StatelessWidget {
   }
 }
 
-class _Atalho extends StatelessWidget {
-  const _Atalho({required this.rotulo, required this.selecionado, required this.icone, required this.aoTocar});
+/// Atalho circular de material. Em repouso, sombra suave; no hover, sobe um
+/// pouco, ganha borda fina na cor do material e o ícone cresce de leve; ao
+/// pressionar, encolhe (o retorno ao toque no celular). A seleção é outra
+/// marca: anel espesso na cor do material, selo de confirmação e rótulo em
+/// negrito, para não se confundir com o hover.
+class _Atalho extends StatefulWidget {
+  const _Atalho({
+    required this.rotulo,
+    required this.selecionado,
+    required this.icone,
+    required this.cor,
+    required this.aoTocar,
+  });
 
   final String rotulo;
   final bool selecionado;
   final Widget icone;
+  final Color cor;
   final VoidCallback aoTocar;
 
   @override
+  State<_Atalho> createState() => _AtalhoState();
+}
+
+class _AtalhoState extends State<_Atalho> {
+  bool _hover = false;
+  bool _pressionado = false;
+  bool _foco = false;
+
+  @override
   Widget build(BuildContext context) {
+    final selecionado = widget.selecionado;
+    final destaque = _hover || _foco;
+    final borda = selecionado
+        ? BorderSide(color: widget.cor, width: 3)
+        : destaque
+        ? BorderSide(color: _foco ? Cores.foco : widget.cor, width: 2)
+        : const BorderSide(color: Colors.transparent, width: 2);
     return Semantics(
       button: true,
       selected: selecionado,
-      label: selecionado ? '$rotulo, selecionado' : rotulo,
+      label: selecionado ? '${widget.rotulo}, selecionado' : widget.rotulo,
       excludeSemantics: true,
       child: InkWell(
-        onTap: aoTocar,
+        onTap: widget.aoTocar,
+        onHover: (v) => setState(() => _hover = v),
+        onFocusChange: (v) => setState(() => _foco = v),
+        onHighlightChanged: (v) => setState(() => _pressionado = v),
         borderRadius: BorderRadius.circular(Raio.cartao),
+        // O próprio círculo mostra hover e foco; sem a sombra retangular do InkWell.
+        hoverColor: Colors.transparent,
+        focusColor: Colors.transparent,
         child: SizedBox(
           width: 84,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: Espaco.xs),
             child: Column(
               children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 120),
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: selecionado ? Cores.texto : Colors.transparent, width: 2),
+                AnimatedScale(
+                  scale: _pressionado ? 0.93 : 1,
+                  duration: duracao(context, 110),
+                  child: AnimatedContainer(
+                    duration: duracao(context, Movimento.hover.inMilliseconds),
+                    curve: Curves.easeOutCubic,
+                    transform: Matrix4.translationValues(0, _hover && !_pressionado ? -3 : 0, 0),
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Cores.superficie,
+                      border: Border.fromBorderSide(borda),
+                      boxShadow: _hover || selecionado ? Sombra.elevada : Sombra.repouso,
+                    ),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        AnimatedScale(
+                          scale: _hover && !selecionado ? 1.06 : 1,
+                          duration: duracao(context, Movimento.hover.inMilliseconds),
+                          curve: Curves.easeOutCubic,
+                          child: widget.icone,
+                        ),
+                        if (selecionado)
+                          Positioned(
+                            right: -4,
+                            bottom: -4,
+                            child: Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: Cores.texto,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Cores.superficie, width: 2),
+                              ),
+                              child: const Icon(Icons.check, size: 12, color: Cores.superficie),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                  child: icone,
                 ),
-                const SizedBox(height: Espaco.xxs),
+                const SizedBox(height: Espaco.xs),
                 Text(
-                  rotulo,
+                  widget.rotulo,
                   maxLines: 2,
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelMedium
-                      ?.copyWith(fontWeight: selecionado ? FontWeight.w600 : FontWeight.w400),
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    fontWeight: selecionado ? FontWeight.w700 : FontWeight.w400,
+                    color: selecionado || _hover ? Cores.texto : Cores.textoSecundario,
+                  ),
                 ),
               ],
             ),
@@ -318,17 +390,21 @@ class _FolhaFiltrosState extends State<_FolhaFiltros> {
                       onPressed: () => Navigator.of(context).pop(const FiltroPontos()),
                       child: const Text('Limpar filtros'),
                     ),
-                    FilledButton(
-                      onPressed: () => Navigator.of(context).pop(
-                        FiltroPontos(
-                          nome: _texto(_nome),
-                          municipio: _texto(_municipio),
-                          bairro: _texto(_bairro),
-                          materialId: _material,
-                          situacao: _situacao == null ? null : FiltroPontos.deQuery({'situacao': _situacao!}).situacao,
+                    Elevavel(
+                      child: FilledButton(
+                        onPressed: () => Navigator.of(context).pop(
+                          FiltroPontos(
+                            nome: _texto(_nome),
+                            municipio: _texto(_municipio),
+                            bairro: _texto(_bairro),
+                            materialId: _material,
+                            situacao: _situacao == null
+                                ? null
+                                : FiltroPontos.deQuery({'situacao': _situacao!}).situacao,
+                          ),
                         ),
+                        child: const Text('Aplicar filtros'),
                       ),
-                      child: const Text('Aplicar filtros'),
                     ),
                   ],
                 ),

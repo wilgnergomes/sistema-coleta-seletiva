@@ -22,6 +22,7 @@ import '../ui/compartilhado/layout.dart';
 import 'dependencias.dart';
 import 'rotas.dart';
 import 'tema/tokens.dart';
+import '../ui/compartilhado/superficie.dart';
 
 String urlSolicitacoesAdmin(FiltroSolicitacoes f) {
   final q = f.paraUrl();
@@ -162,10 +163,12 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
         repositorio: catalogo,
         aoMudarFiltro: (f) => context.go(urlPontosAdmin(f)),
         aoAbrirPonto: (id) => context.push('/administracao/pontos/$id'),
-        acaoTitulo: FilledButton.icon(
-          onPressed: () => context.go('/administracao/pontos/novo'),
-          icon: const Icon(Icons.add),
-          label: const Text('Novo ponto'),
+        acaoTitulo: Elevavel(
+          child: FilledButton.icon(
+            onPressed: () => context.go('/administracao/pontos/novo'),
+            icon: const Icon(Icons.add),
+            label: const Text('Novo ponto'),
+          ),
         ),
       ),
     ),

@@ -8,6 +8,7 @@ import '../features/solicitacoes/ui/solicitacoes_morador.dart';
 import '../features/solicitacoes/ui/view_models.dart';
 import 'dependencias.dart';
 import 'rotas.dart';
+import '../ui/compartilhado/superficie.dart';
 
 String urlSolicitacoesMorador(FiltroSolicitacoes f) {
   final q = f.paraUrl();
@@ -41,7 +42,9 @@ List<RouteBase> rotasSolicitacoesMorador(Dependencias d) {
         filtro: FiltroSolicitacoes.deQuery(estado.uri.queryParameters),
         aoMudarFiltro: (f) => context.go(urlSolicitacoesMorador(f)),
         aoAbrir: (id) => context.push('/morador/solicitacoes/$id'),
-        acaoVazia: FilledButton(onPressed: () => context.go('/pontos'), child: const Text('Solicitar recolhimento')),
+        acaoVazia: Elevavel(
+          child: FilledButton(onPressed: () => context.go('/pontos'), child: const Text('Solicitar recolhimento')),
+        ),
       ),
     ),
     rotaComTransicao(

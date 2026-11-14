@@ -15,6 +15,7 @@ import '../../ui/compartilhado/layout.dart';
 import '../../ui/compartilhado/paginador.dart';
 import '../catalogo/data/repositorio_catalogo.dart';
 import '../catalogo/ui/seletor_ponto.dart';
+import '../../ui/compartilhado/superficie.dart';
 
 class Operador {
   const Operador({
@@ -135,10 +136,12 @@ class _PaginaOperadoresState extends State<PaginaOperadores> {
         TituloPagina(
           'Operadores',
           subtitulo: 'Cada operador atende a fila de um ponto de coleta.',
-          acao: FilledButton.icon(
-            onPressed: () => _abrir(widget.aoNovo),
-            icon: const Icon(Icons.person_add_alt),
-            label: const Text('Novo operador'),
+          acao: Elevavel(
+            child: FilledButton.icon(
+              onPressed: () => _abrir(widget.aoNovo),
+              icon: const Icon(Icons.person_add_alt),
+              label: const Text('Novo operador'),
+            ),
           ),
         ),
         Wrap(
@@ -193,8 +196,10 @@ class _PaginaOperadoresState extends State<PaginaOperadores> {
                   larguraMinima: 300,
                   filhos: [
                     for (final o in pagina.conteudo)
-                      Card(
+                      CartaoInterativo(
                         key: ValueKey(o.id),
+                        preenchimento: EdgeInsets.zero,
+                        aoTocar: () => _abrir(() => widget.aoAbrir(o.id)),
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: Espaco.m, vertical: Espaco.xs),
                           title: Text(o.nome),
@@ -208,7 +213,6 @@ class _PaginaOperadoresState extends State<PaginaOperadores> {
                             ],
                           ),
                           trailing: const Icon(Icons.chevron_right),
-                          onTap: () => _abrir(() => widget.aoAbrir(o.id)),
                         ),
                       ),
                   ],
@@ -342,7 +346,9 @@ class _PaginaEditorOperadorState extends State<PaginaEditorOperador> {
           if (falha is ErroHttp && falha.naoEncontrado)
             EstadoVazio(
               titulo: 'Operador não encontrado',
-              acao: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar aos operadores')),
+              acao: Elevavel(
+                child: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar aos operadores')),
+              ),
             )
           else if (falha != null)
             EstadoErro(mensagem: falha.mensagem, aoTentarNovamente: _carregar)

@@ -9,6 +9,7 @@ import '../../../ui/compartilhado/paginador.dart';
 import '../data/solicitacoes.dart';
 import 'componentes_solicitacao.dart';
 import 'view_models.dart';
+import '../../../ui/compartilhado/superficie.dart';
 
 /// Minhas solicitações (RF09) com filtros de situação e período na URL.
 class PaginaSolicitacoes extends StatefulWidget {
@@ -235,7 +236,9 @@ class _PaginaDetalheSolicitacaoMoradorState extends State<PaginaDetalheSolicitac
                 icone: Icons.search_off,
                 titulo: 'Solicitação indisponível',
                 mensagem: _vm.carga.falha?.mensagem,
-                acao: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar às solicitações')),
+                acao: Elevavel(
+                  child: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar às solicitações')),
+                ),
               ),
             ],
           );
@@ -278,10 +281,12 @@ class _PaginaDetalheSolicitacaoMoradorState extends State<PaginaDetalheSolicitac
       runSpacing: Espaco.s,
       children: [
         if (corrigir)
-          FilledButton.icon(
-            onPressed: _vm.enviando ? null : () => widget.aoCorrigir(d.id),
-            icon: const Icon(Icons.edit_outlined),
-            label: const Text('Corrigir solicitação'),
+          Elevavel(
+            child: FilledButton.icon(
+              onPressed: _vm.enviando ? null : () => widget.aoCorrigir(d.id),
+              icon: const Icon(Icons.edit_outlined),
+              label: const Text('Corrigir solicitação'),
+            ),
           ),
         if (cancelar)
           OutlinedButton.icon(

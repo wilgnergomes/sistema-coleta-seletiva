@@ -12,6 +12,7 @@ import '../../../ui/compartilhado/material_visual.dart';
 import '../data/modelos.dart';
 import '../data/repositorio_catalogo.dart';
 import 'componentes_catalogo.dart';
+import '../../../ui/compartilhado/superficie.dart';
 
 /// Disponibilidade de um material vinculado, confirmada pelo catálogo.
 enum Disponibilidade { disponivel, indisponivel, verificando, desconhecida }
@@ -125,7 +126,9 @@ class _PaginaDetalhePontoState extends State<PaginaDetalhePonto> {
                 icone: Icons.location_off_outlined,
                 titulo: 'Ponto de coleta indisponível',
                 mensagem: 'Este ponto não foi encontrado ou não está ativo no catálogo.',
-                acao: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar à pesquisa')),
+                acao: Elevavel(
+                  child: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar à pesquisa')),
+                ),
               ),
             ],
           );

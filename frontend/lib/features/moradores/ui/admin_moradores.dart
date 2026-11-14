@@ -223,7 +223,9 @@ class _PaginaMoradorAdminState extends State<PaginaMoradorAdmin> {
         if (falha is ErroHttp && falha.naoEncontrado)
           EstadoVazio(
             titulo: 'Morador não encontrado',
-            acao: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar')),
+            acao: Elevavel(
+              child: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar')),
+            ),
           )
         else
           ConteudoCarga<Morador>(

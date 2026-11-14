@@ -6,6 +6,7 @@ import '../../../ui/compartilhado/campos.dart';
 import '../../../ui/compartilhado/dialogos.dart';
 import '../../../ui/compartilhado/material_visual.dart';
 import '../data/solicitacoes.dart';
+import '../../../ui/compartilhado/superficie.dart';
 
 /// Conclusão (RF13, RN02): uma quantidade efetiva explícita para cada item
 /// gravado, não negativa, com pelo menos uma positiva e `UN` inteira.
@@ -103,7 +104,9 @@ class _FormularioConclusaoState extends State<_FormularioConclusao> {
               runSpacing: Espaco.s,
               children: [
                 TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Voltar')),
-                FilledButton(onPressed: _confirmar, child: const Text('Concluir recolhimento')),
+                Elevavel(
+                  child: FilledButton(onPressed: _confirmar, child: const Text('Concluir recolhimento')),
+                ),
               ],
             ),
           ],

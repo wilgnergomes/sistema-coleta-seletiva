@@ -15,6 +15,7 @@ import '../../catalogo/data/repositorio_catalogo.dart';
 import '../../moradores/data/moradores.dart';
 import '../../moradores/ui/formulario_endereco.dart';
 import '../data/solicitacoes.dart';
+import '../../../ui/compartilhado/superficie.dart';
 
 /// Linha de item em edição. O texto digitado é preservado entre erros.
 class LinhaItem {
@@ -297,7 +298,9 @@ class _PaginaFormularioSolicitacaoState extends State<PaginaFormularioSolicitaca
           const SizedBox(height: Espaco.m),
           Align(
             alignment: Alignment.centerLeft,
-            child: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar à solicitação')),
+            child: Elevavel(
+              child: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar à solicitação')),
+            ),
           ),
         ],
       );

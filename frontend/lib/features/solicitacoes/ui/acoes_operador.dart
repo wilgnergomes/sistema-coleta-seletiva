@@ -9,6 +9,7 @@ import 'formulario_conclusao.dart';
 import '../../../ui/compartilhado/dialogos.dart';
 import 'formularios_acao.dart';
 import 'view_models.dart';
+import '../../../ui/compartilhado/superficie.dart';
 
 /// Ação disponível para o operador na situação atual.
 class AcaoOperador {
@@ -159,10 +160,12 @@ class AcoesOperador extends StatelessWidget {
       builder: (context, restricoes) {
         final compacto = restricoes.maxWidth < 480;
         Widget botao(AcaoOperador a) => a.principal
-            ? FilledButton.icon(
-                onPressed: desabilitado ? null : () => a.executar(context),
-                icon: Icon(a.icone),
-                label: Text(a.rotulo),
+            ? Elevavel(
+                child: FilledButton.icon(
+                  onPressed: desabilitado ? null : () => a.executar(context),
+                  icon: Icon(a.icone),
+                  label: Text(a.rotulo),
+                ),
               )
             : OutlinedButton.icon(
                 onPressed: desabilitado ? null : () => a.executar(context),

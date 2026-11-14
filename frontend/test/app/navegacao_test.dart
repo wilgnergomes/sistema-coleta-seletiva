@@ -104,7 +104,11 @@ void main() {
 
     testWidgets('morador: Início → Pontos → Solicitações → Conta e o caminho de volta', (tester) async {
       definirTela(tester, computador);
-      final rotas = await abrir(tester, ator: const Ator(Perfil.morador, 3, nome: 'Ana'), rota: '/morador/inicio');
+      final rotas = await abrir(
+        tester,
+        ator: const Ator(Perfil.morador, 3, nome: 'Ana'),
+        rota: '/morador/inicio',
+      );
       final base = inicioConteudo(tester, find.byType(PaginaInicioMorador));
       Future<double> relativo(String destino, Finder pagina) async =>
           await meioDaTransicao(tester, rotas, destino, pagina) - base;
@@ -117,7 +121,11 @@ void main() {
 
     testWidgets('troca de perfil é neutra: sem deslocamento horizontal', (tester) async {
       definirTela(tester, computador);
-      await abrir(tester, ator: const Ator(Perfil.morador, 3, nome: 'Ana'), rota: '/morador/conta');
+      await abrir(
+        tester,
+        ator: const Ator(Perfil.morador, 3, nome: 'Ana'),
+        rota: '/morador/conta',
+      );
       // Sair da demonstração leva à página inicial pública, fora da ordem anterior.
       await tester.tap(find.text('Sair da demonstração').first);
       await tester.pump();

@@ -11,6 +11,7 @@ import '../../../ui/compartilhado/paginador.dart';
 import '../data/modelos.dart';
 import '../data/repositorio_catalogo.dart';
 import 'componentes_catalogo.dart';
+import '../../../ui/compartilhado/superficie.dart';
 
 /// Catálogo público de materiais (RF03, RF06).
 class PaginaMateriais extends StatefulWidget {
@@ -122,7 +123,9 @@ class _PaginaDetalheMaterialState extends State<PaginaDetalheMaterial> {
             icone: Icons.recycling,
             titulo: 'Material indisponível',
             mensagem: 'Este material não está ativo no catálogo público.',
-            acao: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar ao catálogo')),
+            acao: Elevavel(
+              child: FilledButton(onPressed: widget.aoVoltar, child: const Text('Voltar ao catálogo')),
+            ),
           ),
         ],
       );
@@ -159,10 +162,12 @@ class _PaginaDetalheMaterialState extends State<PaginaDetalheMaterial> {
               const SizedBox(height: Espaco.l),
               Align(
                 alignment: Alignment.centerLeft,
-                child: FilledButton.icon(
-                  onPressed: () => widget.aoVerPontos(m.id),
-                  icon: const Icon(Icons.place_outlined),
-                  label: const Text('Ver pontos que aceitam'),
+                child: Elevavel(
+                  child: FilledButton.icon(
+                    onPressed: () => widget.aoVerPontos(m.id),
+                    icon: const Icon(Icons.place_outlined),
+                    label: const Text('Ver pontos que aceitam'),
+                  ),
                 ),
               ),
             ],

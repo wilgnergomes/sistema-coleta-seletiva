@@ -9,6 +9,7 @@ import '../../../ui/compartilhado/layout.dart';
 import '../data/moradores.dart';
 import 'enderecos.dart';
 import 'formulario_morador.dart';
+import '../../../ui/compartilhado/superficie.dart';
 
 /// Cadastro público de morador (RF01). Sem campo de situação.
 class PaginaCadastro extends StatefulWidget {
@@ -66,10 +67,12 @@ class _PaginaCadastroState extends State<PaginaCadastro> {
             runSpacing: Espaco.s,
             children: [
               if (widget.demonstracao)
-                FilledButton.icon(
-                  onPressed: () => widget.aoUsarNaDemonstracao(criado),
-                  icon: const Icon(Icons.person_pin_outlined),
-                  label: const Text('Usar este cadastro na demonstração'),
+                Elevavel(
+                  child: FilledButton.icon(
+                    onPressed: () => widget.aoUsarNaDemonstracao(criado),
+                    icon: const Icon(Icons.person_pin_outlined),
+                    label: const Text('Usar este cadastro na demonstração'),
+                  ),
                 ),
               OutlinedButton(onPressed: widget.aoVoltarAoCatalogo, child: const Text('Voltar aos pontos de coleta')),
             ],
@@ -165,14 +168,15 @@ class _PaginaContaState extends State<PaginaConta> {
           ),
         ),
         const SizedBox(height: Espaco.m),
-        Card(
+        CartaoInterativo(
+          preenchimento: EdgeInsets.zero,
+          aoTocar: widget.aoAbrirEnderecos,
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.xs),
             leading: const Icon(Icons.home_work_outlined),
             title: const Text('Meus endereços'),
             subtitle: const Text('Locais usados nas solicitações de recolhimento'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: widget.aoAbrirEnderecos,
           ),
         ),
         const SizedBox(height: Espaco.m),

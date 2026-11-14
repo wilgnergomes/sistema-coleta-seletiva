@@ -6,6 +6,7 @@ import '../../../ui/compartilhado/dialogos.dart';
 import '../../../ui/compartilhado/estados.dart';
 import '../data/moradores.dart';
 import 'formulario_endereco.dart';
+import '../../../ui/compartilhado/superficie.dart';
 
 /// Lista e edição dos endereços de um morador. Reutilizada na conta do
 /// morador e na administração.
@@ -71,10 +72,12 @@ class _SecaoEnderecosState extends State<SecaoEnderecos> {
       children: [
         Align(
           alignment: Alignment.centerLeft,
-          child: FilledButton.icon(
-            onPressed: _criar,
-            icon: const Icon(Icons.add_location_alt_outlined),
-            label: const Text('Cadastrar endereço'),
+          child: Elevavel(
+            child: FilledButton.icon(
+              onPressed: _criar,
+              icon: const Icon(Icons.add_location_alt_outlined),
+              label: const Text('Cadastrar endereço'),
+            ),
           ),
         ),
         const SizedBox(height: Espaco.m),

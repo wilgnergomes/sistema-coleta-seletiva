@@ -4,6 +4,7 @@ import '../../../app/tema/tokens.dart';
 import '../../../core/dominio/datas.dart';
 import '../../../ui/compartilhado/campos.dart';
 import '../../../ui/compartilhado/dialogos.dart';
+import '../../../ui/compartilhado/superficie.dart';
 
 /// Dados de uma ação com data futura: agendamento, reagendamento ou falha.
 class DadosDataHora {
@@ -201,7 +202,9 @@ class _FormularioDataHoraState extends State<_FormularioDataHora> {
               runSpacing: Espaco.s,
               children: [
                 TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Voltar')),
-                FilledButton(onPressed: _confirmar, child: Text(widget.rotuloAcao)),
+                Elevavel(
+                  child: FilledButton(onPressed: _confirmar, child: Text(widget.rotuloAcao)),
+                ),
               ],
             ),
           ],
