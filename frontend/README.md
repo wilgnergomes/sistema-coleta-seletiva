@@ -105,6 +105,14 @@ Página inteira e estados de interação, para revisão visual (ver `docs/captur
 python tool/capturar_pagina_inteira.py --chrome "C:/Program Files/Google/Chrome/Application/chrome.exe" --saida capturas --prefixo depois
 ```
 
+Transições em quadros intermediários e GIF, hover e foco de teclado (ver `docs/capturas/etapa-15/`).
+Use o build com `APP_MODE=demo`; a ferramenta declara `prefers-reduced-motion: no-preference`,
+porque o Chrome headless informa movimento reduzido:
+
+```powershell
+python tool/gravar_transicoes.py --chrome "C:/Program Files/Google/Chrome/Application/chrome.exe" --largura 1366 --rota / --saida capturas --passo inicio-pontos:933,27
+```
+
 Assets visuais definitivos: [`docs/ASSETS_VISUAIS.md`](docs/ASSETS_VISUAIS.md).
 
 Roteiro, identificadores do seed e resultados: [`docs/ROTEIRO_DEMONSTRACAO.md`](docs/ROTEIRO_DEMONSTRACAO.md).

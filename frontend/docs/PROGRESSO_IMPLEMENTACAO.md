@@ -8,9 +8,9 @@ anterior (branches cumulativas, `CLAUDE.md`).
 
 | Item | Valor |
 |---|---|
-| Branch atual | `frontend/14-experiencia-publica` |
-| Base da etapa | `frontend/13-refinamento-visual` em `8850e0d` |
-| Etapa em andamento | Nenhuma: experiência pública concluída, aguardando revisão visual do estudante |
+| Branch atual | `frontend/15-interacoes-e-navegacao` |
+| Base da etapa | `frontend/14-experiencia-publica` em `fa844bd` |
+| Etapa em andamento | Nenhuma: interações e navegação concluídas, aguardando revisão do estudante |
 | Próxima ação | Revisão do estudante comparando as branches; a etapa 12 (nativa) é opcional e depende de Android SDK e Visual Studio C++, não instalados |
 
 ## Ambiente
@@ -50,7 +50,8 @@ Banco da demonstração: `coleta_frontend_demo`, criado no mesmo container com
 | 11 | `frontend/11-qualidade-e-entrega-web` | Concluída e publicada | último commit da branch |
 | 12 | `frontend/12-compatibilidade-nativa` | Não iniciada (opcional) | — |
 | 13 | `frontend/13-refinamento-visual` | Concluída e publicada | `8850e0d` |
-| 14 | `frontend/14-experiencia-publica` | Concluída e publicada | último commit da branch |
+| 14 | `frontend/14-experiencia-publica` | Concluída e publicada | `fa844bd` |
+| 15 | `frontend/15-interacoes-e-navegacao` | Concluída e publicada | último commit da branch |
 
 ## Etapa 01 · estrutura
 
@@ -393,10 +394,82 @@ Verificações executadas:
 Ajustes feitos durante a verificação: textos das etapas limitados a 2 e 3 linhas (a altura fixa
 estourava com quebras maiores); conteúdo ainda não revelado mantido na árvore de acessibilidade.
 
+## Etapa 15 · interações e navegação
+
+Pedido do estudante em 14/11/2026: levar o acabamento interativo aprovado na página inicial ao
+resto do sistema, trocar o fade entre páginas por um deslizamento direcional e rolar a página
+inicial até as próprias seções, sem refazer a composição aprovada.
+
+Feito:
+
+- **Transição direcional entre destinos.** `MemoriaDestinos` (`lib/app/navegacao.dart`) guarda o
+  último destino principal e compara a sua posição com a do novo, na ordem do menu da área:
+  público `Início → Pontos → Materiais`, morador `Início → Pontos → Solicitações → Conta` e as seis
+  entradas do administrador. Destino à direita entra pela direita; à esquerda, pela esquerda
+  (Início → Materiais entra direto pela direita). A nova página desliza 30% da largura (no máximo
+  360 dp) sobre a anterior em 340 ms, com fundo opaco e sombra que aparece no meio do movimento; a
+  anterior recua até 96 dp, encolhe 2% e perde 40% de opacidade. Troca de perfil, redirecionamento,
+  cadastro, demonstração e acesso restrito usam fade neutro com escala mínima. O cabeçalho e a
+  navegação lateral ficam parados, porque só as páginas do `ShellRoute` animam.
+- **Por que funciona com `context.go`.** Investigado no `DefaultTransitionDelegate` do Flutter: ao
+  trocar `[A]` por `[B]`, `B` é empurrada com animação e `A` é concluída sem animação, mas continua
+  na árvore até `B` terminar; por isso a anterior aparece por baixo e recebe a animação
+  secundária. Um teste confirma que a página inicial ainda existe a 136 ms e sai ao fim.
+- **O que não anima.** O go_router dá a mesma chave de página a `/pontos` e `/pontos?nome=…`;
+  filtros, paginação e parâmetros da mesma tela atualizam a página sem nova transição. A direção
+  é calculada uma vez por chave, então reconstruções (por exemplo, da sessão) não a alteram.
+  Detalhes e formulários (`/pontos/:id`, `/materiais/:id`, endereços, solicitação, editores do
+  administrador) mantêm o deslizamento curto de entrada e o retorno pelo mesmo caminho; a página
+  de baixo não se desloca. A fila do operador continua sem transição entre lista e detalhe, que
+  são a mesma página.
+- **Rolagem na página inicial.** "Conhecer os materiais" rola até a seção de materiais (560 ms,
+  `easeInOutCubic`, título 40 px abaixo do topo da área rolável, que já começa abaixo do
+  cabeçalho) e põe o foco do teclado numa âncora da seção: o próximo Tab vai a "Ver todos os
+  materiais", que continua abrindo `/materiais`. "Experimentar a demonstração" rola até uma faixa
+  nova no fim do encerramento, que explica a demonstração em duas linhas e oferece "Escolher um
+  perfil" (abre `/demonstracao`, e recebe o foco ao chegar). Com movimento reduzido, a rolagem é
+  imediata. O botão "Demonstração" do cabeçalho e o link do rodapé continuam diretos, então a
+  rolagem não acrescenta uma etapa obrigatória para quem já sabe o que quer.
+- **Botões.** Tema em pílula para todos os botões. Ações cheias com sombra por estado (2 em
+  repouso, 6 no hover, 1 ao pressionar) e `Elevavel` (sobe 2 dp no hover, encolhe 3% ao pressionar,
+  ignora botões desabilitados) nas 34 ações principais; setas com `IconeDirecional` avançam no
+  hover. Secundários (contorno) sem sombra: borda primária de 1,5 dp e fundo verde suave no hover.
+  Destrutivos com `estiloDestrutivo`: vermelho, hover e pressionado mais escuros e sombra
+  avermelhada. Foco de teclado em azul, como antes.
+- **Atalhos circulares de materiais.** Continuam circulares e com as cores do design system.
+  Repouso com sombra suave sobre um anel branco; hover sobe 3 dp, borda de 2 dp na cor do material,
+  sombra maior e ícone 6% maior; pressionar encolhe 7%; seleção com anel de 3 dp, selo de
+  confirmação e rótulo em negrito. Valem no catálogo, na página inicial e no início do morador.
+- **Cartões.** `CartaoInterativo` ganha compressão de 1,5% ao pressionar (o retorno ao toque no
+  celular). As listas clicáveis que ainda eram `Card` + `ListTile` (operadores, solicitações
+  recentes do morador, "Meus endereços") passam a usá-lo. Superfícies não clicáveis não mudaram.
+- **Entradas internas.** `Aparecer`: fade com 12 dp de subida, uma vez por posição na árvore.
+  `PaginaRolavel` escalona os filhos (45 ms entre eles); os resultados de `ConteudoCarga` e os
+  avisos de confirmação e erro entram ao surgir. Novas respostas da API, campos alterados e
+  reconstruções não reiniciam a animação, e nada bloqueia o toque durante a entrada.
+
+Verificações executadas:
+
+| Verificação | Resultado |
+|---|---|
+| `dart format --set-exit-if-changed`, `flutter analyze` | Sem alterações; nenhum problema |
+| `flutter test` | 147 testes aprovados (novos: direção entre destinos público e do morador, página anterior por baixo, filtro sem transição, detalhe de ida e volta, troca de perfil neutra, movimento reduzido, rolagem até materiais e demonstração, elevação de botões, destrutivo, atalhos circulares, entrada única) |
+| `dart test test_integracao` | 10 testes aprovados contra a API real |
+| `flutter build web --release --no-web-resources-cdn` (público e `APP_MODE=demo`) | Concluídos |
+| Gravações no Chrome headless (`tool/gravar_transicoes.py`) | Quadros intermediários de todas as transições pedidas a 390, 768 e 1366 px, rolagens, hover, foco de teclado e movimento reduzido, em `docs/capturas/etapa-15/` |
+
+Achado durante a validação: o Chrome headless informa `prefers-reduced-motion: reduce`, e o app
+trocava de página sem animação (o comportamento correto para essa preferência). A ferramenta de
+gravação passou a declarar a preferência explicitamente; com `--reduzido`, a gravação confirma a
+troca imediata.
+
 ## Pendências e problemas conhecidos
 
 - Assets definitivos (logomarca, imagem principal, recolhimento e etapas) a cargo do estudante.
-- A nova linguagem visual ainda não foi aplicada às áreas internas, como pedido para esta etapa.
+- Selo de modalidade truncado nos cartões de ponto e foco do atalho Papel parecido com o hover:
+  registrados em `backend/docs/melhorias-pendentes.md` (seção Frontend).
+- A entrada coordenada do herói roda de novo a cada visita à página inicial, junto do
+  deslizamento de chegada. Foi mantida porque a composição está aprovada; fica para avaliação.
 
 - Não testados: Firefox, Safari, celular físico, acesso pela rede local, leitores de tela, fluidez de rolagem e memória. A demonstração pelo celular exige `CADDY_BIND` e liberação da porta no firewall, que não foram alterados.
 - Persistência após reinício da API não foi exercitada pelo frontend (o backend tem evidência própria).
