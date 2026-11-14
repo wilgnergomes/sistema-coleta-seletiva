@@ -12,6 +12,7 @@ import '../features/moradores/ui/paginas_morador.dart';
 import '../ui/compartilhado/estados.dart';
 import '../ui/compartilhado/layout.dart';
 import '../ui/compartilhado/marca.dart';
+import '../ui/compartilhado/movimento.dart';
 import 'conexao.dart';
 import 'rotas_morador.dart';
 import 'rotas_operador.dart';
@@ -20,6 +21,14 @@ import 'dependencias.dart';
 import 'sessao.dart';
 import 'shell_app.dart';
 import 'tema/tokens.dart';
+
+/// Rota com transição adequada à função: destinos principais com fade curto
+/// e detalhes com deslizamento e fade (o retorno faz o caminho inverso).
+GoRoute rotaComTransicao({required String path, required GoRouterWidgetBuilder builder, bool detalhe = false}) =>
+    GoRoute(
+      path: path,
+      pageBuilder: (context, estado) => (detalhe ? paginaDetalhe : paginaDestino)(estado, builder(context, estado)),
+    );
 
 /// Volta ao item anterior do histórico ou, sem histórico, ao destino dado.
 void voltarOu(BuildContext context, String destino) {
@@ -97,12 +106,14 @@ GoRouter criarRotas(Dependencias d, {List<RotasArea> areas = const []}) {
       ShellRoute(
         builder: (context, estado, filho) => ShellApp(sessao: sessao, estado: estado, filho: filho, demonstracao: demo),
         routes: [
-          GoRoute(
+          rotaComTransicao(
             path: '/',
             builder: (context, estado) => PaginaInicioPublica(
               catalogo: catalogo,
               navegar: NavegacaoInicio(
                 pontos: (f) => context.go(urlPontos(f)),
+                filtros: (nome) =>
+                    context.go(Uri(path: '/pontos', queryParameters: {'filtros': '1', 'nome': ?nome}).toString()),
                 materiais: () => context.go('/materiais'),
                 material: (id) => context.push('/materiais/$id'),
                 cadastro: () => context.go('/cadastro'),
@@ -119,16 +130,18 @@ GoRouter criarRotas(Dependencias d, {List<RotasArea> areas = const []}) {
               ),
             ),
           ),
-          GoRoute(
+          rotaComTransicao(
             path: '/pontos',
             builder: (context, estado) => PaginaPontos(
               filtro: FiltroPontos.deQuery(estado.uri.queryParameters),
               repositorio: catalogo,
               aoMudarFiltro: (f) => context.go(urlPontos(f)),
               aoAbrirPonto: (id) => context.push('/pontos/$id'),
+              abrirFiltrosAoEntrar: estado.uri.queryParameters['filtros'] == '1',
             ),
           ),
-          GoRoute(
+          rotaComTransicao(
+            detalhe: true,
             path: '/pontos/:id',
             builder: (context, estado) {
               final id = idDaRota(estado);
@@ -143,7 +156,7 @@ GoRouter criarRotas(Dependencias d, {List<RotasArea> areas = const []}) {
               );
             },
           ),
-          GoRoute(
+          rotaComTransicao(
             path: '/materiais',
             builder: (context, estado) {
               final pagina = (int.tryParse(estado.uri.queryParameters['pagina'] ?? '') ?? 1) - 1;
@@ -155,7 +168,8 @@ GoRouter criarRotas(Dependencias d, {List<RotasArea> areas = const []}) {
               );
             },
           ),
-          GoRoute(
+          rotaComTransicao(
+            detalhe: true,
             path: '/materiais/:id',
             builder: (context, estado) {
               final id = idDaRota(estado);
@@ -169,7 +183,7 @@ GoRouter criarRotas(Dependencias d, {List<RotasArea> areas = const []}) {
               );
             },
           ),
-          GoRoute(
+          rotaComTransicao(
             path: '/cadastro',
             builder: (context, estado) => PaginaCadastro(
               repositorio: d.repositorioMoradores,
@@ -181,7 +195,7 @@ GoRouter criarRotas(Dependencias d, {List<RotasArea> areas = const []}) {
               },
             ),
           ),
-          GoRoute(
+          rotaComTransicao(
             path: '/demonstracao',
             builder: (context, estado) {
               final retorno = estado.uri.queryParameters['retorno'];

@@ -56,6 +56,7 @@ class PaginaPontos extends StatefulWidget {
     this.subtitulo = 'Encontre onde entregar recicláveis ou quem faz recolhimento domiciliar.',
     this.administrativo = false,
     this.acaoTitulo,
+    this.abrirFiltrosAoEntrar = false,
   });
 
   final FiltroPontos filtro;
@@ -70,6 +71,9 @@ class PaginaPontos extends StatefulWidget {
   final bool administrativo;
   final Widget? acaoTitulo;
 
+  /// Abre o painel de filtros assim que os materiais forem carregados.
+  final bool abrirFiltrosAoEntrar;
+
   @override
   State<PaginaPontos> createState() => _PaginaPontosState();
 }
@@ -83,7 +87,15 @@ class _PaginaPontosState extends State<PaginaPontos> {
   void initState() {
     super.initState();
     _vm.carregar(widget.filtro);
-    _vm.carregarMateriais();
+    final materiais = _vm.carregarMateriais();
+    if (widget.abrirFiltrosAoEntrar) {
+      materiais.whenComplete(() {
+        if (!mounted) return;
+        // Tira o parâmetro da URL para não reabrir ao voltar ou recarregar.
+        widget.aoMudarFiltro(widget.filtro);
+        _abrirFiltros();
+      });
+    }
   }
 
   @override
