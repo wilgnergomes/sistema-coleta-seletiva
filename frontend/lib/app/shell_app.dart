@@ -95,6 +95,19 @@ int? indiceDestino(List<DestinoNavegacao> destinos, String caminho) {
   return null;
 }
 
+/// Área da navegação: a do prefixo da rota ou, para o morador, também as
+/// páginas públicas que ele consulta (pontos e materiais).
+Perfil? areaDaRota(String caminho, Perfil? perfil) =>
+    Perfil.daRota(caminho) ?? (perfil == Perfil.morador ? Perfil.morador : null);
+
+/// Destinos exibidos na navegação de cada área (nulo: área pública sem menu lateral).
+List<DestinoNavegacao> destinosDaArea(Perfil? area) => switch (area) {
+  Perfil.morador => destinosMorador,
+  Perfil.operador => destinosOperador,
+  Perfil.administrador => destinosAdministrador,
+  null => const <DestinoNavegacao>[],
+};
+
 /// Estrutura da aplicação conforme o contexto: público, morador, operador
 /// ou administrador. Mesma identidade visual e componentes, navegação própria.
 class ShellApp extends StatelessWidget {
@@ -117,12 +130,12 @@ class ShellApp extends StatelessWidget {
       listenable: sessao,
       builder: (context, _) {
         final caminho = estado.uri.path;
-        final area = Perfil.daRota(caminho) ?? (sessao.perfil == Perfil.morador ? Perfil.morador : null);
-        final (destinos, compacta) = switch (area) {
-          Perfil.morador => (destinosMorador, NavegacaoCompacta.barraInferior),
-          Perfil.operador => (destinosOperador, NavegacaoCompacta.cabecalho),
-          Perfil.administrador => (destinosAdministrador, NavegacaoCompacta.gaveta),
-          null => (const <DestinoNavegacao>[], NavegacaoCompacta.cabecalho),
+        final area = areaDaRota(caminho, sessao.perfil);
+        final destinos = destinosDaArea(area);
+        final compacta = switch (area) {
+          Perfil.morador => NavegacaoCompacta.barraInferior,
+          Perfil.administrador => NavegacaoCompacta.gaveta,
+          Perfil.operador || null => NavegacaoCompacta.cabecalho,
         };
         final compacto = MediaQuery.sizeOf(context).width < 600;
         final cabecalhoCompacto = MediaQuery.sizeOf(context).width < 900;

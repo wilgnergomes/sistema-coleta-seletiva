@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -9,7 +11,9 @@ abstract final class Movimento {
   static const hover = Duration(milliseconds: 180);
   static const entrada = Duration(milliseconds: 420);
   static const rota = Duration(milliseconds: 260);
+  static const rotaDestino = Duration(milliseconds: 340);
   static const rotaDetalhe = Duration(milliseconds: 320);
+  static const rolagem = Duration(milliseconds: 560);
   static const curvaEntrada = Curves.easeOutCubic;
   static const curvaSaida = Curves.easeInCubic;
 }
@@ -205,20 +209,117 @@ class _LinkDiscretoState extends State<LinkDiscreto> {
   }
 }
 
-/// Transição entre destinos principais: fade curto, sem deslocamento.
-CustomTransitionPage<void> paginaDestino(GoRouterState estado, Widget filho) => CustomTransitionPage<void>(
+/// Direção espacial de uma troca de destino principal.
+enum DirecaoNavegacao {
+  /// Destino à direita na ordem da navegação: a nova página entra pela direita.
+  avanca,
+
+  /// Destino à esquerda: a nova página entra pela esquerda.
+  recua,
+
+  /// Sem ordem espacial (troca de perfil, redirecionamento, página avulsa).
+  neutra,
+}
+
+/// Transição entre destinos principais. Com [direcao] definida, a nova página
+/// desliza sobre a anterior a partir do lado do destino, com sombra durante o
+/// movimento, enquanto a anterior recua um pouco e perde destaque. Sem
+/// direção, faz um fade com escala mínima. [saida] informa, à página que sai,
+/// a direção da troca em andamento.
+CustomTransitionPage<void> paginaDestino(
+  GoRouterState estado,
+  Widget filho, {
+  DirecaoNavegacao direcao = DirecaoNavegacao.neutra,
+  DirecaoNavegacao Function()? saida,
+}) => CustomTransitionPage<void>(
   key: estado.pageKey,
   child: filho,
-  transitionDuration: Movimento.rota,
-  reverseTransitionDuration: Movimento.rota,
-  transitionsBuilder: (context, animacao, _, child) {
-    if (MediaQuery.disableAnimationsOf(context)) return child;
-    return FadeTransition(
-      opacity: CurvedAnimation(parent: animacao, curve: Movimento.curvaEntrada),
-      child: child,
-    );
-  },
+  transitionDuration: Movimento.rotaDestino,
+  reverseTransitionDuration: Movimento.rotaDestino,
+  transitionsBuilder: (context, animacao, secundaria, child) => TransicaoDestino(
+    entrada: animacao,
+    saida: secundaria,
+    direcao: direcao,
+    direcaoDaSaida: saida ?? () => DirecaoNavegacao.neutra,
+    child: child,
+  ),
 );
+
+/// Movimento de uma página de destino: entrada pela [entrada] e saída pela
+/// [saida] (a animação da página que a cobre).
+class TransicaoDestino extends StatelessWidget {
+  const TransicaoDestino({
+    super.key,
+    required this.entrada,
+    required this.saida,
+    required this.direcao,
+    required this.direcaoDaSaida,
+    required this.child,
+  });
+
+  final Animation<double> entrada;
+  final Animation<double> saida;
+  final DirecaoNavegacao direcao;
+  final DirecaoNavegacao Function() direcaoDaSaida;
+  final Widget child;
+
+  /// Deslocamento de entrada: perceptível sem virar um carrossel.
+  static double deslocamento(double largura) => math.min(largura * 0.3, 360);
+
+  static double _sinal(DirecaoNavegacao d) => switch (d) {
+    DirecaoNavegacao.avanca => 1,
+    DirecaoNavegacao.recua => -1,
+    DirecaoNavegacao.neutra => 0,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+    final largura = MediaQuery.sizeOf(context).width;
+    // O fundo opaco faz a nova página cobrir a anterior em vez de misturar-se a ela.
+    final pagina = ColoredBox(color: Cores.fundo, child: child);
+    return ClipRect(
+      child: AnimatedBuilder(
+        animation: Listenable.merge([entrada, saida]),
+        child: pagina,
+        builder: (context, pagina) {
+          final e = entrada.value;
+          final curva = entrada.status == AnimationStatus.reverse ? Movimento.curvaSaida : Movimento.curvaEntrada;
+          final t = curva.transform(e);
+          final s = Movimento.curvaEntrada.transform(saida.value);
+          final sinal = _sinal(direcao);
+          final sinalSaida = _sinal(direcaoDaSaida());
+          final direcional = sinal != 0;
+          final opacidade = Curves.easeOut.transform(direcional ? (e / 0.55).clamp(0.0, 1.0) : e);
+          final dx = sinal * deslocamento(largura) * (1 - t) - sinalSaida * math.min(largura * 0.08, 96) * s;
+          final escala = (direcional ? 1.0 : 0.985 + 0.015 * t) - (sinalSaida == 0 ? 0 : 0.02 * s);
+          final sombra = direcional ? 0.18 * math.sin(math.pi * e) : 0.0;
+          return Opacity(
+            opacity: (opacidade * (1 - (sinalSaida == 0 ? 0 : 0.4 * s))).clamp(0.0, 1.0),
+            child: Transform.translate(
+              offset: Offset(dx, 0),
+              child: Transform.scale(
+                scale: escala,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Cores.texto.withValues(alpha: sombra),
+                        blurRadius: 32,
+                        offset: Offset(-sinal * 8, 0),
+                      ),
+                    ],
+                  ),
+                  child: pagina,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
 
 /// Lista para detalhe: o detalhe entra deslizando 32 dp da direita com fade,
 /// e sai pelo mesmo caminho ao voltar (continuidade de direção).
@@ -235,7 +336,7 @@ CustomTransitionPage<void> paginaDetalhe(GoRouterState estado, Widget filho) => 
       opacity: curva,
       child: SlideTransition(
         position: Tween(begin: Offset(32 / (largura == 0 ? 1 : largura), 0), end: Offset.zero).animate(curva),
-        child: child,
+        child: ColoredBox(color: Cores.fundo, child: child),
       ),
     );
   },

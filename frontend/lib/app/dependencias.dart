@@ -7,6 +7,7 @@ import '../features/demonstracao/pagina_demonstracao.dart';
 import '../features/moradores/data/moradores.dart';
 import '../features/solicitacoes/data/solicitacoes.dart';
 import 'configuracao.dart';
+import 'navegacao.dart';
 import 'sessao.dart';
 
 /// Composição das dependências por construtores.
@@ -40,4 +41,7 @@ class Dependencias {
   final RepositorioSolicitacoes repositorioSolicitacoes;
   final FusoNegocio fuso;
   late final ValidadorAtor validadorAtor;
+
+  /// Último destino aberto, para a direção das transições entre páginas.
+  late final navegacao = MemoriaDestinos(() => sessao.perfil);
 }

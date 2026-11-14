@@ -66,7 +66,8 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
 
   return [
     GoRoute(path: '/administracao', redirect: (_, _) => '/administracao/resumo'),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
       path: '/administracao/operadores',
       builder: (context, estado) => PaginaOperadores(
         repositorio: operadores,
@@ -78,7 +79,9 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
         aoNovo: () => context.push('/administracao/operadores/novo'),
       ),
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
+      detalhe: true,
       path: '/administracao/operadores/novo',
       builder: (context, estado) => PaginaEditorOperador(
         repositorio: operadores,
@@ -87,7 +90,9 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
         aoSalvar: (_) => voltarOu(context, '/administracao/operadores'),
       ),
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
+      detalhe: true,
       path: '/administracao/operadores/:id',
       builder: (context, estado) {
         final id = idDaRota(estado);
@@ -102,7 +107,8 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
         );
       },
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
       path: '/administracao/moradores',
       builder: (context, estado) => PaginaMoradoresAdmin(
         repositorio: d.repositorioMoradores,
@@ -113,7 +119,9 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
         aoCadastrar: () => context.go('/cadastro'),
       ),
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
+      detalhe: true,
       path: '/administracao/moradores/:id',
       builder: (context, estado) {
         final id = idDaRota(estado);
@@ -126,7 +134,9 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
         );
       },
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
+      detalhe: true,
       path: '/administracao/moradores/:id/enderecos',
       builder: (context, estado) {
         final id = idDaRota(estado);
@@ -140,7 +150,8 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
         );
       },
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
       path: '/administracao/pontos',
       builder: (context, estado) => PaginaPontos(
         titulo: 'Pontos de coleta',
@@ -158,7 +169,9 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
         ),
       ),
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
+      detalhe: true,
       path: '/administracao/pontos/novo',
       builder: (context, estado) => PaginaEditorPonto(
         repositorio: catalogo,
@@ -167,7 +180,9 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
         aoVerSolicitacoes: (id) => context.go(urlSolicitacoesAdmin(FiltroSolicitacoes(pontoId: id))),
       ),
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
+      detalhe: true,
       path: '/administracao/pontos/:id',
       builder: (context, estado) {
         final id = idDaRota(estado);
@@ -182,7 +197,8 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
         );
       },
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
       path: '/administracao/materiais',
       builder: (context, estado) {
         final q = estado.uri.queryParameters;
@@ -198,7 +214,9 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
         );
       },
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
+      detalhe: true,
       path: '/administracao/materiais/novo',
       builder: (context, estado) => PaginaEditorMaterial(
         repositorio: catalogo,
@@ -206,7 +224,9 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
         aoSalvar: (m) => voltarOu(context, '/administracao/materiais'),
       ),
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
+      detalhe: true,
       path: '/administracao/materiais/:id',
       builder: (context, estado) {
         final id = idDaRota(estado);
@@ -220,7 +240,8 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
         );
       },
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
       path: '/administracao/resumo',
       builder: (context, estado) {
         final de = DataCivil.ler(estado.uri.queryParameters['de']);
@@ -240,7 +261,8 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
         );
       },
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
       path: '/administracao/solicitacoes',
       builder: (context, estado) {
         final filtro = FiltroSolicitacoes.deQuery(estado.uri.queryParameters);
@@ -274,7 +296,9 @@ List<RouteBase> rotasAdministracao(Dependencias d) {
         );
       },
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
+      detalhe: true,
       path: '/administracao/solicitacoes/:id',
       builder: (context, estado) {
         final id = idDaRota(estado);

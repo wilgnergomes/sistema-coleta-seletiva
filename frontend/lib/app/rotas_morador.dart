@@ -29,7 +29,8 @@ Widget secoesRecentes(BuildContext context, Dependencias d, String? municipio) =
 List<RouteBase> rotasSolicitacoesMorador(Dependencias d) {
   final sessao = d.sessao;
   return [
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
       path: '/morador/solicitacoes',
       builder: (context, estado) => PaginaSolicitacoes(
         viewModel: ListaSolicitacoesViewModel(
@@ -43,7 +44,9 @@ List<RouteBase> rotasSolicitacoesMorador(Dependencias d) {
         acaoVazia: FilledButton(onPressed: () => context.go('/pontos'), child: const Text('Solicitar recolhimento')),
       ),
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
+      detalhe: true,
       path: '/morador/solicitacoes/nova',
       builder: (context, estado) {
         final pontoId = int.tryParse(estado.uri.queryParameters['pontoId'] ?? '');
@@ -62,7 +65,9 @@ List<RouteBase> rotasSolicitacoesMorador(Dependencias d) {
         );
       },
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
+      detalhe: true,
       path: '/morador/solicitacoes/:id',
       builder: (context, estado) {
         final id = idDaRota(estado);
@@ -86,7 +91,9 @@ List<RouteBase> rotasSolicitacoesMorador(Dependencias d) {
         );
       },
     ),
-    GoRoute(
+    rotaComTransicao(
+      d.navegacao,
+      detalhe: true,
       path: '/morador/solicitacoes/:id/corrigir',
       builder: (context, estado) {
         final id = idDaRota(estado);
