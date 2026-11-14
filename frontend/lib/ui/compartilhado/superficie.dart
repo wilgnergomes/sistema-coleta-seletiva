@@ -175,3 +175,84 @@ class _RevelarState extends State<Revelar> {
     );
   }
 }
+
+/// Elevação de ação: o filho sobe [altura] dp com o mouse por cima e é
+/// comprimido de leve ao ser pressionado (o retorno ao toque no celular).
+/// Um botão desabilitado não reage. Ícones [IconeDirecional] dentro dele
+/// avançam junto com o hover.
+class Elevavel extends StatefulWidget {
+  const Elevavel({super.key, required this.child, this.altura = 2});
+
+  final Widget child;
+  final double altura;
+
+  @override
+  State<Elevavel> createState() => _ElevavelState();
+}
+
+class _ElevavelState extends State<Elevavel> {
+  bool _hover = false;
+  bool _pressionado = false;
+
+  bool get _ativo {
+    final filho = widget.child;
+    return filho is! ButtonStyleButton || filho.enabled;
+  }
+
+  void _pressionar(bool valor) {
+    if (_pressionado != valor) setState(() => _pressionado = valor);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ativo = _ativo;
+    final hover = ativo && _hover;
+    final pressionado = ativo && _pressionado;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Listener(
+        onPointerDown: (_) => _pressionar(true),
+        onPointerUp: (_) => _pressionar(false),
+        onPointerCancel: (_) => _pressionar(false),
+        child: _EstadoElevavel(
+          hover: hover,
+          child: AnimatedContainer(
+            duration: duracao(context, 180),
+            curve: Curves.easeOutCubic,
+            transform: Matrix4.translationValues(0, hover && !pressionado ? -widget.altura : 0, 0),
+            child: AnimatedScale(scale: pressionado ? 0.97 : 1, duration: duracao(context, 110), child: widget.child),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EstadoElevavel extends InheritedWidget {
+  const _EstadoElevavel({required this.hover, required super.child});
+
+  final bool hover;
+
+  @override
+  bool updateShouldNotify(_EstadoElevavel antigo) => antigo.hover != hover;
+}
+
+/// Ícone de direção (seta) que avança um pouco no hover do [Elevavel] que o contém.
+class IconeDirecional extends StatelessWidget {
+  const IconeDirecional(this.icone, {super.key, this.tamanho});
+
+  final IconData icone;
+  final double? tamanho;
+
+  @override
+  Widget build(BuildContext context) {
+    final hover = context.dependOnInheritedWidgetOfExactType<_EstadoElevavel>()?.hover ?? false;
+    return AnimatedSlide(
+      offset: Offset(hover ? 0.22 : 0, 0),
+      duration: duracao(context, 180),
+      curve: Curves.easeOutCubic,
+      child: Icon(icone, size: tamanho),
+    );
+  }
+}

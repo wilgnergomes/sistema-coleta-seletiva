@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 
 import '../../app/tema/tokens.dart';
 import '../../core/estado/carga.dart';
@@ -68,6 +69,10 @@ class PaginaInicioPublica extends StatefulWidget {
 class _PaginaInicioPublicaState extends State<PaginaInicioPublica> {
   final _materiais = Carga<CatalogoMateriais>();
   final _rolagem = ScrollController();
+  final _ancoraMateriais = GlobalKey(debugLabel: 'Seção de materiais');
+  final _ancoraDemonstracao = GlobalKey(debugLabel: 'Área da demonstração');
+  final _focoMateriais = FocusNode(debugLabel: 'Seção de materiais', skipTraversal: true);
+  final _focoDemonstracao = FocusNode(debugLabel: 'Abrir a demonstração');
 
   void _carregar() => _materiais.executar(widget.catalogo.materiaisAtivos, () {
     if (mounted) setState(() {});
@@ -82,7 +87,30 @@ class _PaginaInicioPublicaState extends State<PaginaInicioPublica> {
   @override
   void dispose() {
     _rolagem.dispose();
+    _focoMateriais.dispose();
+    _focoDemonstracao.dispose();
     super.dispose();
+  }
+
+  /// Rola suavemente até [ancora], sem trocar de rota, e leva o foco do
+  /// teclado para a seção. [alinhamento] 0 põe a âncora no topo da área
+  /// visível e 1 no fim; [folga] ajusta alguns pixels (o cabeçalho fica fora
+  /// da área rolável, então não cobre o título). Com movimento reduzido, o
+  /// deslocamento é imediato.
+  Future<void> _rolarAte(GlobalKey ancora, FocusNode foco, {double alinhamento = 0, double folga = 0}) async {
+    final caixa = ancora.currentContext?.findRenderObject();
+    if (caixa == null || !_rolagem.hasClients) return;
+    final posicao = _rolagem.position;
+    final alvo = (RenderAbstractViewport.of(caixa).getOffsetToReveal(caixa, alinhamento).offset + folga).clamp(
+      posicao.minScrollExtent,
+      posicao.maxScrollExtent,
+    );
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _rolagem.jumpTo(alvo);
+    } else {
+      await _rolagem.animateTo(alvo, duration: Movimento.rolagem, curve: Curves.easeInOutCubic);
+    }
+    if (mounted) foco.requestFocus();
   }
 
   @override
@@ -94,12 +122,24 @@ class _PaginaInicioPublicaState extends State<PaginaInicioPublica> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _Heroi(navegar: widget.navegar),
+            _Heroi(
+              navegar: widget.navegar,
+              aoConhecerMateriais: () => _rolarAte(_ancoraMateriais, _focoMateriais, folga: -40),
+              aoConhecerDemonstracao: widget.navegar.demonstracao == null
+                  ? null
+                  : () => _rolarAte(_ancoraDemonstracao, _focoDemonstracao, alinhamento: 1, folga: 64),
+            ),
             const _Percurso(),
-            _Materiais(carga: _materiais, navegar: widget.navegar, aoTentarNovamente: _carregar),
+            _Materiais(
+              carga: _materiais,
+              navegar: widget.navegar,
+              aoTentarNovamente: _carregar,
+              ancora: _ancoraMateriais,
+              foco: _focoMateriais,
+            ),
             _Recolhimento(navegar: widget.navegar),
             _Encontrar(navegar: widget.navegar, materiais: _materiais.dados),
-            _Encerramento(navegar: widget.navegar),
+            _Encerramento(navegar: widget.navegar, ancora: _ancoraDemonstracao, foco: _focoDemonstracao),
             _Rodape(navegar: widget.navegar),
           ],
         ),
@@ -165,9 +205,13 @@ TextStyle? _tituloSecao(BuildContext context) {
 // Seção 1 · Apresentação
 
 class _Heroi extends StatelessWidget {
-  const _Heroi({required this.navegar});
+  const _Heroi({required this.navegar, required this.aoConhecerMateriais, this.aoConhecerDemonstracao});
 
   final NavegacaoInicio navegar;
+
+  /// Rolam até as seções da própria página, sem trocar de rota.
+  final VoidCallback aoConhecerMateriais;
+  final VoidCallback? aoConhecerDemonstracao;
 
   @override
   Widget build(BuildContext context) {
@@ -277,9 +321,9 @@ class _Heroi extends StatelessWidget {
                         spacing: Espaco.s,
                         runSpacing: Espaco.xxs,
                         children: [
-                          LinkDiscreto(rotulo: 'Conhecer os materiais', aoPressionar: navegar.materiais),
-                          if (navegar.demonstracao != null)
-                            LinkDiscreto(rotulo: 'Experimentar a demonstração', aoPressionar: navegar.demonstracao!),
+                          LinkDiscreto(rotulo: 'Conhecer os materiais', aoPressionar: aoConhecerMateriais),
+                          if (aoConhecerDemonstracao != null)
+                            LinkDiscreto(rotulo: 'Experimentar a demonstração', aoPressionar: aoConhecerDemonstracao!),
                         ],
                       ),
                     ),
@@ -645,11 +689,22 @@ class _PercursoVertical extends StatelessWidget {
 // Seção 3 · Materiais (composição assimétrica com os quatro tradicionais)
 
 class _Materiais extends StatelessWidget {
-  const _Materiais({required this.carga, required this.navegar, required this.aoTentarNovamente});
+  const _Materiais({
+    required this.carga,
+    required this.navegar,
+    required this.aoTentarNovamente,
+    required this.ancora,
+    required this.foco,
+  });
 
   final Carga<CatalogoMateriais> carga;
   final NavegacaoInicio navegar;
   final VoidCallback aoTentarNovamente;
+
+  /// Ponto de chegada da rolagem a partir do herói e alvo do foco do teclado:
+  /// o próximo Tab segue para "Ver todos os materiais".
+  final GlobalKey ancora;
+  final FocusNode foco;
 
   @override
   Widget build(BuildContext context) {
@@ -658,6 +713,7 @@ class _Materiais extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Focus(key: ancora, focusNode: foco, child: const SizedBox(height: 0)),
           Revelar(
             child: Wrap(
               alignment: WrapAlignment.spaceBetween,
@@ -1177,9 +1233,13 @@ class _EncontrarState extends State<_Encontrar> {
 // Seção 6 · Encerramento e rodapé
 
 class _Encerramento extends StatelessWidget {
-  const _Encerramento({required this.navegar});
+  const _Encerramento({required this.navegar, required this.ancora, required this.foco});
 
   final NavegacaoInicio navegar;
+  final GlobalKey ancora;
+
+  /// Foco do botão que abre a demonstração, ao chegar pela rolagem.
+  final FocusNode foco;
 
   @override
   Widget build(BuildContext context) {
@@ -1227,10 +1287,6 @@ class _Encerramento extends StatelessWidget {
           claro: true,
           aoPressionar: () => navegar.pontos(const FiltroPontos()),
         ),
-        if (navegar.demonstracao != null) ...[
-          const SizedBox(height: Espaco.xs),
-          LinkDiscreto(rotulo: 'Experimentar a demonstração', aoPressionar: navegar.demonstracao!, claro: true),
-        ],
       ],
     );
     return ClipRect(
@@ -1250,25 +1306,129 @@ class _Encerramento extends StatelessWidget {
             ),
             _Conteudo(
               vertical: 112,
-              child: Revelar(
-                child: f == _Formato.celular
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [frase, const SizedBox(height: 40), acoes],
-                      )
-                    : Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(child: frase),
-                          const SizedBox(width: Espaco.xl),
-                          acoes,
-                        ],
-                      ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Revelar(
+                    child: f == _Formato.celular
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [frase, const SizedBox(height: 40), acoes],
+                          )
+                        : Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Expanded(child: frase),
+                              const SizedBox(width: Espaco.xl),
+                              acoes,
+                            ],
+                          ),
+                  ),
+                  if (navegar.demonstracao != null)
+                    Revelar(
+                      atraso: const Duration(milliseconds: 120),
+                      child: _FaixaDemonstracao(key: ancora, foco: foco, aoAbrir: navegar.demonstracao!),
+                    ),
+                ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Explicação curta da demonstração, no fim do encerramento: o link do herói
+/// rola até aqui, e o botão abre a seleção de identidade (`/demonstracao`).
+class _FaixaDemonstracao extends StatelessWidget {
+  const _FaixaDemonstracao({super.key, required this.foco, required this.aoAbrir});
+
+  final FocusNode foco;
+  final VoidCallback aoAbrir;
+
+  @override
+  Widget build(BuildContext context) {
+    final f = _formato(MediaQuery.sizeOf(context).width);
+    final texto = Theme.of(context).textTheme;
+    final explicacao = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('DEMONSTRAÇÃO', style: texto.labelMedium?.copyWith(color: Cores.secundarioSuave, letterSpacing: 1.4)),
+        const SizedBox(height: Espaco.xs),
+        Semantics(
+          header: true,
+          child: Text(
+            'Veja o sistema por dentro, sem cadastro.',
+            style: texto.titleLarge?.copyWith(color: Colors.white),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Escolha uma identidade de exemplo (morador, operador ou administrador) '
+          'e percorra os fluxos com dados fictícios.',
+          style: texto.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.8), height: 1.5),
+        ),
+      ],
+    );
+    final botao = Elevavel(
+      child: OutlinedButton.icon(
+        focusNode: foco,
+        onPressed: aoAbrir,
+        iconAlignment: IconAlignment.end,
+        icon: const IconeDirecional(Icons.arrow_forward, tamanho: 20),
+        label: const Text('Escolher um perfil'),
+        style: ButtonStyle(
+          foregroundColor: const WidgetStatePropertyAll(Colors.white),
+          padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: Espaco.l, vertical: Espaco.s)),
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (e) => e.contains(WidgetState.hovered) || e.contains(WidgetState.focused)
+                ? Colors.white.withValues(alpha: 0.12)
+                : Colors.transparent,
+          ),
+          overlayColor: WidgetStatePropertyAll(Colors.white.withValues(alpha: 0.08)),
+          side: WidgetStateProperty.resolveWith(
+            (e) => e.contains(WidgetState.focused)
+                ? const BorderSide(color: Colors.white, width: 2.5)
+                : BorderSide(color: Colors.white.withValues(alpha: e.contains(WidgetState.hovered) ? 1 : 0.55)),
+          ),
+        ),
+      ),
+    );
+    const icone = ExcludeSemantics(
+      child: CircleAvatar(
+        radius: 24,
+        backgroundColor: Color(0x1FFFFFFF),
+        child: Icon(Icons.play_circle_outline, color: Colors.white),
+      ),
+    );
+    return Container(
+      margin: const EdgeInsets.only(top: 56),
+      padding: const EdgeInsets.only(top: 40),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.14))),
+      ),
+      child: f == _Formato.celular
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                icone,
+                const SizedBox(height: Espaco.m),
+                explicacao,
+                const SizedBox(height: Espaco.l),
+                botao,
+              ],
+            )
+          : Row(
+              children: [
+                icone,
+                const SizedBox(width: 20),
+                Expanded(child: explicacao),
+                const SizedBox(width: Espaco.xl),
+                botao,
+              ],
+            ),
     );
   }
 }

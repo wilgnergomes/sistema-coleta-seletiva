@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:coleta_seletiva_web/app/navegacao.dart';
 import 'package:coleta_seletiva_web/app/sessao.dart';
 import 'package:coleta_seletiva_web/app/shell_app.dart';
@@ -11,7 +13,6 @@ import 'package:coleta_seletiva_web/features/solicitacoes/ui/solicitacoes_morado
 import 'package:coleta_seletiva_web/ui/compartilhado/movimento.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_ui/material_ui.dart';
 
 import '../apoio.dart';
 import '../features/refinamento_test.dart' show abrir;
@@ -84,7 +85,7 @@ void main() {
     testWidgets('detalhe entra pela direita e volta pelo mesmo caminho', (tester) async {
       definirTela(tester, computador);
       final rotas = await abrir(tester, rota: '/pontos');
-      rotas.push('/pontos/4');
+      unawaited(rotas.push('/pontos/4'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       final entrando = find.byType(PaginaDetalhePonto);

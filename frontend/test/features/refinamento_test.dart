@@ -86,11 +86,64 @@ void main() {
       expect(rotas.state.uri.path, '/pontos');
       rotas.go('/');
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Experimentar a demonstração').first);
+      // "Experimentar a demonstração" rola até a explicação no encerramento;
+      // o botão de lá abre a seleção de identidade.
+      await tester.ensureVisible(find.text('Experimentar a demonstração'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Experimentar a demonstração').first);
+      await tester.tap(find.text('Experimentar a demonstração'));
+      await tester.pumpAndSettle();
+      expect(rotas.state.uri.path, '/');
+      expect(find.text('Veja o sistema por dentro, sem cadastro.').hitTestable(), findsOneWidget);
+      final botao = find.widgetWithText(OutlinedButton, 'Escolher um perfil');
+      expect(tester.widget<OutlinedButton>(botao).focusNode!.hasFocus, isTrue);
+      await tester.tap(botao);
       await tester.pumpAndSettle();
       expect(rotas.state.uri.path, '/demonstracao');
+    });
+
+    testWidgets('"Conhecer os materiais" rola suavemente até a seção, sem trocar de rota', (tester) async {
+      definirTela(tester, computador);
+      final rotas = await abrir(tester);
+      final rolagem = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+      await tester.ensureVisible(find.text('Conhecer os materiais'));
+      await tester.pumpAndSettle();
+      final inicio = rolagem.pixels;
+      await tester.tap(find.text('Conhecer os materiais'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      // No meio do caminho: ainda rolando, nem no início nem no destino.
+      final intermediario = rolagem.pixels;
+      expect(intermediario, greaterThan(inicio));
+      await tester.pumpAndSettle();
+      expect(rolagem.pixels, greaterThan(intermediario));
+      expect(rotas.state.uri.path, '/');
+      // O título da seção fica visível, logo abaixo do topo da área rolável.
+      final titulo = tester.getTopLeft(find.textContaining('Cada material'));
+      final topo = tester.getTopLeft(find.byType(Scrollable).first).dy;
+      expect(titulo.dy - topo, inInclusiveRange(16, 160));
+      // "Ver todos os materiais" continua abrindo o catálogo completo.
+      await tester.tap(find.text('Ver todos os materiais'));
+      await tester.pumpAndSettle();
+      expect(rotas.state.uri.path, '/materiais');
+    });
+
+    testWidgets('com movimento reduzido, a rolagem até a seção é imediata', (tester) async {
+      definirTela(tester, computador);
+      tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+        disableAnimations: true,
+      );
+      addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      await abrir(tester);
+      final rolagem = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+      await tester.ensureVisible(find.text('Conhecer os materiais'));
+      await tester.pumpAndSettle();
+      final inicio = rolagem.pixels;
+      await tester.tap(find.text('Conhecer os materiais'));
+      await tester.pump();
+      final destino = rolagem.pixels;
+      expect(destino, greaterThan(inicio + 200));
+      await tester.pumpAndSettle();
+      expect(rolagem.pixels, destino);
     });
 
     testWidgets('filtros da página inicial abrem o catálogo com o painel de filtros', (tester) async {
