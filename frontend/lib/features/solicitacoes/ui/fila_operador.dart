@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/tema/tokens.dart';
+import '../../../ui/compartilhado/superficie.dart';
 import '../../../core/api/pagina.dart';
 import '../../../core/dominio/enums.dart';
 import '../../../ui/compartilhado/estados.dart';
@@ -97,22 +98,36 @@ class _PaginaFilaState extends State<PaginaFila> {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(width: 360, child: _listaRolavel(context, compacta: false)),
-              const VerticalDivider(width: 1),
+              SizedBox(width: 352, child: _listaRolavel(context, compacta: false)),
+              // O detalhe é a área principal: superfície elevada e larga, com
+              // transição suave ao trocar de solicitação.
               Expanded(
-                child: detalhe == null
-                    ? const Center(
-                        child: EstadoVazio(
-                          icone: Icons.touch_app_outlined,
-                          titulo: 'Selecione uma solicitação',
-                          mensagem: 'O detalhe, as ações e o histórico aparecem aqui.',
-                        ),
-                      )
-                    : PainelDetalheOperador(
-                        key: ValueKey(detalhe.id),
-                        viewModel: detalhe,
-                        aoAlterar: () => _lista.carregar(widget.filtro),
+                child: Container(
+                  color: Cores.fundoVerde,
+                  padding: const EdgeInsets.fromLTRB(Espaco.s, Espaco.m, Espaco.m, Espaco.m),
+                  child: AnimatedSwitcher(
+                    duration: duracao(context, 260),
+                    switchInCurve: Curves.easeOutCubic,
+                    child: Container(
+                      key: ValueKey(detalhe?.id),
+                      decoration: BoxDecoration(
+                        color: Cores.superficie,
+                        borderRadius: BorderRadius.circular(Raio.dialogo),
+                        boxShadow: Sombra.elevada,
                       ),
+                      clipBehavior: Clip.antiAlias,
+                      child: detalhe == null
+                          ? const Center(
+                              child: EstadoVazio(
+                                icone: Icons.touch_app_outlined,
+                                titulo: 'Selecione uma solicitação',
+                                mensagem: 'O detalhe, as ações e o histórico aparecem aqui.',
+                              ),
+                            )
+                          : PainelDetalheOperador(viewModel: detalhe, aoAlterar: () => _lista.carregar(widget.filtro)),
+                    ),
+                  ),
+                ),
               ),
             ],
           );

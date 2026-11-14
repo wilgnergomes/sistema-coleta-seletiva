@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../app/tema/tema.dart';
 import '../../../app/tema/tokens.dart';
+import '../../../ui/compartilhado/superficie.dart';
 import '../../../core/dominio/datas.dart';
 import '../../../core/dominio/enums.dart';
 import '../../../ui/compartilhado/campos.dart';
@@ -34,44 +35,64 @@ class CartaoSolicitacao extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = solicitacao;
     final texto = Theme.of(context).textTheme;
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      shape: selecionada
-          ? RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(Raio.cartao),
-              side: const BorderSide(color: Cores.primario, width: 2),
-            )
-          : null,
-      child: InkWell(
-        onTap: aoAbrir,
-        child: Semantics(
-          selected: selecionada,
-          button: true,
-          label: 'Solicitação ${s.protocolo}, ${s.situacao.rotulo}',
-          child: Padding(
-            padding: const EdgeInsets.all(Espaco.m),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: Espaco.xs,
-                  runSpacing: Espaco.xs,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(s.protocolo, style: texto.titleMedium),
-                    SeloSituacao(situacao: s.situacao),
-                  ],
-                ),
-                const SizedBox(height: Espaco.xs),
-                Text('Criada em ${fuso.dataHora(s.criadaEm)}', style: texto.bodyMedium),
-                if (s.agendadaPara != null)
-                  Text('Agendada para ${fuso.dataHora(s.agendadaPara!)}', style: texto.bodyMedium),
-                Text(mostrarMorador ? '$nomePonto · Morador #${s.moradorId}' : nomePonto, style: texto.bodySmall),
-                Text(s.enderecoCopia, style: texto.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),
-              ],
+    final visual = context.coresSituacao.solicitacao(s.situacao);
+    return CartaoInterativo(
+      altura: 168,
+      selecionado: selecionada,
+      aoTocar: aoAbrir,
+      rotuloSemantico: 'Solicitação ${s.protocolo}, ${s.situacao.rotulo}',
+      preenchimento: EdgeInsets.zero,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Faixa lateral com a cor da situação.
+          Container(
+            width: 4,
+            decoration: BoxDecoration(
+              color: visual.cor,
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(Raio.cartao)),
             ),
           ),
-        ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(Espaco.m),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          s.protocolo,
+                          style: texto.titleMedium,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: Espaco.xs),
+                      SeloSituacao(situacao: s.situacao),
+                    ],
+                  ),
+                  const SizedBox(height: Espaco.xs),
+                  Text('Criada em ${fuso.dataHora(s.criadaEm)}', style: texto.bodyMedium, maxLines: 1),
+                  Text(
+                    s.agendadaPara == null ? 'Ainda não agendada' : 'Agendada para ${fuso.dataHora(s.agendadaPara!)}',
+                    style: texto.bodyMedium,
+                    maxLines: 1,
+                  ),
+                  const Spacer(),
+                  Text(
+                    mostrarMorador ? '$nomePonto · Morador #${s.moradorId}' : nomePonto,
+                    style: texto.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(s.enderecoCopia, style: texto.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -312,29 +333,47 @@ class DetalheSolicitacaoView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Wrap(
-          spacing: Espaco.s,
-          runSpacing: Espaco.xs,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Semantics(header: true, child: Text(d.protocolo, style: texto.headlineSmall)),
-            IconButton(
-              tooltip: 'Copiar protocolo',
-              icon: const Icon(Icons.copy_outlined),
-              onPressed: () async {
-                try {
-                  await Clipboard.setData(ClipboardData(text: d.protocolo));
-                  if (context.mounted) _avisar(context, 'Protocolo copiado.');
-                } on Object {
-                  if (context.mounted) _avisar(context, 'Não foi possível copiar. Selecione o protocolo no texto.');
-                }
-              },
-            ),
-            SeloSituacao(situacao: d.situacao),
-          ],
+        // Cabeçalho com a cor da situação: identifica o pedido e o estado de
+        // relance, antes das ações.
+        AnimatedContainer(
+          duration: duracao(context, 280),
+          padding: const EdgeInsets.all(Espaco.m),
+          decoration: BoxDecoration(
+            color: context.coresSituacao.solicitacao(d.situacao).fundo,
+            borderRadius: BorderRadius.circular(Raio.cartao),
+            border: Border(left: BorderSide(color: context.coresSituacao.solicitacao(d.situacao).cor, width: 4)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Wrap(
+                spacing: Espaco.s,
+                runSpacing: Espaco.xs,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Semantics(header: true, child: Text(d.protocolo, style: texto.headlineSmall)),
+                  IconButton(
+                    tooltip: 'Copiar protocolo',
+                    icon: const Icon(Icons.copy_outlined),
+                    onPressed: () async {
+                      try {
+                        await Clipboard.setData(ClipboardData(text: d.protocolo));
+                        if (context.mounted) _avisar(context, 'Protocolo copiado.');
+                      } on Object {
+                        if (context.mounted) {
+                          _avisar(context, 'Não foi possível copiar. Selecione o protocolo no texto.');
+                        }
+                      }
+                    },
+                  ),
+                  SeloSituacao(situacao: d.situacao),
+                ],
+              ),
+              const SizedBox(height: Espaco.xs),
+              Text(d.enderecoCopia, style: texto.bodyLarge),
+            ],
+          ),
         ),
-        const SizedBox(height: Espaco.xs),
-        Text(d.enderecoCopia, style: texto.bodyLarge),
         if (aviso != null) ...[const SizedBox(height: Espaco.m), aviso!],
         if (acoes != null) ...[const SizedBox(height: Espaco.m), acoes!],
         const TituloSecao('Dados da solicitação'),
