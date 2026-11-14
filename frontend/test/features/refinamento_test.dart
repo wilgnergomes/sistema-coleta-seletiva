@@ -1,7 +1,6 @@
 import 'package:coleta_seletiva_web/app/app.dart';
 import 'package:coleta_seletiva_web/app/rotas.dart';
 import 'package:coleta_seletiva_web/app/sessao.dart';
-import 'package:coleta_seletiva_web/features/catalogo/ui/componentes_catalogo.dart';
 import 'package:coleta_seletiva_web/features/moradores/data/moradores.dart';
 import 'package:coleta_seletiva_web/features/moradores/ui/admin_moradores.dart';
 import 'package:coleta_seletiva_web/ui/compartilhado/marca.dart';
@@ -49,45 +48,71 @@ Future<GoRouter> abrir(
 
 void main() {
   group('página inicial pública', () {
-    testWidgets('abre em /, com as seções e os materiais reais, tradicionais primeiro', (tester) async {
+    testWidgets('abre em /, com seções distintas e os materiais reais', (tester) async {
+      final semantica = tester.ensureSemantics();
       definirTela(tester, computador);
       final rotas = await abrir(tester);
       expect(rotas.state.uri.path, '/');
-      expect(find.text('Reciclar ficou mais simples.'), findsOneWidget);
-      for (final secao in ['Como funciona', 'Materiais recicláveis', 'Recolhimento domiciliar', 'Encontre um ponto']) {
-        await tester.scrollUntilVisible(find.text(secao).last, 300, scrollable: find.byType(Scrollable).first);
-        expect(find.text(secao), findsWidgets);
+      expect(find.bySemanticsLabel('Reciclar ficou mais simples.'), findsOneWidget);
+      for (final trecho in [
+        'Do separar ao recolher',
+        'Cada material',
+        'O ponto vai',
+        'Onde levar os seus recicláveis?',
+        'Separe hoje.',
+      ]) {
+        await tester.scrollUntilVisible(
+          find.textContaining(trecho).last,
+          300,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(find.textContaining(trecho), findsWidgets);
       }
-      Offset noCartao(String nome) =>
-          tester.getTopLeft(find.descendant(of: find.byType(CartaoMaterial), matching: find.text(nome)));
-      final papel = noCartao('Papel');
-      final metal = noCartao('Metal');
-      final pilhas = noCartao('Pilhas e baterias');
-      // Papel e Metal (tradicionais) vêm antes de Pilhas e baterias na grade.
-      expect(papel.dy < pilhas.dy || (papel.dy == pilhas.dy && papel.dx < pilhas.dx), isTrue);
-      expect(metal.dy < pilhas.dy || (metal.dy == pilhas.dy && metal.dx < pilhas.dx), isTrue);
+      // Os tradicionais ganham blocos; os demais aparecem como "Também aceitos".
+      expect(find.bySemanticsLabel('Ver orientações de Papel'), findsOneWidget);
+      expect(find.bySemanticsLabel('Ver orientações de Metal'), findsOneWidget);
+      expect(find.text('Também aceitos:'), findsOneWidget);
+      expect(find.widgetWithText(ActionChip, 'Pilhas e baterias'), findsOneWidget);
       expect(find.byType(SimboloReciclagem), findsWidgets);
       expect(tester.takeException(), isNull);
+      semantica.dispose();
     });
 
-    testWidgets('botões levam às rotas reais', (tester) async {
+    testWidgets('ação principal e links levam às rotas reais', (tester) async {
       definirTela(tester, computador);
       final rotas = await abrir(tester);
-      await tester.tap(find.text('Encontrar pontos de coleta'));
+      await tester.tap(find.text('Encontrar um ponto de coleta'));
       await tester.pumpAndSettle();
       expect(rotas.state.uri.path, '/pontos');
       rotas.go('/');
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Experimentar demonstração').first);
+      await tester.ensureVisible(find.text('Experimentar a demonstração').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Experimentar a demonstração').first);
       await tester.pumpAndSettle();
       expect(rotas.state.uri.path, '/demonstracao');
+    });
+
+    testWidgets('filtros da página inicial abrem o catálogo com o painel de filtros', (tester) async {
+      definirTela(tester, computador);
+      final rotas = await abrir(tester);
+      await tester.scrollUntilVisible(find.text('Filtros').last, 300, scrollable: find.byType(Scrollable).first);
+      await tester.enterText(find.widgetWithText(TextField, 'Nome do ponto de coleta'), 'Verde');
+      await tester.ensureVisible(find.text('Filtros').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Filtros').last);
+      await tester.pumpAndSettle();
+      expect(rotas.state.uri.path, '/pontos');
+      expect(rotas.state.uri.queryParameters.containsKey('filtros'), isFalse);
+      expect(find.text('Aplicar filtros'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Verde'), findsWidgets);
     });
 
     testWidgets('compilação pública não oferece demonstração; 360 px sem transbordo', (tester) async {
       definirTela(tester, celular);
       await abrir(tester, modo: 'publico');
-      expect(find.text('Experimentar demonstração'), findsNothing);
-      expect(find.text('Encontrar pontos de coleta'), findsOneWidget);
+      expect(find.text('Experimentar a demonstração'), findsNothing);
+      expect(find.text('Encontrar um ponto de coleta'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
