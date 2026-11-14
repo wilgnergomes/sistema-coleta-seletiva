@@ -7,6 +7,7 @@ import 'sessao.dart';
 import 'tema/tokens.dart';
 
 const destinosPublicos = [
+  DestinoNavegacao(rotulo: 'Início', icone: Icons.home_outlined, iconeSelecionado: Icons.home, rota: '/'),
   DestinoNavegacao(rotulo: 'Pontos', icone: Icons.place_outlined, iconeSelecionado: Icons.place, rota: '/pontos'),
   DestinoNavegacao(
     rotulo: 'Materiais',
@@ -84,7 +85,7 @@ const destinosAdministrador = [
 int? indiceDestino(List<DestinoNavegacao> destinos, String caminho) {
   for (var i = 0; i < destinos.length; i++) {
     final rota = destinos[i].rota;
-    if (caminho == rota || caminho.startsWith('$rota/')) return i;
+    if (caminho == rota || (rota != '/' && caminho.startsWith('$rota/'))) return i;
   }
   // O morador vê o detalhe e os materiais dentro do destino Pontos.
   if (caminho.startsWith('/materiais')) {
@@ -121,24 +122,36 @@ class ShellApp extends StatelessWidget {
           Perfil.morador => (destinosMorador, NavegacaoCompacta.barraInferior),
           Perfil.operador => (destinosOperador, NavegacaoCompacta.cabecalho),
           Perfil.administrador => (destinosAdministrador, NavegacaoCompacta.gaveta),
-          null => (destinosPublicos, NavegacaoCompacta.cabecalho),
+          null => (const <DestinoNavegacao>[], NavegacaoCompacta.cabecalho),
         };
         final compacto = MediaQuery.sizeOf(context).width < 600;
+        final cabecalhoCompacto = MediaQuery.sizeOf(context).width < 900;
         return ShellAdaptativo(
-          titulo: Marca(comNome: !(compacto && area == Perfil.administrador)),
+          titulo: Semantics(
+            link: true,
+            label: 'Coleta Seletiva, página inicial',
+            child: InkWell(
+              borderRadius: BorderRadius.circular(Raio.campo),
+              onTap: () => context.go('/'),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: Espaco.xxs, vertical: Espaco.xs),
+                child: Marca(comNome: !(compacto && area == Perfil.administrador)),
+              ),
+            ),
+          ),
           destinos: destinos,
           compacta: compacta,
           indiceSelecionado: indiceDestino(destinos, caminho),
           aoSelecionar: (i) => context.go(destinos[i].rota),
-          faixa: sessao.ator == null || area == null ? null : _FaixaSimulacao(ator: sessao.ator!),
-          acoes: area == null ? _acoesPublicas(context, compacto) : const [],
+          faixa: sessao.ator == null || area == null ? null : _FaixaSimulacao(sessao: sessao),
+          acoes: area == null ? _acoesPublicas(context, cabecalhoCompacto, caminho) : const [],
           corpo: filho,
         );
       },
     );
   }
 
-  List<Widget> _acoesPublicas(BuildContext context, bool compacto) {
+  List<Widget> _acoesPublicas(BuildContext context, bool compacto, String caminho) {
     final ator = sessao.ator;
     if (compacto) {
       return [
@@ -147,24 +160,48 @@ class ShellApp extends StatelessWidget {
           icon: const Icon(Icons.menu),
           onSelected: (rota) => context.go(rota),
           itemBuilder: (context) => [
-            for (final d in destinosPublicos) PopupMenuItem(value: d.rota, child: Text(d.rotulo)),
-            const PopupMenuItem(value: '/cadastro', child: Text('Cadastrar morador')),
+            for (final d in destinosPublicos)
+              PopupMenuItem(
+                value: d.rota,
+                child: ListTile(leading: Icon(d.icone), title: Text(d.rotulo), contentPadding: EdgeInsets.zero),
+              ),
+            const PopupMenuItem(
+              value: '/cadastro',
+              child: ListTile(
+                leading: Icon(Icons.person_add_alt),
+                title: Text('Cadastrar-se'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
             if (demonstracao)
               PopupMenuItem(
                 value: ator == null ? '/demonstracao' : ator.perfil.rotaInicial,
-                child: Text(ator == null ? 'Demonstração' : 'Minha área'),
+                child: ListTile(
+                  leading: const Icon(Icons.play_circle_outline),
+                  title: Text(ator == null ? 'Demonstração' : 'Minha área'),
+                  contentPadding: EdgeInsets.zero,
+                ),
               ),
           ],
         ),
       ];
     }
+    final indice = indiceDestino(destinosPublicos, caminho);
     return [
-      TextButton(onPressed: () => context.go('/cadastro'), child: const Text('Cadastrar morador')),
+      for (var i = 0; i < destinosPublicos.length; i++)
+        _LinkCabecalho(
+          rotulo: destinosPublicos[i].rotulo,
+          selecionado: i == indice,
+          aoTocar: () => context.go(destinosPublicos[i].rota),
+        ),
+      const SizedBox(width: Espaco.s),
+      TextButton(onPressed: () => context.go('/cadastro'), child: const Text('Cadastrar-se')),
+      const SizedBox(width: Espaco.xs),
       if (demonstracao)
         ator == null
-            ? OutlinedButton.icon(
+            ? FilledButton.icon(
                 onPressed: () => context.go('/demonstracao'),
-                icon: const Icon(Icons.person_pin_outlined),
+                icon: const Icon(Icons.play_circle_outline),
                 label: const Text('Demonstração'),
               )
             : FilledButton.icon(
@@ -176,16 +213,68 @@ class ShellApp extends StatelessWidget {
   }
 }
 
-/// Faixa visível nas áreas restritas: deixa claro que a identidade é
-/// simulada e permite trocá-la.
-class _FaixaSimulacao extends StatelessWidget {
-  const _FaixaSimulacao({required this.ator});
+/// Link de navegação do cabeçalho público, com sublinhado no destino atual.
+class _LinkCabecalho extends StatelessWidget {
+  const _LinkCabecalho({required this.rotulo, required this.selecionado, required this.aoTocar});
 
-  final Ator ator;
+  final String rotulo;
+  final bool selecionado;
+  final VoidCallback aoTocar;
 
   @override
   Widget build(BuildContext context) {
+    return Semantics(
+      selected: selecionado,
+      child: TextButton(
+        style: TextButton.styleFrom(foregroundColor: selecionado ? Cores.primario : Cores.texto),
+        onPressed: aoTocar,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(rotulo),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              margin: const EdgeInsets.only(top: 2),
+              height: 2,
+              width: selecionado ? 24 : 0,
+              color: Cores.primario,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Faixa visível nas áreas restritas: deixa claro que a identidade é
+/// simulada e permite trocá-la.
+class _FaixaSimulacao extends StatelessWidget {
+  const _FaixaSimulacao({required this.sessao});
+
+  final Sessao sessao;
+
+  /// Encerra a identidade simulada: a sessão limpa caches e respostas
+  /// restritas (`aoTrocarAtor`), e a navegação volta à página inicial.
+  void _sair(BuildContext context) {
+    sessao.sair();
+    context.go('/');
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Você saiu da demonstração.')));
+  }
+
+  /// Troca de perfil: limpa o contexto atual antes da nova seleção.
+  void _trocar(BuildContext context) {
+    sessao.sair();
+    context.go('/demonstracao');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ator = sessao.ator!;
     final texto = Theme.of(context).textTheme;
+    final compacto = MediaQuery.sizeOf(context).width < 600;
+    final estilo = TextButton.styleFrom(foregroundColor: Cores.alerta, minimumSize: const Size(48, 40));
     return Semantics(
       container: true,
       label: 'Simulação de identidade: ${ator.descricao}',
@@ -206,11 +295,30 @@ class _FaixaSimulacao extends StatelessWidget {
                 ),
               ),
             ),
-            TextButton(
-              style: TextButton.styleFrom(foregroundColor: Cores.alerta, minimumSize: const Size(48, 40)),
-              onPressed: () => context.go('/demonstracao'),
-              child: const Text('Trocar'),
-            ),
+            if (compacto)
+              PopupMenuButton<String>(
+                tooltip: 'Opções da demonstração',
+                icon: const Icon(Icons.more_vert, color: Cores.alerta),
+                onSelected: (opcao) => opcao == 'sair' ? _sair(context) : _trocar(context),
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'trocar', child: Text('Trocar perfil')),
+                  PopupMenuItem(value: 'sair', child: Text('Sair da demonstração')),
+                ],
+              )
+            else ...[
+              TextButton.icon(
+                style: estilo,
+                onPressed: () => _trocar(context),
+                icon: const Icon(Icons.switch_account_outlined, size: 18),
+                label: const Text('Trocar perfil'),
+              ),
+              TextButton.icon(
+                style: estilo,
+                onPressed: () => _sair(context),
+                icon: const Icon(Icons.logout, size: 18),
+                label: const Text('Sair da demonstração'),
+              ),
+            ],
           ],
         ),
       ),

@@ -88,12 +88,14 @@ class PaginaConta extends StatefulWidget {
     required this.repositorio,
     required this.aoAbrirEnderecos,
     required this.aoTrocarIdentidade,
+    required this.aoSairDaDemonstracao,
   });
 
   final Sessao sessao;
   final RepositorioMoradores repositorio;
   final VoidCallback aoAbrirEnderecos;
   final VoidCallback aoTrocarIdentidade;
+  final VoidCallback aoSairDaDemonstracao;
 
   @override
   State<PaginaConta> createState() => _PaginaContaState();
@@ -191,10 +193,21 @@ class _PaginaContaState extends State<PaginaConta> {
                 const SizedBox(height: Espaco.xxs),
                 Text(widget.sessao.ator?.descricao ?? '', style: texto.bodyMedium),
                 const SizedBox(height: Espaco.s),
-                OutlinedButton.icon(
-                  onPressed: widget.aoTrocarIdentidade,
-                  icon: const Icon(Icons.switch_account_outlined),
-                  label: const Text('Trocar identidade'),
+                Wrap(
+                  spacing: Espaco.s,
+                  runSpacing: Espaco.s,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: widget.aoTrocarIdentidade,
+                      icon: const Icon(Icons.switch_account_outlined),
+                      label: const Text('Trocar perfil'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: widget.aoSairDaDemonstracao,
+                      icon: const Icon(Icons.logout),
+                      label: const Text('Sair da demonstração'),
+                    ),
+                  ],
                 ),
               ],
             ),
