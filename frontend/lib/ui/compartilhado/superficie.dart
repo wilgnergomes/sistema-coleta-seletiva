@@ -261,3 +261,63 @@ class IconeDirecional extends StatelessWidget {
     );
   }
 }
+
+/// Entrada única e curta (fade e 12 dp de subida) quando o filho aparece pela
+/// primeira vez. Reconstruções, novas respostas da API e mudanças de campo não
+/// reiniciam a animação, porque o estado fica no lugar do widget na árvore.
+/// Com movimento reduzido, aparece de imediato. O conteúdo continua acessível
+/// ao leitor de tela e ao toque durante a entrada.
+class Aparecer extends StatefulWidget {
+  const Aparecer({super.key, required this.child, this.atraso = Duration.zero, this.deslocamento = 12});
+
+  final Widget child;
+  final Duration atraso;
+  final double deslocamento;
+
+  @override
+  State<Aparecer> createState() => _AparecerState();
+}
+
+class _AparecerState extends State<Aparecer> with SingleTickerProviderStateMixin {
+  static const _duracao = Duration(milliseconds: 320);
+  late final _controle = AnimationController(vsync: this, duration: _duracao + widget.atraso);
+  late final _curva = CurvedAnimation(
+    parent: _controle,
+    curve: Interval(
+      widget.atraso.inMicroseconds / (_duracao + widget.atraso).inMicroseconds,
+      1,
+      curve: Curves.easeOutCubic,
+    ),
+  );
+  bool _iniciado = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_iniciado) return;
+    _iniciado = true;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controle.value = 1;
+    } else {
+      _controle.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _curva.dispose();
+    _controle.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _curva,
+    child: widget.child,
+    builder: (context, filho) => Opacity(
+      opacity: _curva.value,
+      alwaysIncludeSemantics: true,
+      child: Transform.translate(offset: Offset(0, widget.deslocamento * (1 - _curva.value)), child: filho),
+    ),
+  );
+}

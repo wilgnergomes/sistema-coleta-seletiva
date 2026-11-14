@@ -1,9 +1,10 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../app/tema/tokens.dart';
+import 'superficie.dart';
 
 /// Página rolável com largura máxima de leitura e margens laterais
-/// adaptadas à largura disponível.
+/// adaptadas à largura disponível. Os filhos entram em sequência ao abrir.
 class PaginaRolavel extends StatelessWidget {
   const PaginaRolavel({super.key, required this.filhos, this.larguraMaxima = Largura.catalogo, this.controlador});
 
@@ -28,7 +29,18 @@ class PaginaRolavel extends StatelessWidget {
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: larguraMaxima),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: filhos),
+                  // Entrada coordenada e curta da área principal: título, filtros e
+                  // conteúdo surgem em sequência (45 ms entre eles), uma única vez.
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var i = 0; i < filhos.length; i++)
+                        Aparecer(
+                          atraso: Duration(milliseconds: 45 * (i < 5 ? i : 5)),
+                          child: filhos[i],
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),

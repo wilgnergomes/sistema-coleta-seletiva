@@ -132,4 +132,30 @@ void main() {
       semantica.dispose();
     });
   });
+
+  group('entrada das áreas internas', () {
+    double opacidade(WidgetTester tester) =>
+        tester.widget<Opacity>(find.descendant(of: find.byType(Aparecer), matching: find.byType(Opacity))).opacity;
+
+    testWidgets('roda uma vez: reconstruir com outro conteúdo não reinicia a entrada', (tester) async {
+      Widget tela(String texto) => comTema(Scaffold(body: Aparecer(child: Text(texto))));
+      await tester.pumpWidget(tela('Primeira resposta'));
+      expect(opacidade(tester), lessThan(1));
+      await tester.pumpAndSettle();
+      expect(opacidade(tester), 1);
+      await tester.pumpWidget(tela('Nova resposta da API'));
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(opacidade(tester), 1);
+      expect(find.text('Nova resposta da API'), findsOneWidget);
+    });
+
+    testWidgets('com movimento reduzido, aparece de imediato', (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+        disableAnimations: true,
+      );
+      addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      await tester.pumpWidget(comTema(const Scaffold(body: Aparecer(child: Text('Resultado')))));
+      expect(opacidade(tester), 1);
+    });
+  });
 }

@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../app/tema/tema.dart';
 import '../../app/tema/tokens.dart';
+import 'superficie.dart';
 import '../../core/dominio/enums.dart';
 import '../../core/estado/carga.dart';
 
@@ -87,29 +88,33 @@ class Aviso extends StatelessWidget {
       TipoAviso.info => (const Color(0xFF304E67), const Color(0xFFE8F0F8), Icons.info_outline),
     };
     final texto = Theme.of(context).textTheme;
-    return Semantics(
-      liveRegion: true,
-      container: true,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(Espaco.m),
-        decoration: BoxDecoration(color: fundo, borderRadius: BorderRadius.circular(Raio.campo)),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ExcludeSemantics(child: Icon(icone, color: cor)),
-            const SizedBox(width: Espaco.s),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (titulo != null) Text(titulo!, style: texto.titleSmall?.copyWith(color: cor)),
-                  Text(mensagem, style: texto.bodyMedium?.copyWith(color: cor)),
-                  if (acao != null) ...[const SizedBox(height: Espaco.xs), acao!],
-                ],
+    // Confirmações e erros surgem com uma entrada curta, sem atrasar a leitura.
+    return Aparecer(
+      deslocamento: 8,
+      child: Semantics(
+        liveRegion: true,
+        container: true,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(Espaco.m),
+          decoration: BoxDecoration(color: fundo, borderRadius: BorderRadius.circular(Raio.campo)),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ExcludeSemantics(child: Icon(icone, color: cor)),
+              const SizedBox(width: Espaco.s),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (titulo != null) Text(titulo!, style: texto.titleSmall?.copyWith(color: cor)),
+                    Text(mensagem, style: texto.bodyMedium?.copyWith(color: cor)),
+                    if (acao != null) ...[const SizedBox(height: Espaco.xs), acao!],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -176,7 +181,9 @@ class ConteudoCarga<T> extends StatelessWidget {
         else
           const SizedBox(height: 2),
         if (carga.falha != null) EstadoErro(mensagem: carga.falha!.mensagem, aoTentarNovamente: aoTentarNovamente),
-        construir(context, dados),
+        // Os resultados surgem com uma entrada curta ao chegarem; uma nova
+        // leitura com dados já exibidos não repete a animação.
+        Aparecer(child: construir(context, dados)),
       ],
     );
   }
