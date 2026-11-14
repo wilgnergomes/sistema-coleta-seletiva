@@ -6,6 +6,7 @@ import '../features/catalogo/ui/pagina_detalhe_ponto.dart';
 import '../features/catalogo/ui/pagina_materiais.dart';
 import '../features/catalogo/ui/pagina_pontos.dart';
 import '../features/demonstracao/pagina_demonstracao.dart';
+import '../features/inicio/pagina_inicio_publica.dart';
 import '../features/moradores/ui/pagina_inicio_morador.dart';
 import '../features/moradores/ui/paginas_morador.dart';
 import '../ui/compartilhado/estados.dart';
@@ -70,7 +71,7 @@ GoRouter criarRotas(Dependencias d, {List<RotasArea> areas = const []}) {
   final demo = d.configuracao.demonstracaoHabilitada;
 
   return GoRouter(
-    initialLocation: '/pontos',
+    initialLocation: '/',
     refreshListenable: sessao,
     errorBuilder: (context, estado) => Scaffold(
       appBar: AppBar(title: const Marca()),
@@ -93,10 +94,31 @@ GoRouter criarRotas(Dependencias d, {List<RotasArea> areas = const []}) {
       return null;
     },
     routes: [
-      GoRoute(path: '/', redirect: (_, _) => sessao.perfil?.rotaInicial ?? '/pontos'),
       ShellRoute(
         builder: (context, estado, filho) => ShellApp(sessao: sessao, estado: estado, filho: filho, demonstracao: demo),
         routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, estado) => PaginaInicioPublica(
+              catalogo: catalogo,
+              navegar: NavegacaoInicio(
+                pontos: (f) => context.go(urlPontos(f)),
+                materiais: () => context.go('/materiais'),
+                material: (id) => context.push('/materiais/$id'),
+                cadastro: () => context.go('/cadastro'),
+                demonstracao: demo ? () => context.go('/demonstracao') : null,
+                solicitar: () {
+                  if (sessao.perfil == Perfil.morador) {
+                    context.go('/pontos');
+                  } else if (demo) {
+                    context.go('/demonstracao?perfil=morador&retorno=%2Fmorador%2Finicio');
+                  } else {
+                    context.go('/cadastro');
+                  }
+                },
+              ),
+            ),
+          ),
           GoRoute(
             path: '/pontos',
             builder: (context, estado) => PaginaPontos(
@@ -225,7 +247,14 @@ GoRouter criarRotas(Dependencias d, {List<RotasArea> areas = const []}) {
               sessao: sessao,
               repositorio: d.repositorioMoradores,
               aoAbrirEnderecos: () => context.push('/morador/conta/enderecos'),
-              aoTrocarIdentidade: () => context.go('/demonstracao'),
+              aoTrocarIdentidade: () {
+                sessao.sair();
+                context.go('/demonstracao');
+              },
+              aoSairDaDemonstracao: () {
+                sessao.sair();
+                context.go('/');
+              },
             ),
           ),
           GoRoute(
