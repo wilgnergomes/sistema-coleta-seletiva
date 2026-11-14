@@ -53,9 +53,14 @@ Future<T?> abrirFormulario<T>(
       ),
     );
   }
-  return showDialog<T>(
+  return showGeneralDialog<T>(
     context: context,
-    builder: (context) => Dialog(
+    barrierDismissible: true,
+    barrierLabel: 'Fechar',
+    barrierColor: Colors.black54,
+    transitionDuration: const Duration(milliseconds: 240),
+    transitionBuilder: transicaoDialogo,
+    pageBuilder: (context, _, _) => Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: Espaco.m, vertical: Espaco.l),
       child: ConstrainedBox(
         constraints: BoxConstraints(
@@ -86,6 +91,16 @@ Future<T?> abrirFormulario<T>(
         ),
       ),
     ),
+  );
+}
+
+/// Entrada de diálogo: fade com escala de 0,96 a 1; respeita o movimento reduzido.
+Widget transicaoDialogo(BuildContext context, Animation<double> animacao, Animation<double> _, Widget filho) {
+  if (MediaQuery.disableAnimationsOf(context)) return filho;
+  final curva = CurvedAnimation(parent: animacao, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+  return FadeTransition(
+    opacity: curva,
+    child: ScaleTransition(scale: Tween(begin: 0.96, end: 1.0).animate(curva), child: filho),
   );
 }
 

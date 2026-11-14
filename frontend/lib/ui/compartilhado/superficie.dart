@@ -85,14 +85,25 @@ class _CartaoInterativoState extends State<CartaoInterativo> {
   }
 }
 
-/// Faz o filho surgir (opacidade e deslocamento) quando entra na área
-/// visível. Com movimento reduzido, aparece imediatamente.
+/// Efeito de entrada do [Revelar]: cada seção pode usar um diferente.
+enum EfeitoEntrada { subir, daEsquerda, daDireita, escala }
+
+/// Faz o filho surgir quando entra na área visível, com fade combinado a
+/// deslocamento vertical, horizontal ou escala leve. Com movimento reduzido,
+/// aparece imediatamente.
 class Revelar extends StatefulWidget {
-  const Revelar({super.key, required this.child, this.atraso = Duration.zero, this.deslocamento = 24});
+  const Revelar({
+    super.key,
+    required this.child,
+    this.atraso = Duration.zero,
+    this.deslocamento = 24,
+    this.efeito = EfeitoEntrada.subir,
+  });
 
   final Widget child;
   final Duration atraso;
   final double deslocamento;
+  final EfeitoEntrada efeito;
 
   @override
   State<Revelar> createState() => _RevelarState();
@@ -136,15 +147,30 @@ class _RevelarState extends State<Revelar> {
   @override
   Widget build(BuildContext context) {
     if (MediaQuery.disableAnimationsOf(context)) return widget.child;
+    const duracaoEntrada = Duration(milliseconds: 440);
+    final d = widget.deslocamento / 400;
+    final deslocamento = switch (widget.efeito) {
+      EfeitoEntrada.subir => Offset(0, d),
+      EfeitoEntrada.daEsquerda => Offset(-d, 0),
+      EfeitoEntrada.daDireita => Offset(d, 0),
+      EfeitoEntrada.escala => Offset.zero,
+    };
     return AnimatedOpacity(
       opacity: _visivel ? 1 : 0,
-      duration: const Duration(milliseconds: 420),
+      // O conteúdo ainda não revelado continua disponível ao leitor de tela.
+      alwaysIncludeSemantics: true,
+      duration: duracaoEntrada,
       curve: Curves.easeOut,
       child: AnimatedSlide(
-        offset: _visivel ? Offset.zero : Offset(0, widget.deslocamento / 400),
-        duration: const Duration(milliseconds: 420),
+        offset: _visivel ? Offset.zero : deslocamento,
+        duration: duracaoEntrada,
         curve: Curves.easeOutCubic,
-        child: widget.child,
+        child: AnimatedScale(
+          scale: _visivel || widget.efeito != EfeitoEntrada.escala ? 1 : 0.94,
+          duration: duracaoEntrada,
+          curve: Curves.easeOutCubic,
+          child: widget.child,
+        ),
       ),
     );
   }
