@@ -4,6 +4,7 @@ import '../../../app/tema/tokens.dart';
 import '../../../core/api/cliente_api.dart';
 import '../../../core/api/falhas.dart';
 import '../../../core/api/pagina.dart';
+import '../../../ui/compartilhado/dialogos.dart';
 import '../../../ui/compartilhado/estados.dart';
 import '../../../ui/compartilhado/paginador.dart';
 import '../data/modelos.dart';
@@ -12,11 +13,11 @@ import '../data/repositorio_catalogo.dart';
 /// Seletor administrativo de ponto: pesquisável por nome, paginado e com
 /// pontos inativos identificados.
 Future<PontoColeta?> escolherPontoAdmin(BuildContext context, RepositorioCatalogo repositorio, {int? selecionado}) {
-  return showModalBottomSheet<PontoColeta>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (context) => _SeletorPonto(repositorio: repositorio, selecionado: selecionado),
+  return abrirFormulario<PontoColeta>(
+    context,
+    titulo: 'Escolher ponto',
+    longo: false,
+    construir: (context) => _SeletorPonto(repositorio: repositorio, selecionado: selecionado),
   );
 }
 
@@ -79,11 +80,6 @@ class _SeletorPontoState extends State<_SeletorPonto> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Semantics(
-                      header: true,
-                      child: Text('Escolher ponto', style: Theme.of(context).textTheme.titleLarge),
-                    ),
-                    const SizedBox(height: Espaco.s),
                     TextField(
                       controller: _nome,
                       textInputAction: TextInputAction.search,

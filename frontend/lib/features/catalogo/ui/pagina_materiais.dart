@@ -10,6 +10,7 @@ import '../../../ui/compartilhado/material_visual.dart';
 import '../../../ui/compartilhado/paginador.dart';
 import '../data/modelos.dart';
 import '../data/repositorio_catalogo.dart';
+import 'componentes_catalogo.dart';
 
 /// Catálogo público de materiais (RF03, RF06).
 class PaginaMateriais extends StatefulWidget {
@@ -67,23 +68,7 @@ class _PaginaMateriaisState extends State<PaginaMateriais> {
                   larguraMinima: 300,
                   filhos: [
                     for (final m in pagina.conteudo)
-                      Card(
-                        key: ValueKey(m.id),
-                        clipBehavior: Clip.antiAlias,
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: Espaco.m, vertical: Espaco.xs),
-                          leading: IconeMaterial(nome: m.nome),
-                          title: Text(m.nome),
-                          subtitle: Text(
-                            '${m.descricao}\nMedido em ${m.unidade.extenso} (${m.unidade.simbolo})',
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          isThreeLine: true,
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => widget.aoAbrir(m.id),
-                        ),
-                      ),
+                      CartaoMaterial(key: ValueKey(m.id), material: m, aoAbrir: () => widget.aoAbrir(m.id)),
                   ],
                 ),
                 Paginador(pagina: pagina, aoMudar: widget.aoMudarPagina, desabilitado: _carga.carregando),

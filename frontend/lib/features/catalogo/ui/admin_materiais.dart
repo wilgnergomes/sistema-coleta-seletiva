@@ -11,10 +11,10 @@ import '../../../ui/compartilhado/dialogos.dart';
 import '../../../ui/compartilhado/envio.dart';
 import '../../../ui/compartilhado/estados.dart';
 import '../../../ui/compartilhado/layout.dart';
-import '../../../ui/compartilhado/material_visual.dart';
 import '../../../ui/compartilhado/paginador.dart';
 import '../data/modelos.dart';
 import '../data/repositorio_catalogo.dart';
+import 'componentes_catalogo.dart';
 
 /// `/administracao/materiais` (RF03): lista paginada com filtro de situação.
 class PaginaMateriaisAdmin extends StatefulWidget {
@@ -115,29 +115,14 @@ class _PaginaMateriaisAdminState extends State<PaginaMateriaisAdmin> {
                   larguraMinima: 300,
                   filhos: [
                     for (final m in pagina.conteudo)
-                      Card(
+                      CartaoMaterial(
                         key: ValueKey(m.id),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: Espaco.m, vertical: Espaco.xs),
-                          leading: IconeMaterial(nome: m.nome),
-                          title: Text(m.nome),
-                          subtitle: Padding(
-                            padding: const EdgeInsets.only(top: Espaco.xxs),
-                            child: Wrap(
-                              spacing: Espaco.xs,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                Text('Em ${m.unidade.extenso}'),
-                                SeloCadastro(situacao: m.situacao),
-                              ],
-                            ),
-                          ),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () async {
-                            await widget.aoAbrir(m.id);
-                            if (mounted) _carregar();
-                          },
-                        ),
+                        material: m,
+                        mostrarSituacao: true,
+                        aoAbrir: () async {
+                          await widget.aoAbrir(m.id);
+                          if (mounted) _carregar();
+                        },
                       ),
                   ],
                 ),

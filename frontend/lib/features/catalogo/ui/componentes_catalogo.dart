@@ -1,7 +1,11 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/tema/tokens.dart';
+import '../../../core/dominio/enums.dart';
+import '../../../ui/compartilhado/dialogos.dart';
+import '../../../ui/compartilhado/estados.dart';
 import '../../../ui/compartilhado/material_visual.dart';
+import '../../../ui/compartilhado/superficie.dart';
 import '../data/modelos.dart';
 import '../data/repositorio_catalogo.dart';
 
@@ -176,53 +180,43 @@ class _Atalho extends StatelessWidget {
   }
 }
 
-/// Lista de materiais em folha inferior para escolha única.
+/// Lista de materiais em diálogo centralizado para escolha única.
 Future<MaterialColeta?> escolherMaterial(BuildContext context, List<MaterialColeta> materiais, {int? selecionado}) {
-  return showModalBottomSheet<MaterialColeta>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    builder: (context) => SafeArea(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.7),
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(Espaco.l, 0, Espaco.l, Espaco.s),
-              child: Semantics(
-                header: true,
-                child: Text('Escolha um material', style: Theme.of(context).textTheme.titleLarge),
-              ),
-            ),
-            for (final m in materiais)
-              ListTile(
-                leading: IconeMaterial(nome: m.nome, tamanho: 36),
-                title: Text(m.nome),
-                subtitle: Text('Medido em ${m.unidade.extenso}'),
-                selected: m.id == selecionado,
-                trailing: m.id == selecionado ? const Icon(Icons.check) : null,
-                onTap: () => Navigator.of(context).pop(m),
-              ),
-          ],
-        ),
-      ),
+  return abrirFormulario<MaterialColeta>(
+    context,
+    titulo: 'Escolha um material',
+    longo: false,
+    construir: (context) => ListView(
+      shrinkWrap: true,
+      padding: const EdgeInsets.only(bottom: Espaco.m),
+      children: [
+        for (final m in materiais)
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: Espaco.l),
+            leading: IconeMaterial(nome: m.nome, tamanho: 36),
+            title: Text(m.nome),
+            subtitle: Text('Medido em ${m.unidade.extenso}'),
+            selected: m.id == selecionado,
+            trailing: m.id == selecionado ? const Icon(Icons.check) : null,
+            onTap: () => Navigator.of(context).pop(m),
+          ),
+      ],
     ),
   );
 }
 
-/// Filtros secundários do RF06 em folha inferior.
+/// Filtros secundários do RF06: diálogo centralizado no amplo e tela
+/// própria no celular.
 Future<FiltroPontos?> abrirFiltrosPontos(
   BuildContext context, {
   required FiltroPontos atual,
   required CatalogoMateriais? catalogo,
   bool permitirSituacao = false,
 }) {
-  return showModalBottomSheet<FiltroPontos>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (context) => _FolhaFiltros(atual: atual, catalogo: catalogo, permitirSituacao: permitirSituacao),
+  return abrirFormulario<FiltroPontos>(
+    context,
+    titulo: 'Filtros',
+    construir: (_) => _FolhaFiltros(atual: atual, catalogo: catalogo, permitirSituacao: permitirSituacao),
   );
 }
 
@@ -261,15 +255,13 @@ class _FolhaFiltrosState extends State<_FolhaFiltros> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(Espaco.l, 0, Espaco.l, Espaco.l),
+        padding: const EdgeInsets.fromLTRB(Espaco.l, Espaco.xs, Espaco.l, Espaco.l),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: Largura.formulario),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Semantics(header: true, child: Text('Filtros', style: Theme.of(context).textTheme.titleLarge)),
-                const SizedBox(height: Espaco.xs),
                 Text(
                   'Município e bairro precisam do nome completo. Acentos contam.',
                   style: Theme.of(context).textTheme.bodySmall,
@@ -349,7 +341,13 @@ class _FolhaFiltrosState extends State<_FolhaFiltros> {
   }
 }
 
+/// Altura base dos cartões de ponto na mesma grade (multiplicada pela escala
+/// de texto pelo [CartaoInterativo]).
+const alturaCartaoPonto = 184.0;
+
 /// Cartão de resultado: nome, localização, modalidade e acesso ao detalhe.
+/// Altura fixa por grade; nomes e endereços longos são abreviados aqui e
+/// aparecem completos no detalhe.
 class CartaoPonto extends StatelessWidget {
   const CartaoPonto({super.key, required this.ponto, required this.aoAbrir, this.mostrarSituacao = false});
 
@@ -360,44 +358,133 @@ class CartaoPonto extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final texto = Theme.of(context).textTheme;
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: aoAbrir,
-        child: Padding(
-          padding: const EdgeInsets.all(Espaco.m),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return CartaoInterativo(
+      altura: alturaCartaoPonto,
+      aoTocar: aoAbrir,
+      rotuloSemantico: 'Ver detalhes de ${ponto.nome}',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(ponto.nome, style: texto.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: Espaco.xxs),
+          Text(
+            '${ponto.endereco.municipio} · ${ponto.endereco.bairro}',
+            style: texto.bodyMedium?.copyWith(color: Cores.textoSecundario),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(ponto.endereco.linha1, style: texto.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+          const Spacer(),
+          Row(
             children: [
-              Text(ponto.nome, style: texto.titleMedium),
-              const SizedBox(height: Espaco.xxs),
-              Text(
-                '${ponto.endereco.municipio} · ${ponto.endereco.bairro}',
-                style: texto.bodyMedium?.copyWith(color: Cores.textoSecundario),
-              ),
-              Text(ponto.endereco.linha1, style: texto.bodySmall),
-              const SizedBox(height: Espaco.s),
-              Wrap(
-                spacing: Espaco.xs,
-                runSpacing: Espaco.xs,
-                children: [
-                  SeloModalidade(domiciliar: ponto.recolhimentoDomiciliar),
-                  if (mostrarSituacao && !ponto.ativo) const Chip(label: Text('Inativo')),
-                ],
-              ),
-              const SizedBox(height: Espaco.s),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: aoAbrir,
-                  iconAlignment: IconAlignment.end,
-                  icon: const Icon(Icons.chevron_right),
-                  label: Text('Ver detalhes', semanticsLabel: 'Ver detalhes de ${ponto.nome}'),
+              Flexible(child: SeloModalidade(domiciliar: ponto.recolhimentoDomiciliar)),
+              if (mostrarSituacao && !ponto.ativo) ...[
+                const SizedBox(width: Espaco.xs),
+                const SeloCadastro(situacao: SituacaoCadastro.inativo),
+              ],
+              const SizedBox(width: Espaco.xs),
+              const Spacer(),
+              Flexible(
+                child: ExcludeSemantics(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'Ver detalhes',
+                          style: texto.labelLarge?.copyWith(color: Cores.primario),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: Cores.primario, size: 20),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-        ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Altura base dos cartões de material na mesma grade.
+const alturaCartaoMaterial = 156.0;
+
+/// Cartão de material com área de ícone, nome, unidade, descrição limitada a
+/// duas linhas e acesso à orientação completa.
+class CartaoMaterial extends StatelessWidget {
+  const CartaoMaterial({super.key, required this.material, required this.aoAbrir, this.mostrarSituacao = false});
+
+  final MaterialColeta material;
+  final VoidCallback aoAbrir;
+  final bool mostrarSituacao;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    final m = material;
+    return CartaoInterativo(
+      altura: alturaCartaoMaterial,
+      aoTocar: aoAbrir,
+      rotuloSemantico: mostrarSituacao ? 'Editar ${m.nome}' : 'Ver orientações de ${m.nome}',
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 56,
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: IconeMaterial(nome: m.nome, tamanho: 48),
+            ),
+          ),
+          const SizedBox(width: Espaco.s),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(m.nome, style: texto.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                    if (mostrarSituacao) SeloCadastro(situacao: m.situacao),
+                  ],
+                ),
+                Text(
+                  'Medido em ${m.unidade.extenso} (${m.unidade.simbolo})',
+                  style: texto.bodySmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: Espaco.xxs),
+                Text(m.descricao, style: texto.bodyMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                const Spacer(),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ExcludeSemantics(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            mostrarSituacao ? 'Editar' : 'Ver orientações',
+                            style: texto.labelLarge?.copyWith(color: Cores.primario),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: Cores.primario, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -428,6 +515,8 @@ class SeloModalidade extends StatelessWidget {
             child: Text(
               domiciliar ? 'Recolhimento domiciliar' : 'Entrega no local',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cor),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

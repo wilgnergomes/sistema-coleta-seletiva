@@ -331,11 +331,11 @@ class _SecaoVinculosState extends State<SecaoVinculos> {
 
   Future<MaterialColeta?> _escolherMaterial() {
     final vinculados = {for (final v in widget.ponto.materiaisAceitos) v.materialId};
-    return showModalBottomSheet<MaterialColeta>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (context) => _SeletorMaterialAdmin(repositorio: widget.repositorio, excluir: vinculados),
+    return abrirFormulario<MaterialColeta>(
+      context,
+      titulo: 'Escolher material',
+      longo: false,
+      construir: (context) => _SeletorMaterialAdmin(repositorio: widget.repositorio, excluir: vinculados),
     );
   }
 
@@ -515,13 +515,6 @@ class _SeletorMaterialAdminState extends State<_SeletorMaterialAdmin> {
         child: ListView(
           shrinkWrap: true,
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Espaco.l),
-              child: Semantics(
-                header: true,
-                child: Text('Escolher material', style: Theme.of(context).textTheme.titleLarge),
-              ),
-            ),
             ConteudoCarga<Pagina<MaterialColeta>>(
               carga: _carga,
               aoTentarNovamente: () => _carregar(0),

@@ -223,7 +223,12 @@ class _Selo extends StatelessWidget {
             Icon(visual.icone, size: 16, color: visual.cor),
             const SizedBox(width: Espaco.xxs),
             Flexible(
-              child: Text(rotulo, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: visual.cor)),
+              child: Text(
+                rotulo,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: visual.cor),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),

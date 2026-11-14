@@ -285,6 +285,7 @@ class _PaginaPontosState extends State<PaginaPontos> {
                 )
         else
           GradeResponsiva(
+            larguraMinima: 280,
             filhos: [
               for (final p in pagina.conteudo)
                 CartaoPonto(

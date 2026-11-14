@@ -4,6 +4,7 @@ import '../../../app/sessao.dart';
 import '../../../app/tema/tokens.dart';
 import '../../../core/api/falhas.dart';
 import '../../../core/estado/carga.dart';
+import '../../../ui/compartilhado/dialogos.dart';
 import '../../../ui/compartilhado/layout.dart';
 import '../../catalogo/data/modelos.dart';
 import '../../catalogo/data/repositorio_catalogo.dart';
@@ -101,20 +102,14 @@ class _PaginaInicioMoradorState extends State<PaginaInicioMorador> {
 
   Future<void> _escolherEndereco() async {
     final lista = _vm.enderecos.dados ?? const [];
-    final escolhido = await showModalBottomSheet<Object>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
+    final escolhido = await abrirFormulario<Object>(
+      context,
+      titulo: 'Endereço de referência',
+      longo: false,
+      construir: (context) => SafeArea(
         child: ListView(
           shrinkWrap: true,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(Espaco.l, 0, Espaco.l, Espaco.s),
-              child: Semantics(
-                header: true,
-                child: Text('Endereço de referência', style: Theme.of(context).textTheme.titleLarge),
-              ),
-            ),
             for (final e in lista)
               ListTile(
                 leading: Icon(e.id == _vm.selecionado?.id ? Icons.radio_button_checked : Icons.radio_button_off),
