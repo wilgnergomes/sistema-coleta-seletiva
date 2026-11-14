@@ -843,6 +843,8 @@ class _TileMaterialState extends State<_TileMaterial> {
           border: Border.all(color: _ativo ? visual.cor : Colors.transparent, width: 2),
           boxShadow: _ativo ? Sombra.elevada : const [],
         ),
+        // Recorte arredondado: a forma decorativa não vaza pelos cantos.
+        clipBehavior: Clip.antiAlias,
         child: Material(
           type: MaterialType.transparency,
           child: InkWell(
