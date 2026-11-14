@@ -8,9 +8,9 @@ anterior (branches cumulativas, `CLAUDE.md`).
 
 | Item | Valor |
 |---|---|
-| Branch atual | `frontend/13-refinamento-visual` |
-| Base da etapa | `frontend/11-qualidade-e-entrega-web` em `f433839` (a 12, nativa, continua reservada) |
-| Etapa em andamento | Nenhuma: refinamento visual concluído |
+| Branch atual | `frontend/14-experiencia-publica` |
+| Base da etapa | `frontend/13-refinamento-visual` em `8850e0d` |
+| Etapa em andamento | Nenhuma: experiência pública concluída, aguardando revisão visual do estudante |
 | Próxima ação | Revisão do estudante comparando as branches; a etapa 12 (nativa) é opcional e depende de Android SDK e Visual Studio C++, não instalados |
 
 ## Ambiente
@@ -49,7 +49,8 @@ Banco da demonstração: `coleta_frontend_demo`, criado no mesmo container com
 | 10 | `frontend/10-moradores-e-operadores-admin` | Concluída e publicada | `04dca01` |
 | 11 | `frontend/11-qualidade-e-entrega-web` | Concluída e publicada | último commit da branch |
 | 12 | `frontend/12-compatibilidade-nativa` | Não iniciada (opcional) | — |
-| 13 | `frontend/13-refinamento-visual` | Concluída e publicada | último commit da branch |
+| 13 | `frontend/13-refinamento-visual` | Concluída e publicada | `8850e0d` |
+| 14 | `frontend/14-experiencia-publica` | Concluída e publicada | último commit da branch |
 
 ## Etapa 01 · estrutura
 
@@ -344,7 +345,58 @@ Verificações executadas:
 | `tool/capturar_telas.py` (Chrome 157 headless) | 6 telas (início, pontos, materiais, início do morador, fila do operador, moradores) em 360, 390, 768 e 1366 px; `scrollWidth` igual à largura em todas as 24 capturas |
 | Inspeção visual das capturas | Logomarca, página inicial, cartões de mesma altura, fila com painel principal, faixa com sair e trocar perfil, administração com total e aviso |
 
+## Etapa 14 · experiência pública
+
+Pedido do estudante em 14/11/2026: mudar a composição e a experiência visual da página
+inicial, sem investir agora nos elementos gráficos definitivos.
+
+Feito:
+
+- **A · Composição.** Página inicial redesenhada: hero assimétrico (55/45 no desktop) com
+  título em três linhas, uma ação principal (`BotaoDestaque`) e links discretos, e composição
+  visual em camadas (placa verde girada, espaço da imagem e etiquetas sobrepostas); percurso de
+  "Como funciona" em linha com etapas alternadas acima e abaixo (vertical conectado no celular e
+  no tablet); materiais em composição assimétrica com o primeiro tradicional em destaque e blocos
+  coloridos, os demais em "Também aceitos"; recolhimento em fundo verde com camada de
+  profundidade; busca central em pílula com `Filtros` e `Buscar`; encerramento tipográfico em
+  verde profundo; rodapé discreto.
+- **Assets provisórios.** `EspacoImagem` e `AssetsVisuais` reservam proporções para a imagem
+  principal, o recolhimento, as etapas e a logomarca (guia em `ASSETS_VISUAIS.md`).
+- **B · Movimento e interação.** `EntradaCoordenada` (um controlador, intervalos escalonados) no
+  hero; `Revelar` com efeitos variados (subir, da esquerda, da direita, escala) e semântica
+  sempre presente; `BotaoDestaque` com hover (escurece, sobe 2 dp, sombra maior, seta avança),
+  compressão ao pressionar e anel de foco; `LinkDiscreto` com sublinhado que cresce; blocos de
+  material com elevação, borda na cor e seta animada.
+- **Transições por função.** Investigado: o tema define `FadeForwards`, mas o go_router usa a
+  página padrão de cada rota e o efeito acompanha a página empurrada, inclusive em `context.go`.
+  Para controlar, as rotas públicas passaram a `CustomTransitionPage`: destinos (`/`, `/pontos`,
+  `/materiais`, `/cadastro`, `/demonstracao`) com fade de 260 ms; detalhes (`/pontos/:id`,
+  `/materiais/:id`) com deslizamento de 32 dp e fade de 320 ms, voltando pelo mesmo caminho.
+  Diálogos entram com fade e escala de 0,96 a 1 em 240 ms. Tudo respeita
+  `MediaQuery.disableAnimationsOf`. As áreas internas mantêm a transição do tema.
+- **Filtros a partir da página inicial.** `Filtros` leva a `/pontos?filtros=1&nome=…`; o catálogo
+  abre o painel de filtros com o nome preenchido e retira o parâmetro da URL.
+- **C · Acabamento.** Tipografia de títulos com tracking negativo, sobretítulos em caixa alta,
+  margens por formato (20, 40 e 56 dp), espaço negativo amplo e recorte arredondado nos blocos
+  (a forma decorativa vazava pelos cantos, corrigido após a primeira captura).
+
+Verificações executadas:
+
+| Verificação | Resultado |
+|---|---|
+| `dart format --set-exit-if-changed`, `flutter analyze` | Sem alterações; nenhum problema |
+| `flutter test` | 131 testes aprovados (novos: seções da página inicial, rotas da ação principal, atalho de filtros) |
+| `dart test test_integracao` | 10 testes aprovados contra a API real |
+| `flutter build web --release --no-web-resources-cdn` | Concluído |
+| Capturas (`tool/capturar_pagina_inteira.py`) | Página inteira e primeira dobra em 390, 768 e 1366 px, antes e depois; hover; filtros; detalhe. Em `docs/capturas/etapa-14/` com avaliação crítica |
+
+Ajustes feitos durante a verificação: textos das etapas limitados a 2 e 3 linhas (a altura fixa
+estourava com quebras maiores); conteúdo ainda não revelado mantido na árvore de acessibilidade.
+
 ## Pendências e problemas conhecidos
+
+- Assets definitivos (logomarca, imagem principal, recolhimento e etapas) a cargo do estudante.
+- A nova linguagem visual ainda não foi aplicada às áreas internas, como pedido para esta etapa.
 
 - Não testados: Firefox, Safari, celular físico, acesso pela rede local, leitores de tela, fluidez de rolagem e memória. A demonstração pelo celular exige `CADDY_BIND` e liberação da porta no firewall, que não foram alterados.
 - Persistência após reinício da API não foi exercitada pelo frontend (o backend tem evidência própria).

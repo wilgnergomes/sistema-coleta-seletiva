@@ -99,6 +99,14 @@ nas áreas de demonstração:
 python tool/capturar_telas.py --chrome "C:/Program Files/Google/Chrome/Application/chrome.exe" --saida capturas
 ```
 
+Página inteira e estados de interação, para revisão visual (ver `docs/capturas/etapa-14/`):
+
+```powershell
+python tool/capturar_pagina_inteira.py --chrome "C:/Program Files/Google/Chrome/Application/chrome.exe" --saida capturas --prefixo depois
+```
+
+Assets visuais definitivos: [`docs/ASSETS_VISUAIS.md`](docs/ASSETS_VISUAIS.md).
+
 Roteiro, identificadores do seed e resultados: [`docs/ROTEIRO_DEMONSTRACAO.md`](docs/ROTEIRO_DEMONSTRACAO.md).
 Limitações e evoluções: [`docs/MELHORIAS_FUTURAS.md`](docs/MELHORIAS_FUTURAS.md).
 
