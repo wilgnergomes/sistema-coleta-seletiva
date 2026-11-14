@@ -127,3 +127,54 @@ class LinhaCampos extends StatelessWidget {
     );
   }
 }
+
+/// Abre um cadastro pelo número, usando a consulta por ID da API. Não é uma
+/// pesquisa por nome: a API atual não oferece esse filtro.
+class AbrirPorNumero extends StatefulWidget {
+  const AbrirPorNumero({super.key, required this.rotulo, required this.aoAbrir});
+
+  final String rotulo;
+  final ValueChanged<int> aoAbrir;
+
+  @override
+  State<AbrirPorNumero> createState() => _AbrirPorNumeroState();
+}
+
+class _AbrirPorNumeroState extends State<AbrirPorNumero> {
+  final _numero = TextEditingController();
+  String? _erro;
+
+  @override
+  void dispose() {
+    _numero.dispose();
+    super.dispose();
+  }
+
+  void _abrir() {
+    final id = int.tryParse(_numero.text.trim());
+    if (id == null || id < 1 || id > 2147483647) {
+      setState(() => _erro = 'Informe um número inteiro positivo.');
+      return;
+    }
+    setState(() => _erro = null);
+    widget.aoAbrir(id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 360),
+      child: TextField(
+        controller: _numero,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
+        onSubmitted: (_) => _abrir(),
+        decoration: InputDecoration(
+          labelText: widget.rotulo,
+          errorText: _erro,
+          suffixIcon: IconButton(tooltip: 'Abrir cadastro', icon: const Icon(Icons.arrow_forward), onPressed: _abrir),
+        ),
+      ),
+    );
+  }
+}

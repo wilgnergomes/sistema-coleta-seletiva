@@ -5,10 +5,12 @@ import '../../../core/api/falhas.dart';
 import '../../../core/api/pagina.dart';
 import '../../../core/dominio/enums.dart';
 import '../../../core/estado/carga.dart';
+import '../../../ui/compartilhado/campos.dart';
 import '../../../ui/compartilhado/dialogos.dart';
 import '../../../ui/compartilhado/estados.dart';
 import '../../../ui/compartilhado/layout.dart';
 import '../../../ui/compartilhado/paginador.dart';
+import '../../../ui/compartilhado/superficie.dart';
 import '../data/moradores.dart';
 import 'enderecos.dart';
 import 'formulario_morador.dart';
@@ -67,40 +69,89 @@ class _PaginaMoradoresAdminState extends State<PaginaMoradoresAdmin> {
             label: const Text('Cadastrar morador'),
           ),
         ),
+        Wrap(
+          spacing: Espaco.l,
+          runSpacing: Espaco.s,
+          crossAxisAlignment: WrapCrossAlignment.end,
+          children: [
+            AbrirPorNumero(
+              rotulo: 'Abrir morador pelo número',
+              aoAbrir: (id) async {
+                await widget.aoAbrir(id);
+                if (mounted) _carregar();
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: Espaco.s),
+        const Aviso(
+          tipo: TipoAviso.info,
+          mensagem:
+              'A API ainda não oferece pesquisa por nome; use o número do cadastro ou a paginação. '
+              'E-mail e telefone aparecem só ao abrir o cadastro. A identificação desta demonstração é '
+              'simulada e não protege dados pessoais como um login real.',
+        ),
+        const SizedBox(height: Espaco.m),
         ConteudoCarga<Pagina<Morador>>(
           carga: _carga,
           aoTentarNovamente: _carregar,
           construir: (context, pagina) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('${pagina.totalElementos} moradores', style: Theme.of(context).textTheme.titleMedium),
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  pagina.totalElementos == 1
+                      ? '1 morador cadastrado'
+                      : '${pagina.totalElementos} moradores cadastrados',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
               const SizedBox(height: Espaco.s),
               if (pagina.conteudo.isEmpty)
                 const EstadoVazio(icone: Icons.groups_outlined, titulo: 'Nenhum morador cadastrado')
               else
                 GradeResponsiva(
-                  larguraMinima: 300,
+                  larguraMinima: 280,
                   filhos: [
                     for (final m in pagina.conteudo)
-                      Card(
+                      CartaoInterativo(
                         key: ValueKey(m.id),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: Espaco.m, vertical: Espaco.xs),
-                          title: Text(m.nome),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(m.email),
-                              if (m.fone != null && m.fone!.isNotEmpty) Text(m.fone!),
-                              const SizedBox(height: Espaco.xxs),
-                              SeloCadastro(situacao: m.situacao),
-                            ],
-                          ),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () async {
-                            await widget.aoAbrir(m.id);
-                            if (mounted) _carregar();
-                          },
+                        altura: 112,
+                        rotuloSemantico: 'Abrir cadastro de ${m.nome}',
+                        aoTocar: () async {
+                          await widget.aoAbrir(m.id);
+                          if (mounted) _carregar();
+                        },
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: Cores.sucessoFundo,
+                              child: Text(
+                                m.nome.isEmpty ? '?' : m.nome.characters.first.toUpperCase(),
+                                style: const TextStyle(color: Cores.primario, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            const SizedBox(width: Espaco.s),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    m.nome,
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text('Morador #${m.id}', style: Theme.of(context).textTheme.bodySmall),
+                                  const SizedBox(height: Espaco.xxs),
+                                  SeloCadastro(situacao: m.situacao),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.chevron_right, color: Cores.textoSecundario),
+                          ],
                         ),
                       ),
                   ],

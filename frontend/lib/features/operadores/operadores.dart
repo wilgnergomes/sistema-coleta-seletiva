@@ -142,21 +142,34 @@ class _PaginaOperadoresState extends State<PaginaOperadores> {
           ),
         ),
         Wrap(
-          spacing: Espaco.s,
+          spacing: Espaco.l,
+          runSpacing: Espaco.s,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            OutlinedButton.icon(
-              icon: const Icon(Icons.place_outlined),
+            InputChip(
+              avatar: const Icon(Icons.place_outlined, size: 18),
               label: Text(
-                widget.pontoId == null ? 'Ponto: todos' : 'Ponto: ${widget.catalogo.rotuloPonto(widget.pontoId!)}',
+                widget.pontoId == null
+                    ? 'Filtrar por ponto de coleta'
+                    : 'Ponto: ${widget.catalogo.rotuloPonto(widget.pontoId!)}',
               ),
+              selected: widget.pontoId != null,
               onPressed: () async {
                 final p = await escolherPontoAdmin(context, widget.catalogo, selecionado: widget.pontoId);
                 if (p != null) widget.aoMudar(p.id, 0);
               },
+              onDeleted: widget.pontoId == null ? null : () => widget.aoMudar(null, 0),
+              deleteButtonTooltipMessage: 'Remover filtro de ponto',
             ),
-            if (widget.pontoId != null)
-              TextButton(onPressed: () => widget.aoMudar(null, 0), child: const Text('Limpar filtros')),
+            AbrirPorNumero(rotulo: 'Abrir operador pelo número', aoAbrir: (id) => _abrir(() => widget.aoAbrir(id))),
           ],
+        ),
+        const SizedBox(height: Espaco.s),
+        const Aviso(
+          tipo: TipoAviso.info,
+          mensagem:
+              'O filtro usa o ponto de coleta (a pesquisa pelo nome do ponto acontece no seletor). '
+              'A API ainda não oferece pesquisa pelo nome do operador.',
         ),
         const SizedBox(height: Espaco.m),
         ConteudoCarga<Pagina<Operador>>(
@@ -165,7 +178,10 @@ class _PaginaOperadoresState extends State<PaginaOperadores> {
           construir: (context, pagina) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('${pagina.totalElementos} operadores', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                pagina.totalElementos == 1 ? '1 operador' : '${pagina.totalElementos} operadores',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: Espaco.s),
               if (pagina.conteudo.isEmpty)
                 EstadoVazio(
