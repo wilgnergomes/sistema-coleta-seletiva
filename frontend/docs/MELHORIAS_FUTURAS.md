@@ -6,6 +6,8 @@ registrá-las também em `backend/docs/melhorias-pendentes.md`, conforme o `CLAU
 
 | Item | Tipo | Situação atual no frontend | Possível evolução |
 |---|---|---|---|
+| Pesquisa de moradores por nome | Melhoria (API) | `GET /moradores` aceita só `page` e `size`; a administração mostra o total e abre um cadastro pelo número (`GET /moradores/{id}`), sem filtrar só a página carregada. | Filtro `nome` (e, se desejado, `email`) em `GET /moradores`. |
+| Pesquisa de operadores por nome | Melhoria (API) | `GET /operadores` filtra só por `pontoId`; a pesquisa pelo nome acontece no seletor de pontos, não de operadores. A tela abre um operador pelo número. | Filtro `nome` em `GET /operadores`. |
 | Pesquisa por vários materiais | Melhoria (API) | `GET /pontos-coleta` aceita um único `materialId`; a seleção de material é única. | Aceitar vários `materialId` com semântica E: o ponto precisa aceitar todos os selecionados, podendo aceitar outros. |
 | Pontos usados recentemente | Limitação documentada | Derivados da primeira página de 20 solicitações e de no máximo 4 leituras de ponto; pontos usados antes disso não aparecem. | Endpoint de pontos recentes do morador ou filtro por ponto distinto. |
 | Nomes de pontos nas solicitações | Limitação (API) | Rótulos vêm de uma leitura de até 100 pontos ativos; inativos aparecem como `Ponto #id` na lista. | Projeção com nome do ponto no resumo da solicitação. |

@@ -8,9 +8,9 @@ anterior (branches cumulativas, `CLAUDE.md`).
 
 | Item | Valor |
 |---|---|
-| Branch atual | `frontend/11-qualidade-e-entrega-web` |
-| Base da etapa | `frontend/10-moradores-e-operadores-admin` em `04dca01` |
-| Etapa em andamento | Nenhuma: entrega Web concluída (etapas 01 a 11) |
+| Branch atual | `frontend/13-refinamento-visual` |
+| Base da etapa | `frontend/11-qualidade-e-entrega-web` em `f433839` (a 12, nativa, continua reservada) |
+| Etapa em andamento | Nenhuma: refinamento visual concluído |
 | Próxima ação | Revisão do estudante comparando as branches; a etapa 12 (nativa) é opcional e depende de Android SDK e Visual Studio C++, não instalados |
 
 ## Ambiente
@@ -49,6 +49,7 @@ Banco da demonstração: `coleta_frontend_demo`, criado no mesmo container com
 | 10 | `frontend/10-moradores-e-operadores-admin` | Concluída e publicada | `04dca01` |
 | 11 | `frontend/11-qualidade-e-entrega-web` | Concluída e publicada | último commit da branch |
 | 12 | `frontend/12-compatibilidade-nativa` | Não iniciada (opcional) | — |
+| 13 | `frontend/13-refinamento-visual` | Concluída e publicada | último commit da branch |
 
 ## Etapa 01 · estrutura
 
@@ -313,6 +314,35 @@ Verificações executadas:
 | `flutter build web --release --no-web-resources-cdn` | Concluído em cerca de 30 s; `main.dart.js` com 3,97 MB sem compressão |
 | Desempenho (Chrome 157 headless, 15 repetições) | p75 frio 3,38 s (computador) e 8,42 s (entrada); quente 0,58 s e 1,75 s; 3,38 MiB frios; 2 chamadas de API |
 | Backend | `git diff main..HEAD -- backend/` vazio: nenhum arquivo do backend alterado |
+
+## Etapa 13 · refinamento visual e experiência
+
+Pedido do estudante em 14/11/2026: elevar a qualidade visual sem reconstruir o frontend e sem alterar o backend.
+
+Feito:
+
+- **Página inicial pública (`/`)**, que deixa de abrir direto nos pontos: apresentação ("Reciclar ficou mais simples.") com ações reais (pontos, materiais, demonstração quando habilitada, cadastro), Como funciona em quatro passos, Materiais recicláveis com os dados da API (papel, plástico, vidro e metal primeiro), Recolhimento domiciliar com ilustração vetorial original (`CustomPainter`) e a jornada do morador, Encontre um ponto (busca e atalhos que abrem o catálogo real), encerramento e rodapé. As seções surgem ao rolar (`Revelar`), a ilustração e o símbolo têm entrada única, e tudo respeita o movimento reduzido.
+- **Logomarca**: símbolo universal da reciclagem com três setas que dobram nos cantos (lado de baixo mais escuro e recorte de sobreposição), em azul, vermelho e verde, com a dobra amarela. Conferida em 24, 32, 48 e 256 px e usada no cabeçalho, na página inicial e no rodapé; tocar nela leva a `/`.
+- **Cartões padronizados**: `CartaoInterativo` (sombra suave, hover com elevação, pressionamento, transição de 220 ms) com altura fixa por grade multiplicada pela escala de texto. `CartaoPonto`, `CartaoMaterial` e `CartaoSolicitacao` limitam linhas (detalhes completos no detalhe), reservam a mesma área de ícone e alinham as ações embaixo.
+- **Tema**: cartões com elevação suave e transição `FadeForwards` entre páginas.
+- **Navegação**: a área pública usa links no cabeçalho, como um site (menu no compacto); faixa da demonstração com **Trocar perfil** e **Sair da demonstração** (menu no celular), que chamam `Sessao.sair()` (limpa caches e respostas restritas) e voltam a `/`. A conta do morador tem as mesmas ações.
+- **Fila do operador**: no amplo, o detalhe ocupa um painel elevado e largo, com troca suave entre solicitações; o cabeçalho do detalhe destaca a situação em cor; cartões com faixa lateral da situação. No celular, o detalhe continua como página própria com `Voltar para fila`.
+- **Filtros e diálogos**: as folhas presas na parte de baixo foram trocadas por diálogos centralizados de largura controlada (escolha de material, de ponto, de endereço de referência) e, para formulários longos no celular, tela própria (filtros de pontos). O conteúdo rola e acompanha o teclado virtual.
+- **Administração**: moradores com o total da API (`totalElementos`) em destaque, cartões resumidos (nome, número e situação; e-mail e telefone só no cadastro) e **Abrir morador pelo número** (`GET /moradores/{id}`); operadores com filtro de ponto em chip (seletor pesquisável pelo nome do ponto), total e **Abrir operador pelo número**. As telas avisam que a API não tem pesquisa por nome e que a identidade é simulada.
+- **Demonstração por teclado**: quando o perfil vem na URL, o foco vai ao identificador (ou ao botão, no administrador); basta digitar e pressionar Enter.
+
+Defeito corrigido: o atraso da revelação usava `Future.delayed` e continuava pendente depois que o widget saía da árvore; agora é um `Timer` cancelado no `dispose`.
+
+Verificações executadas:
+
+| Verificação | Resultado |
+|---|---|
+| `dart format --set-exit-if-changed`, `flutter analyze` | Sem alterações; nenhum problema |
+| `flutter test` | 130 testes aprovados (9 novos: página inicial, rotas dos botões, modo público, sair e trocar perfil, menu da faixa no celular, moradores com total, privacidade e abertura pelo número; `/` nas diretrizes de acessibilidade) |
+| `dart test test_integracao` | 10 testes aprovados contra a API real |
+| `flutter build web --release --no-web-resources-cdn` | Concluído |
+| `tool/capturar_telas.py` (Chrome 157 headless) | 6 telas (início, pontos, materiais, início do morador, fila do operador, moradores) em 360, 390, 768 e 1366 px; `scrollWidth` igual à largura em todas as 24 capturas |
+| Inspeção visual das capturas | Logomarca, página inicial, cartões de mesma altura, fila com painel principal, faixa com sair e trocar perfil, administração com total e aviso |
 
 ## Pendências e problemas conhecidos
 

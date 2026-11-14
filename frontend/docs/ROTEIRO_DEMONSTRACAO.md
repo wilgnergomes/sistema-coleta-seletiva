@@ -48,14 +48,15 @@ ou no Swagger.
 
 | Passo | Onde | O que mostrar | RF, RN e RNF |
 |---|---|---|---|
+| 0 | `/` (visitante) | Página inicial: apresentação, como funciona, materiais da API, recolhimento domiciliar, busca e encerramento | RF03, RF06, RNF02 |
 | 1 | `/pontos` (visitante) | Barra de pesquisa, atalho Papel, filtros de município e bairro, total, paginação e detalhe com horários, contato e materiais | RF03–RF06, RNF02 |
 | 2 | `/cadastro` | Cadastro de morador; e-mail repetido recusado com o rascunho preservado | RF01, RNF03 |
 | 3 | `Demonstração` → Morador 3 | Faixa de simulação, início com endereço selecionado, `Pontos em Lagarto`, pontos usados recentemente e solicitações recentes | RNF06, RF02, RF06, RF09 |
 | 4 | Detalhe da Cooperativa Verde Vida → `Solicitar recolhimento` | Materiais aceitos com unidade e limite, quantidade `3,5`, protocolo e histórico após o envio | RF08, RN01, RN02 |
 | 5 | Detalhe da solicitação | `Corrigir solicitação` (escolha explícita do endereço) e `Cancelar solicitação` com motivo | RF09, RF12, RN04, RN06 |
-| 6 | `Trocar` → Operador 1 | Fila `Solicitada`, detalhe ao lado (1366 px) ou em tela cheia (360 px), `Agendar` com data futura | RF07, RF09, RF10 |
+| 6 | `Trocar perfil` → Operador 1 | Fila `Solicitada`, detalhe ao lado (1366 px) ou em tela cheia (360 px), `Agendar` com data futura | RF07, RF09, RF10 |
 | 7 | Mesmo detalhe | `Iniciar recolhimento`, `Registrar falha`, `Reagendar`, `Concluir recolhimento` com efetivas (uma pode ser 0) | RF13, RF14, RN02, RN03 |
-| 8 | `Trocar` → Administrador | Resumo com as seis situações e as quantidades por unidade; período; contagem → consulta filtrada | RF15, RF09 |
+| 8 | `Trocar perfil` → Administrador (ao final, `Sair da demonstração`) | Resumo com as seis situações e as quantidades por unidade; período; contagem → consulta filtrada | RF15, RF09 |
 | 9 | `Pontos` → Cooperativa Verde Vida | Tentar inativar: `409` da RN05 com `Ver solicitações do ponto` | RF04, RN05 |
 | 10 | `Materiais`, `Operadores`, `Moradores` | Edição com confirmação, vínculos com limite, troca de ponto do operador, endereços do morador | RF03, RF05, RF07, RF01–RF02 |
 

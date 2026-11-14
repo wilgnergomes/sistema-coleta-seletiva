@@ -92,6 +92,13 @@ python -m pip install websocket-client==1.8.0
 python tool/medir_desempenho.py --chrome "C:/Program Files/Google/Chrome/Application/chrome.exe"
 ```
 
+Capturas nas larguras de referência (360, 390, 768 e 1366 px), com entrada automática
+nas áreas de demonstração:
+
+```powershell
+python tool/capturar_telas.py --chrome "C:/Program Files/Google/Chrome/Application/chrome.exe" --saida capturas
+```
+
 Roteiro, identificadores do seed e resultados: [`docs/ROTEIRO_DEMONSTRACAO.md`](docs/ROTEIRO_DEMONSTRACAO.md).
 Limitações e evoluções: [`docs/MELHORIAS_FUTURAS.md`](docs/MELHORIAS_FUTURAS.md).
 
@@ -99,7 +106,7 @@ Limitações e evoluções: [`docs/MELHORIAS_FUTURAS.md`](docs/MELHORIAS_FUTURAS
 
 | Perfil | Rotas principais |
 |---|---|
-| Público | `/pontos`, `/pontos/:id`, `/materiais`, `/materiais/:id`, `/cadastro`, `/demonstracao` |
+| Público | `/` (página inicial), `/pontos`, `/pontos/:id`, `/materiais`, `/materiais/:id`, `/cadastro`, `/demonstracao` |
 | Morador | `/morador/inicio`, `/morador/solicitacoes` (`/nova`, `/:id`, `/:id/corrigir`), `/morador/conta`, `/morador/conta/enderecos` |
 | Operador | `/operador/fila`, `/operador/fila/:id` |
 | Administrador | `/administracao/resumo`, `/administracao/solicitacoes`, `/administracao/pontos`, `/administracao/materiais`, `/administracao/operadores`, `/administracao/moradores` |
