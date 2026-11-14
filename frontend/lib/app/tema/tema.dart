@@ -130,6 +130,17 @@ ThemeData criarTema() {
     visualDensity: VisualDensity.standard,
     materialTapTargetSize: MaterialTapTargetSize.padded,
     extensions: const [CoresSituacao()],
+    // Transição curta e suave entre páginas em todas as plataformas.
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.iOS: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.macOS: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.fuchsia: FadeForwardsPageTransitionsBuilder(),
+      },
+    ),
     appBarTheme: AppBarTheme(
       backgroundColor: Cores.superficie,
       foregroundColor: Cores.texto,
@@ -183,7 +194,8 @@ ThemeData criarTema() {
     cardTheme: CardThemeData(
       color: Cores.superficie,
       surfaceTintColor: Colors.transparent,
-      elevation: 0,
+      elevation: 1,
+      shadowColor: const Color(0x3324352D),
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(Raio.cartao),
