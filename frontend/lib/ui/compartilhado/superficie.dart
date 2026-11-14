@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 
 import '../../app/tema/tokens.dart';
@@ -99,6 +101,7 @@ class Revelar extends StatefulWidget {
 class _RevelarState extends State<Revelar> {
   bool _visivel = false;
   ScrollPosition? _posicao;
+  Timer? _atraso;
 
   @override
   void didChangeDependencies() {
@@ -112,6 +115,7 @@ class _RevelarState extends State<Revelar> {
   @override
   void dispose() {
     _posicao?.removeListener(_verificar);
+    _atraso?.cancel();
     super.dispose();
   }
 
@@ -122,7 +126,7 @@ class _RevelarState extends State<Revelar> {
     final topo = caixa.localToGlobal(Offset.zero).dy;
     final alturaTela = MediaQuery.sizeOf(context).height;
     if (topo < alturaTela * 0.92) {
-      Future.delayed(widget.atraso, () {
+      _atraso = Timer(widget.atraso, () {
         if (mounted) setState(() => _visivel = true);
       });
       _posicao?.removeListener(_verificar);
