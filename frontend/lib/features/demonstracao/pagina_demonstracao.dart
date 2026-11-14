@@ -166,6 +166,8 @@ class _PaginaDemonstracaoState extends State<PaginaDemonstracao> {
                         obrigatorio: true,
                         ajuda: 'Número fornecido pelo roteiro da demonstração.',
                         teclado: TextInputType.number,
+                        // Quem chega com o perfil escolhido digita o número e confirma com Enter.
+                        autofocus: widget.perfilInicial != null,
                         formatadores: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
                         aoEnviar: (_) => _usar(),
                         validar: (t) {
@@ -185,6 +187,7 @@ class _PaginaDemonstracaoState extends State<PaginaDemonstracao> {
                           enviando: _envio.enviando,
                           aoPressionar: _usar,
                           icone: Icons.login,
+                          autofocus: widget.perfilInicial != null && !_perfil.exigeId,
                         ),
                       ],
                     ),

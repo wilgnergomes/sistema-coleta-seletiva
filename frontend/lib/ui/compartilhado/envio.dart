@@ -74,12 +74,20 @@ class MensagemEnvio extends StatelessWidget {
 
 /// Botão principal que mostra o progresso sem perder o rótulo.
 class BotaoEnvio extends StatelessWidget {
-  const BotaoEnvio({super.key, required this.rotulo, required this.enviando, required this.aoPressionar, this.icone});
+  const BotaoEnvio({
+    super.key,
+    required this.rotulo,
+    required this.enviando,
+    required this.aoPressionar,
+    this.icone,
+    this.autofocus = false,
+  });
 
   final String rotulo;
   final bool enviando;
   final VoidCallback? aoPressionar;
   final IconData? icone;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +98,7 @@ class BotaoEnvio extends StatelessWidget {
     return Semantics(
       liveRegion: enviando,
       child: FilledButton.icon(
+        autofocus: autofocus,
         onPressed: enviando ? null : aoPressionar,
         icon: enviando ? indicador : (icone == null ? null : Icon(icone)),
         label: Text(enviando ? '$rotulo…' : rotulo),

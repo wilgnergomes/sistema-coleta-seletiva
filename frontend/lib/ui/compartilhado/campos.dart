@@ -24,6 +24,7 @@ class CampoTexto extends StatelessWidget {
     this.autofill,
     this.prefixo,
     this.foco,
+    this.autofocus = false,
   });
 
   final TextEditingController controlador;
@@ -42,6 +43,7 @@ class CampoTexto extends StatelessWidget {
   final Iterable<String>? autofill;
   final Widget? prefixo;
   final FocusNode? foco;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +52,7 @@ class CampoTexto extends StatelessWidget {
       child: TextFormField(
         controller: controlador,
         focusNode: foco,
+        autofocus: autofocus,
         enabled: habilitado,
         keyboardType: linhas > 1 ? TextInputType.multiline : teclado,
         textInputAction: linhas > 1 ? TextInputAction.newline : acaoTeclado,
