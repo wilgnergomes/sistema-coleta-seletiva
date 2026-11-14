@@ -42,6 +42,7 @@ ApiFalsa apiCompleta() => ApiFalsa()
 void main() {
   for (final (nome, tela) in [('360 px', celular), ('1366 px', computador)]) {
     for (final (rota, ator) in [
+      ('/', null),
       ('/pontos', null),
       ('/pontos/4', null),
       ('/cadastro', null),
